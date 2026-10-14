@@ -6,15 +6,6 @@ Vibe Coding Challenge 2026 - Team Alpha
 
 **Vibe Coding Challenge | One web application | Three connected MVPs**
 
-### Introduction to Mieterstrom and the European Energy Framework
-
-As part of the European Union's energy transition, regulatory initiatives such as the **Renewable Energy Directive (RED III)** and the **Electricity Market Design Reform** promote renewable energy generation, decentralized electricity systems, and greater consumer participation in energy markets. In Germany, the **Mieterstrom (tenant electricity) model**, governed by national legislation including the EEG and EnWG, enables households to benefit directly from locally generated electricity.
-
-Under this model, a **plant operator (Anlagenbetreiber)** installs and operates renewable energy facilities, particularly photovoltaic systems. Participating households (**Teilnehmer**) consume locally generated electricity whenever available. If production is insufficient, supplementary electricity (**Reststrom**) is purchased from the public grid. Surplus electricity can be fed into the grid.
-
-The main stakeholders include the **Anlagenbetreiber**, **Teilnehmer**, **Mieterstrom Supplier**, **Grid Operator (Netzbetreiber)**, and **Metering Service Provider (Messstellenbetreiber)**. In this challenge's simplified business scenario, **E.ON** acts as both the supplementary electricity supplier and grid operator, while **Metiundo** provides metering services.
-
-A successful Mieterstrom system requires accurate participant and contract registration, reliable energy metering, allocation of locally generated electricity, and transparent financial transactions between stakeholders. Solar and wind generation are included in the challenge, while the statutory Mieterstrom subsidy applies only to eligible solar electricity.
 
 ## 1. Business Context and Problem
 
@@ -127,20 +118,10 @@ Teams may choose their architecture, development tools and UI design.
 
 **Vibe Coding Challenge | Eine Webanwendung | Drei miteinander verbundene MVPs**
 
-### Einführung in das Mieterstrommodell und den europäischen Energierahmen
-
-Im Rahmen der europäischen Energiewende fördern regulatorische Entwicklungen wie die **Erneuerbare-Energien-Richtlinie (RED III)** und die **Reform des europäischen Strommarktdesigns** den Ausbau erneuerbarer Energien, die dezentrale Stromerzeugung sowie die aktive Beteiligung von Verbraucherinnen und Verbrauchern am Energiemarkt. In Deutschland ermöglicht das **Mieterstrommodell** auf Grundlage nationaler Regelungen, insbesondere des EEG und des EnWG, die direkte Nutzung lokal erzeugten Stroms durch Haushalte.
-
-In diesem Modell errichtet und betreibt ein **Anlagenbetreiber** Energieerzeugungsanlagen, insbesondere Photovoltaikanlagen. Teilnehmende Haushalte (**Teilnehmer**) nutzen den lokal erzeugten Strom zur Deckung ihres Energiebedarfs. Reicht die lokale Erzeugung nicht aus, wird zusätzlicher Strom (**Reststrom**) aus dem öffentlichen Netz bezogen. Überschüssige Energie kann in das Netz eingespeist werden.
-
-Zu den wichtigsten Akteuren gehören **Anlagenbetreiber**, **Teilnehmer**, **Mieterstromlieferant**, **Netzbetreiber** und **Messstellenbetreiber**. Im vereinfachten Geschäftsszenario dieser Challenge übernimmt **E.ON** sowohl die Rolle des Reststromlieferanten als auch die des Netzbetreibers. **Metiundo** ist für den Messstellenbetrieb zuständig.
-
-Für die erfolgreiche Umsetzung eines Mieterstrommodells sind die korrekte Registrierung von Teilnehmern und Verträgen, die zuverlässige Messung und Zuordnung von Energiemengen sowie eine transparente Abwicklung der finanziellen Zahlungsströme erforderlich. Die Challenge berücksichtigt sowohl Solar- als auch Windenergie; der gesetzliche Mieterstromzuschlag ist jedoch ausschließlich für förderfähigen Solarstrom vorgesehen.
-
 
 ## 1. Geschäftlicher Hintergrund und Problemstellung
 
-In einem **Mieterstrommodell** kann lokal erzeugter Strom direkt an teilnehmende Haushalte eines Gebäudes geliefert werden.
+In einem Modell kann lokal erzeugter Strom direkt an teilnehmende Haushalte eines Gebäudes geliefert werden.
 
 Die Installation einer Photovoltaik- oder Windenergieanlage allein reicht jedoch nicht aus: Es muss auch bekannt sein, welcher Betreiber für welche Anlage verantwortlich ist, welcher Haushalt zu welchem Gebäude gehört, welcher Zähler und welcher Vertrag ihm zugeordnet sind und ob der Haushalt überhaupt am Mieterstrommodell teilnimmt.
 
