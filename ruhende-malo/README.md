@@ -50,6 +50,10 @@ curl 'http://localhost:4004/odata/v4/malo/health()'
 
 `npm run import:data` reads only `data/source/Datensatz_Deutsch.xlsx`, sheet `MK7 Teilnehmer`. The import deploys the local schema and transactionally replaces workbook-derived reference data. It never modifies the Excel file. MaLo and MeLo IDs remain strings.
 
+`npm run deploy:local` is an alias for the complete local workbook import. A bare
+`cds deploy` creates the schema but does not populate the workbook-derived demo
+records and should not be used to prepare the presentation database.
+
 ## Simulated Ruhendstellung
 
 The Workbench previews and executes a local ACTIVE → RUHEND transition. The
