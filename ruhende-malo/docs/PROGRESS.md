@@ -243,3 +243,73 @@ Status: **VERIFIED** on 2026-10-15.
 - Test Center is a domain scenario runner, not a wrapper around the Vitest CLI.
 - The known Vite/UI5 bundle-size warning remains; visual and bundle optimization belong to Phase G.
 - There is still no SAP connection; all successful outcomes are SQLite simulation results.
+
+## Phase G — Frontend Redesign and Presentation Polish
+
+Status: **VERIFIED** on 2026-10-15.
+
+### Scope
+
+A complete UI/UX redesign of the React frontend. No business rule, CDS entity,
+or domain service was rewritten. The only backend change is one additional
+read-only CAP action (`previewLifecycle`) so that reactivation, removal,
+correction, and reversal can be validated before execution, reusing the
+existing `buildLifecyclePlan` logic.
+
+### Implemented
+
+- token-based design system (`app/src/styles/tokens.css`, `app.css`) replacing ad-hoc styling
+- reusable component layer: AppShell, Sidebar, TopBar, PageHeader, Metric, StatusBadge,
+  DataTable, FilterBar, EmptyState, LoadingState, ErrorState, Callout, Drawer, Dialog,
+  Toasts, ProcessStepper, ValidationChecklist, RelationshipViewer, Before/After diff,
+  ResultSummary, BatchResultSummary, TestResultCard
+- six redesigned pages: Übersicht, MaLo Explorer, Prozess-Workbench, Automatisierung,
+  Historie & Protokoll, Testcenter
+- guided five-step Workbench flow: AUSWÄHLEN → PRÜFEN → VORSCHAU → AUSFÜHREN → ERGEBNIS,
+  with read-only checking and a mandatory confirmation dialog before any write
+- German UI language throughout, with canonical German domain terms and unmodified source values
+- permanent `SIMULATION — KEINE SAP-VERBINDUNG` markers; `SAP_VERIFIED` is never rendered;
+  `ASSUMED_DEMO`, `UNKNOWN`, `BLOCKED`, and `REVIEW` remain visually distinct
+- accessibility work: landmark structure, labelled controls, focus-trapped overlays,
+  Escape handling, visible focus rings, reduced-motion support, responsive layout
+- all displayed figures are derived from CAP/OData responses; nothing is hardcoded
+
+### Backend change
+
+| Change | Reason |
+| --- | --- |
+| `previewLifecycle` action (CDS + handler) | read-only validation for the four non-dormancy lifecycle operations; reuses `buildLifecyclePlan`, performs no writes |
+
+### Fixes found during redesign
+
+- `executeOperation` previously sent every parameter to every CAP action, so
+  `setDormant` failed with `Property "reason" does not exist`. The client now sends
+  exactly the parameters each action declares.
+- `useAppData` double-loaded under React StrictMode and could render a blank page.
+- Layout defects: clipped Overview building table, mobile menu button visible on desktop,
+  card overflow, wrapping building cells, breadcrumb crowding on small screens.
+
+### Executed verification
+
+| Command/check | Result |
+| --- | --- |
+| `npm run typecheck` | PASS |
+| `npm test` | PASS — 7 files, 33 tests |
+| `npm run build` | PASS — 329 kB bundle / 98 kB gzip, no chunk warning |
+| Playwright smoke across all six pages | PASS — no console or page errors |
+| UI journey: Ruhendstellung `50539603921` (B-MUL-01, ASSUMED_DEMO) | PASS — READY → confirmation → `SIMULATED_SUCCESS` |
+| UI journey: browser reload after execution | PASS — Explorer still shows `RUHEND` |
+| UI journey: Wiederaktivierung on 2026-11-01 | PASS — `SIMULATED_SUCCESS`, prior periods retained |
+| UI journey: B-MUL-01 batch | PASS — 2 success, 1 skipped, 1 already done (one MaLo was dormant from the manual run) |
+| UI journey: conflict `50539603888` | PASS — `REVIEW`, nothing changed |
+| UI journey: STRICT profile | PASS — blocked with `PREREQUISITES_UNKNOWN` |
+| In-app Test Center | PASS — 3 scenarios executed, 0 failed |
+| Final `resetDemo` | PASS — presentation database restored to baseline |
+
+### Known limitations after Phase G
+
+- `cds watch` redeploys the schema when repository files change, which clears the
+  simulated history. Use `cds serve` for presentations so persisted state survives.
+- Batch mode supports Ruhendstellung only; the other lifecycle operations are manual.
+- Test Center remains a domain scenario runner, not a Vitest CLI wrapper.
+- No SAP connection exists; every success is a SQLite simulation result.

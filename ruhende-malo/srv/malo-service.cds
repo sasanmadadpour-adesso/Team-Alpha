@@ -44,6 +44,7 @@ service MaloService {
   action previewTransition(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String) returns TransitionResponse;
   action setDormant(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, confirmed: Boolean) returns TransitionResponse;
   action reconcileRelationships(maloId: String, buildingId: String, effectiveDate: Date) returns TransitionResponse;
+  action previewLifecycle(operation: String, maloId: String, buildingId: String, effectiveDate: Date, referenceOperationId: UUID, reason: String) returns TransitionResponse;
   action reactivate(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, confirmed: Boolean) returns TransitionResponse;
   action removeFromConstruct(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, reason: String, confirmed: Boolean) returns TransitionResponse;
   action correctTransition(maloId: String, buildingId: String, effectiveDate: Date, referenceOperationId: UUID, reason: String, confirmed: Boolean) returns TransitionResponse;

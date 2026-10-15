@@ -48,6 +48,14 @@ export default class MaloService extends cds.ApplicationService {
       await tx.run(INSERT.into('mk7.controlcenter.AuditEvents').entries({requestId,referenceOperationId:data.referenceOperationId,operation,maloId:data.maloId,actor:'DEMO_USER',effectiveDate:data.effectiveDate,eventTime:now,beforeValue:JSON.stringify(before),afterValue:JSON.stringify({businessState:persistedState,periods:afterPeriods,relationshipAction:plan.changes.relationshipAction}),reason:data.reason??plan.message,simulated:true}));
       await tx.run(UPDATE('mk7.controlcenter.ProcessRequests').set({status:'SUCCESS'}).where({ID:requestId})); plan={...plan,status:'SUCCESS',code:'SIMULATED_SUCCESS',message:`${operation} persisted and verified in SQLite.`,canExecute:false}; return {...lifecycleResponse(plan,requestId),maloId:data.maloId,buildingId:data.buildingId};
     };
+    /** Read-only lifecycle preview: builds the same plan as execution without writing anything. */
+    this.on('previewLifecycle',async req=>{
+      const data=req.data as ActionData&{operation:string}; const operation=data.operation as LifecycleOperation; const tx=cds.tx(req); const repository=new CapLifecycleRepository(tx); const currentState=await repository.state(data.maloId);
+      if(!currentState)return {...lifecycleResponse({status:'BLOCKED',code:'MALO_NOT_FOUND',message:'MaLo was not found.',canExecute:false,beforeState:'ACTIVE',afterState:'ACTIVE',effectiveDate:data.effectiveDate,changes:{}}),maloId:data.maloId,buildingId:data.buildingId};
+      const reference=await repository.reference(data.referenceOperationId,data.maloId);
+      const plan=buildLifecyclePlan({operation,effectiveDate:data.effectiveDate,reason:data.reason,referenceOperationId:data.referenceOperationId,currentState,periods:await repository.periods(data.maloId),reference,alreadyCompleted:await repository.completed(operation,data.maloId,data.buildingId,data.effectiveDate,data.referenceOperationId),alreadyReversed:operation==='REVERSE_TRANSITION'?await repository.reversed(data.referenceOperationId):false});
+      return {...lifecycleResponse(plan),maloId:data.maloId,buildingId:data.buildingId};
+    });
     this.on('reactivate',req=>lifecycleAction('REACTIVATE',req));
     this.on('removeFromConstruct',req=>lifecycleAction('REMOVE_FROM_CONSTRUCT',req));
     this.on('correctTransition',req=>lifecycleAction('CORRECT_TRANSITION',req));
