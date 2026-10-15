@@ -4,7 +4,7 @@ import { buildDormantPlan, type PrerequisiteProfile, type TransitionInput, type 
 
 interface ActionData { maloId:string; buildingId:string; effectiveDate:string; prerequisiteProfile:string; confirmed?:boolean; }
 const profile=(value:string):PrerequisiteProfile=>value==='ASSUMED_DEMO'?'ASSUMED_DEMO':'STRICT';
-const response=(plan:TransitionPlan,requestId?:string)=>({...plan,reststromMaloId:plan.reststromMaloId??'',beforeState:plan.beforeState??'',checksJson:JSON.stringify(plan.checks),requestId:requestId??null,checks:undefined});
+const response=(plan:TransitionPlan,requestId?:string)=>({...plan,reststromMaloId:plan.reststromMaloId??'',beforeState:plan.beforeState??'',checksJson:JSON.stringify(plan.checks),reconciliationJson:JSON.stringify(plan.reconciliation),requestId:requestId??null,checks:undefined,reconciliation:undefined});
 
 export default class MaloService extends cds.ApplicationService {
   async init(): Promise<void> {
@@ -17,6 +17,7 @@ export default class MaloService extends cds.ApplicationService {
       const data=req.data as ActionData; const input:TransitionInput={maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:profile(data.prerequisiteProfile)};
       return response(await buildDormantPlan(new CapTransitionRepository(cds.tx(req)),input));
     });
+    this.on('reconcileRelationships',async req=>{const data=req.data as ActionData; return response(await buildDormantPlan(new CapTransitionRepository(cds.tx(req)),{maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:'STRICT'}));});
     this.on('setDormant', async req=>{
       const data=req.data as ActionData; const input:TransitionInput={maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:profile(data.prerequisiteProfile),confirmed:data.confirmed};
       if(data.confirmed!==true) return response({...await buildDormantPlan(new CapTransitionRepository(cds.tx(req)),input),status:'BLOCKED',code:'CONFIRMATION_REQUIRED',message:'Explicit confirmation is required.',canExecute:false});

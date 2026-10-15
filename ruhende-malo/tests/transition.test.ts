@@ -1,8 +1,11 @@
 import { describe,expect,it } from 'vitest';
 import { buildDormantPlan,type LocationState,type SourceAssignment,type TransitionReader } from '../srv/domain/transition.js';
-class MemoryReader implements TransitionReader { constructor(private a:SourceAssignment[],private l?:LocationState,private done=false){} async assignments(){return this.a;} async location(){return this.l;} async completed(){return this.done;} }
+import type { RelationshipRecord } from '../srv/domain/reconciliation.js';
+class MemoryReader implements TransitionReader { constructor(private a:SourceAssignment[],private l?:LocationState,private done=false,private rel:RelationshipRecord[]=matching,private periods=[{businessState:'ACTIVE'}]){} async assignments(){return this.a;} async location(){return this.l;} async completed(){return this.done;} async relationships(){return this.rel;} async lifecyclePeriods(){return this.periods;} }
 const valid:SourceAssignment={buildingId:'B-MUL-01',role:'Haushaltsverbrauch',participates:true,reststromMaloId:'50539603639',maloConflict:false,supplyStartUtc:'2026-10-01'};
 const input={maloId:'50539603921',buildingId:'B-MUL-01',effectiveDate:'2026-10-01',prerequisiteProfile:'ASSUMED_DEMO' as const};
+const expected:RelationshipRecord[]=[{kind:'MEMA',source:'EXPECTED',buildingId:'B-MUL-01',fromLocationId:'50539603639',toLocationId:'MELO-1',validFrom:'2026-10-01'},{kind:'MAMA',source:'EXPECTED',buildingId:'B-MUL-01',fromLocationId:'50539603921',toLocationId:'50539603639',validFrom:'2026-10-01'}];
+const matching:RelationshipRecord[]=[...expected,...expected.map(r=>({...r,source:'MOCK_OBSERVED' as const}))];
 describe('Phase C transition engine',()=>{
   it('TC01 creates an executable simulated preview',async()=>{const result=await buildDormantPlan(new MemoryReader([valid],{maloId:input.maloId,businessState:'ACTIVE',conflictingAssignment:false}),input); expect(result.status).toBe('READY'); expect(result.reststromMaloId).toBe('50539603639'); expect(result.canExecute).toBe(true); expect(result.checks.some(c=>c.confidence==='ASSUMED_DEMO')).toBe(true);});
   it('TC02 skips a nonparticipant',async()=>{const result=await buildDormantPlan(new MemoryReader([{...valid,participates:false}],{maloId:'50539603604',businessState:'ACTIVE',conflictingAssignment:false}),{...input,maloId:'50539603604'}); expect(result.status).toBe('SKIPPED'); expect(result.canExecute).toBe(false);});

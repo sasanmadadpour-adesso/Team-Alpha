@@ -34,10 +34,12 @@ service MaloService {
     simulated         : Boolean;
     prerequisiteProfile : String;
     checksJson        : LargeString;
+    reconciliationJson: LargeString;
     requestId         : UUID;
   }
 
   function health() returns HealthResponse;
   action previewTransition(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String) returns TransitionResponse;
   action setDormant(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, confirmed: Boolean) returns TransitionResponse;
+  action reconcileRelationships(maloId: String, buildingId: String, effectiveDate: Date) returns TransitionResponse;
 }

@@ -116,3 +116,51 @@ Status: **VERIFIED** on 2026-10-15.
 
 - expected-versus-observed MeMa/MaMa reconciliation and prerequisite fixtures
 - remaining lifecycle operations and batch execution
+
+## Phase D — Validation and Relationship Reconciliation
+
+Status: **VERIFIED** on 2026-10-15.
+
+### Implemented
+
+- expected MeMa derivation from each Reststrom-MaLo to participating Bezugs-MeLos in the same building
+- expected MaMa derivation from each participating household MaLo to its same-building Reststrom-MaLo
+- separate `EXPECTED` and `MOCK_OBSERVED` relationship records with explicit provenance
+- generation/Einspeise handling as MeMa-only, without household MaMa creation
+- machine-readable `MATCH`, `MISSING`, `EXTRA`, and `CONFLICT` reconciliation results
+- half-open Zeitscheibe validation, invalid-range rejection, and conflicting overlapping MaMa detection
+- mandatory Reststrom target, lifecycle interval, lifecycle state, vSZ readiness, master-data, and supplier/market checks
+- strict blocking for `UNKNOWN` mandatory checks and visible `ASSUMED_DEMO` provenance
+- one shared validation engine for preview and execution, with revalidation immediately before writes
+- CAP `reconcileRelationships` action and Workbench validation/reconciliation checklist
+- isolated negative tests for missing and extra relationships, conflicting targets, invalid intervals, overlaps, and blocked prerequisites
+
+### Derived baseline
+
+| Relationship set | Count |
+| --- | ---: |
+| Expected MeMa | 13 |
+| Expected MaMa | 10 |
+| Mock-observed MeMa | 13 |
+| Mock-observed MaMa | 10 |
+| Generation MaMa | 0 |
+
+The mock-observed records are local fixtures and are not SAP observations.
+
+### Executed verification
+
+| Command/check | Result |
+| --- | --- |
+| `npm test` | PASS — 4 test files, 19 tests |
+| `npm run typecheck` | PASS |
+| `npm run import:data` | PASS — 17 workbook rows imported |
+| `npm run build` | PASS — only the known UI5 bundle-size warning |
+| relationship count query | PASS — expected and mock-observed sets remain separate; no generation MaMa |
+| live `ASSUMED_DEMO` preview | PASS — 10 checks, matching MeMa/MaMa, no blocking difference |
+| live confirmed `setDormant` | PASS — `SIMULATED_SUCCESS`, revalidated and persisted |
+| post-verification import | PASS — presentation database restored to the ACTIVE baseline |
+
+### Remaining after Phase D
+
+- lifecycle operations Wiederaktivierung, Herauslösung, Korrektur, and Rücknahme
+- automatic batch execution, history views, scenario Test Center, and Reset Demo
