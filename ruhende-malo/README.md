@@ -1,6 +1,6 @@
-# MK7 Control Center — Simulation
+# Ruhend — Umstellung auf ruhende MaLo (Simulation)
 
-Local SAP CAP prototype for the “Umstellung auf ruhende MaLo” process.
+Local SAP CAP prototype of the MVP boxes from the solution map *Marktrolle VNB*: **Anmeldung Konstrukt → Prüfung der Daten → Korrektur Daten → Konstrukt Übersicht → Umstellung auf ruhende MaLo inkl. MeMa/MaMa**, with a REST API for other services.
 
 > **SIMULATION — NO SAP CONNECTION**
 
@@ -19,7 +19,7 @@ npm run import:data
 npm run dev
 ```
 
-CAP runs on `http://localhost:4004` and Vite on `http://localhost:5173` by default. Vite proxies `/odata` to CAP. The local SQLite file `db.sqlite` is stored in the project root and excluded from Git.
+CAP runs on `http://localhost:4004` and Vite on `http://localhost:5173` by default. Vite proxies `/api` and `/odata` to CAP. The local SQLite file `db.sqlite` is stored in the project root and excluded from Git.
 
 The development script uses `cds serve` (not `cds watch`) so simulated process
 history remains persistent while presenting. `npm run dev` first runs a
@@ -44,71 +44,92 @@ the simulated process history, so it is not used by `npm run dev`.
 ## Verification
 
 ```bash
-npm test
+npm test          # unit tests (rules, Umstellung plan, lifecycle, import) + HTTP API tests on a temp DB copy
 npm run typecheck
 npm run build
+npm run api:spec  # regenerate docs/openapi.json from the CDS contract
 ```
 
-Direct API checks:
+## How the process works
 
-```bash
-curl http://localhost:4004/odata/v4/malo/SystemStatuses
-curl 'http://localhost:4004/odata/v4/malo/health()'
-```
+| Step (solution map) | What happens | Mode |
+| --- | --- | --- |
+| **Anmeldung Konstrukt** | The workbook import or `POST /registerConstruct` creates one construct per building | API / UI |
+| **Prüfung der Daten** | Rules V01–V14 on Teilnehmerliste, Einspeiser, iMSys, Abmeldeanfrage and Zeitscheiben | automatic |
+| **Korrektur Daten** | Findings wait for a human decision (choose construct, exclude, fix value, confirm) with a reason, then a re-check | **manual** |
+| **Aufbau vSZ** (gate) | The 10 checklist items from PDF steps 1–4.7 must be confirmed with evidence | manual confirm |
+| **Umstellung** | MeMa Reststrom→MeLo (§6.1), MaMa MaLo→Reststrom (§6.2), Einspeise-MeMa (§6.3, MeMa only after MCM), then RUHEND from the Stichtag, read back before SUCCESS | automatic |
+| **Übergabe** | The §5 relationship list (CSV/JSON) and outbox events for UTILMD, INVOIC and EDM (`NOT_IMPLEMENTED`) | automatic |
 
-## Architecture
+One run processes every participant through all steps; **the pipeline never stops globally**. Clean MaLos become ruhend in the same run. A problem stops only the affected MaLo, at the step where it occurs, and appears in Korrektur. Running again is safe: completed work returns `ALREADY_DONE`.
 
-- `db/`: CDS persistence model and Phase A seed
-- `srv/`: CAP transport, independent domain types, and adapter boundaries
-- `app/`: React/Vite UI (token-based design system, UI5 Web Components available)
-  - `app/src/styles/`: design tokens and component styles
-  - `app/src/components/`: shared UI building blocks
-  - `app/src/pages/`: the six application screens
-  - `app/src/api/maloApi.ts`: typed OData client; the only place that talks to CAP
-  - `app/src/lib/`: presentation mapping for backend codes and derived view data
-- `tests/`: Vitest tests
-- `scripts/workbook.ts`: workbook normalization and conflict detection
-- `scripts/import-workbook.ts`: idempotent CAP/SQLite import
-- `docs/PROGRESS.md`: results from executed verification commands
+**First run with the workbook and the simulated SAP state** (`data/fixtures/sap-simulated-state.json`, explicitly labeled demo data):
 
-## Importing source data
-
-`npm run import:data` reads only `data/source/Datensatz_Deutsch.xlsx`, sheet `MK7 Teilnehmer`. The import deploys the local schema and transactionally replaces workbook-derived reference data. It never modifies the Excel file. MaLo and MeLo IDs remain strings.
-
-`npm run deploy:local` is an alias for the complete local workbook import. A bare
-`cds deploy` creates the schema but does not populate the workbook-derived demo
-records and should not be used to prepare the presentation database.
-
-## Simulated Ruhendstellung
-
-The Workbench previews and executes a local ACTIVE → RUHEND transition. The
-default strict profile blocks because SAP and market evidence is unavailable.
-The user must explicitly select `ASSUMED_DEMO` and confirm execution. A success
-means only that SQLite was updated and verified; it is not an SAP update.
+- **6 MaLos become ruhend immediately**, with MeMa and MaMa.
+- Waiting for Korrektur:
+  - `50539603888`: in two constructs (V05)
+  - `50539603876`: Abmeldung of the current supplier pending (V11)
+  - `50539603103`: no iMSys (V10)
+  - the wind MeLo with 34 characters (V02)
+  - one Einspeise-MaLo shared by three generators (V14)
+- `50539603604` is skipped (Teilnahme nein).
+- After the status input "Abmeldung received" (`POST /updateSapState`), the building decision and the iMSys confirmation, **9 of 9 are ruhend**.
+- The BDEW check digit (V03) fails for all workbook IDs (synthetic test data). It is shown as a notice and blocks nothing.
 
 ## User interface
 
-Six screens, all driven exclusively by CAP/OData responses:
-
-| Screen | Purpose |
+| Tab | Purpose |
 | --- | --- |
-| Übersicht | import figures, per-building status, recent operations, open issues |
-| MaLo Explorer | searchable and filterable market locations with a detail drawer |
-| Prozess-Workbench | guided flow AUSWÄHLEN → PRÜFEN → VORSCHAU → AUSFÜHREN → ERGEBNIS |
-| Automatisierung | click-triggered batch run for one building through the same backend engine |
-| Historie & Protokoll | append-only process and audit history with per-request check details |
-| Testcenter | in-app domain scenario runner on isolated fixtures |
+| **Process** | **Process board**: one row per participant and one column per step (Prüfung, vSZ, Voraussetzungen, MeMa §6.1, MaMa §6.2, Ruhend, Übergabe), with ✓/✕/!/○ per cell and the reason in the tooltip. **Run automatic process**, KPIs, per-construct MeMa/MaMa (§5 CSV), Aufbau vSZ checklist, process log, handover events |
+| **Korrektur** | Worklist of open findings grouped by rule: status input (e.g. *Abmeldung received*), building decision, fix value, exclude, or manual confirmation with a required reason; non-blocking notices and resolved history |
+| **MaLo** | Manual mode for one MaLo: Ruhendstellung (same engine as the process), Wiederaktivierung, Herauslösung, Korrektur, Rücknahme. **Check** never writes; the operation asks for confirmation. Shows Zeitscheiben and audit history |
+| **API** | Live documentation of the REST API with **Try it**, curl examples and the OpenAPI download |
 
-The UI language is German; canonical German domain terms and source values are
-preserved verbatim. `SIMULATION — KEINE SAP-VERBINDUNG` is shown permanently,
-`SAP_VERIFIED` is never displayed, and `ASSUMED_DEMO`, `UNKNOWN`, `BLOCKED`, and
-`REVIEW` stay visually distinct from a simulated success.
+The header shows `Simulation · no SAP`, **Self-check** (18 business scenarios on isolated fixtures) and **Reset**.
 
-Checking never writes. Execution always requires an explicit confirmation dialog,
-and a result is shown only after the backend confirms and reads the change back.
+## Process API (`/api/v1`)
+
+REST + JSON (`srv/process-api.cds`). OpenAPI: `docs/openapi.json`. The UI uses only this API.
+
+| Method | Path | Step |
+| --- | --- | --- |
+| POST | `/registerConstruct` · `/importWorkbook` | Anmeldung (JSON or base64 xlsx) |
+| GET | `/Constructs` · `/Participants` · `/MarketLocations` | Konstrukt Übersicht |
+| POST | `/Constructs/{id}/validate` | Prüfung der Daten |
+| GET / POST | `/Issues?$filter=status eq 'OPEN'` · `/Issues/{ID}/resolve` · `/resolveIssues` | Korrektur Daten |
+| POST | `/Constructs/{id}/confirmVsz` · `/Constructs/{id}/setStichtag` | vSZ gate, Stichtag |
+| POST | `/updateSapState` `{ attribute: imsys\|abmeldung\|mcm, objectId, value }` | Status input from SAP / market communication / MSB (simulated) |
+| POST | `/Constructs/{id}/previewSwitch` · `/Constructs/{id}/executeSwitch` | Umstellung (preview never writes) |
+| POST | `/Constructs/{id}/process` · `/processAll` | Automatic pipeline |
+| GET | `/Constructs/{id}/relationshipList()` · `/Outbox` | Übergabe |
+| POST | `/preview` · `/execute` with `{ command: { operation, maloId, buildingId, effectiveDate, reason?, referenceOperationId? } }` | Manual MaLo operations |
+| GET | `/Relationships` · `/LifecyclePeriods` · `/ProcessRequests` · `/ProcessRuns` · `/AuditEvents` | Traceability (`$filter`, `$select`, `$orderby`, `$top`) |
+| GET / POST | `/health()` · `/runSelfCheck` · `/resetDemo` | System |
+
+Errors use HTTP 400 (invalid input), 404 (unknown object), 409 (state conflict) and 422 (rule violation, e.g. a Korrektur without a reason). Writes accept an optional `actor` for the audit log.
+
+```bash
+curl -X POST http://localhost:4004/api/v1/processAll -H "Content-Type: application/json" -d '{}'
+curl "http://localhost:4004/api/v1/Constructs/B-MUL-01/relationshipList()"
+```
+
+The internal read-only OData V4 view is available at `/odata/v4/malo`.
+
+## Code layout
+
+| Path | Content |
+| --- | --- |
+| `srv/construct/rules.ts` | Prüfung rule engine (pure) |
+| `srv/construct/switch-plan.ts` | Umstellung planning: MeMa/MaMa/Einspeise-MeMa and per-MaLo decisions (pure) |
+| `srv/construct/service.ts` | Orchestration: validation sync, Korrektur, vSZ gate, execution with read-back, outbox |
+| `srv/construct/registration.ts` | Anmeldung (workbook and JSON, one code path) |
+| `srv/construct/lifecycle-ops.ts` + `srv/domain/lifecycle.ts` | Wiederaktivierung, Herauslösung, Korrektur, Rücknahme |
+| `srv/construct/scenario-runner.ts` | Self-check scenarios |
+| `srv/process-api.*` | REST contract and transport |
+| `srv/adapters/sap-isu-not-configured.ts` | SAP boundary, fails closed |
+
+See `docs/ASSUMPTIONS.md` for every assumption and gap, `docs/DEMO.md` for the presenter script, and `docs/MVP_PLAN.md` for the design.
 
 ## Demo reset
 
-`resetDemo` (button “Demo zurücksetzen” in Automatisierung) restores the imported
-baseline in SQLite and clears process and audit history. It requires confirmation
-and never modifies the source workbook.
+**Reset** in the header (or `POST /api/v1/resetDemo {"confirm": true}`) re-registers the workbook baseline and clears the simulated state and history. The workbook itself is never modified.

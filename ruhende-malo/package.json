@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit && npm run typecheck --workspace app",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "api:spec": "cds compile srv/process-api.cds --service ProcessApi --to openapi --openapi:url /api/v1 > docs/openapi.json && cp docs/openapi.json app/public/openapi.json"
   },
   "dependencies": {
     "@cap-js/sqlite": "^3.1.2",

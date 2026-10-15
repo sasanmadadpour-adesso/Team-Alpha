@@ -7,6 +7,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
+      '/api': { target: 'http://localhost:4004', changeOrigin: true },
       '/odata': {
         target: 'http://localhost:4004',
         changeOrigin: true,

@@ -1,0 +1,11 @@
+{
+  "_notice": "SIMULATED SAP IS-U / market-communication state for the local demo. NOT real SAP data. Applied on workbook import and reset. Constructs registered through the API without this fixture start with UNKNOWN status.",
+  "defaults": { "imsys": "INSTALLED", "abmeldung": "CONFIRMED", "mcm": "COMPLETED" },
+  "vszConfirmedFor": ["B-FRA-01", "B-CGN-01", "B-MUL-01"],
+  "malo": {
+    "50539603876": { "abmeldung": "PENDING", "_why": "Current supplier has not yet confirmed the deregistration (UTILMD Abmeldung)." }
+  },
+  "melo": {
+    "DE0001815707800000101300000139045": { "imsys": "MISSING", "_why": "MeLo of MaLo 50539603103 still has a conventional meter; a vSZ needs iMSys at every participating MeLo." }
+  }
+}

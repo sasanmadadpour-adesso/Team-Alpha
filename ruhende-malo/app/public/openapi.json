@@ -1,0 +1,5313 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Ruhende MaLo Process API (Simulation)",
+    "description": "MK7 energy-sharing constructs: register, validate, correct, confirm vSZ readiness and switch participating MaLos to ruhend with MeMa/MaMa maintenance. No SAP connection.",
+    "version": ""
+  },
+  "x-sap-api-type": "ODATAV4",
+  "x-odata-version": "4.01",
+  "x-sap-shortText": "MK7 energy-sharing constructs: register, validate, correct, confirm vSZ readiness and switch participating MaLos to ruhend with MeMa/MaMa maintenance. No SAP connection.",
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Audit Events"
+    },
+    {
+      "name": "Constructs"
+    },
+    {
+      "name": "Issues"
+    },
+    {
+      "name": "Lifecycle Periods"
+    },
+    {
+      "name": "Market Locations"
+    },
+    {
+      "name": "Outbox"
+    },
+    {
+      "name": "Participants"
+    },
+    {
+      "name": "Process Requests"
+    },
+    {
+      "name": "Process Runs"
+    },
+    {
+      "name": "Relationships"
+    },
+    {
+      "name": "Vsz Checklist"
+    }
+  ],
+  "paths": {
+    "/$batch": {
+      "post": {
+        "summary": "Sends a group of requests",
+        "description": "Group multiple requests into a single request payload, see [Batch Requests](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BatchRequests).\n\n*Please note that \"Try it out\" is not supported for this request.*",
+        "tags": [
+          "Batch Requests"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Batch request",
+          "content": {
+            "multipart/mixed;boundary=request-separator": {
+              "schema": {
+                "type": "string"
+              },
+              "example": "--request-separator\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\nGET Constructs HTTP/1.1\nAccept: application/json\n\n\n--request-separator--"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch response",
+            "content": {
+              "multipart/mixed": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "--response-separator\nContent-Type: application/http\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{...}\n--response-separator--"
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuditEvents": {
+      "get": {
+        "summary": "Retrieves a list of audit events.",
+        "tags": [
+          "Audit Events"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "requestId",
+                  "requestId desc",
+                  "referenceOperationId",
+                  "referenceOperationId desc",
+                  "operation",
+                  "operation desc",
+                  "maloId",
+                  "maloId desc",
+                  "actor",
+                  "actor desc",
+                  "effectiveDate",
+                  "effectiveDate desc",
+                  "eventTime",
+                  "eventTime desc",
+                  "beforeValue",
+                  "beforeValue desc",
+                  "afterValue",
+                  "afterValue desc",
+                  "reason",
+                  "reason desc",
+                  "simulated",
+                  "simulated desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "requestId",
+                  "referenceOperationId",
+                  "operation",
+                  "maloId",
+                  "actor",
+                  "effectiveDate",
+                  "eventTime",
+                  "beforeValue",
+                  "afterValue",
+                  "reason",
+                  "simulated"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved audit events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of AuditEvents",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.AuditEvents"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/AuditEvents({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single audit event.",
+        "tags": [
+          "Audit Events"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "requestId",
+                  "referenceOperationId",
+                  "operation",
+                  "maloId",
+                  "actor",
+                  "effectiveDate",
+                  "eventTime",
+                  "beforeValue",
+                  "afterValue",
+                  "reason",
+                  "simulated"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved audit event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.AuditEvents"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Constructs": {
+      "get": {
+        "summary": "Retrieves a list of constructs.",
+        "tags": [
+          "Constructs"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "constructId",
+                  "constructId desc",
+                  "buildingId",
+                  "buildingId desc",
+                  "city",
+                  "city desc",
+                  "operator",
+                  "operator desc",
+                  "streetAddress",
+                  "streetAddress desc",
+                  "reststromMaloId",
+                  "reststromMaloId desc",
+                  "stichtag",
+                  "stichtag desc",
+                  "registrationSource",
+                  "registrationSource desc",
+                  "registeredAt",
+                  "registeredAt desc",
+                  "validatedAt",
+                  "validatedAt desc",
+                  "switchedAt",
+                  "switchedAt desc",
+                  "stage",
+                  "stage desc",
+                  "householdCount",
+                  "householdCount desc",
+                  "eligibleCount",
+                  "eligibleCount desc",
+                  "dormantCount",
+                  "dormantCount desc",
+                  "excludedCount",
+                  "excludedCount desc",
+                  "openIssueCount",
+                  "openIssueCount desc",
+                  "blockingIssueCount",
+                  "blockingIssueCount desc",
+                  "vszConfirmed",
+                  "vszConfirmed desc",
+                  "vszTotal",
+                  "vszTotal desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "constructId",
+                  "buildingId",
+                  "city",
+                  "operator",
+                  "streetAddress",
+                  "reststromMaloId",
+                  "stichtag",
+                  "registrationSource",
+                  "registeredAt",
+                  "validatedAt",
+                  "switchedAt",
+                  "stage",
+                  "householdCount",
+                  "eligibleCount",
+                  "dormantCount",
+                  "excludedCount",
+                  "openIssueCount",
+                  "blockingIssueCount",
+                  "vszConfirmed",
+                  "vszTotal"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved constructs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Constructs",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.Constructs"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')": {
+      "parameters": [
+        {
+          "description": "key: constructId",
+          "in": "path",
+          "name": "constructId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 40
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single construct.",
+        "tags": [
+          "Constructs"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "constructId",
+                  "buildingId",
+                  "city",
+                  "operator",
+                  "streetAddress",
+                  "reststromMaloId",
+                  "stichtag",
+                  "registrationSource",
+                  "registeredAt",
+                  "validatedAt",
+                  "switchedAt",
+                  "stage",
+                  "householdCount",
+                  "eligibleCount",
+                  "dormantCount",
+                  "excludedCount",
+                  "openIssueCount",
+                  "blockingIssueCount",
+                  "vszConfirmed",
+                  "vszTotal"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved construct",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.Constructs"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.confirmVsz": {
+      "post": {
+        "summary": "Invokes action confirmVsz",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of VszChecklist",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.VszChecklist"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "itemCodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "evidence": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.executeSwitch": {
+      "post": {
+        "summary": "Invokes action executeSwitch",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.SwitchResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.previewSwitch": {
+      "post": {
+        "summary": "Invokes action previewSwitch",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.SwitchResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.process": {
+      "post": {
+        "summary": "Invokes action process",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ConstructRun"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.relationshipList": {
+      "get": {
+        "summary": "Invokes function relationshipList",
+        "tags": [
+          "Constructs"
+        ],
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of RelationshipRow",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ProcessApi.RelationshipRow"
+                          }
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.setStichtag": {
+      "post": {
+        "summary": "Invokes action setStichtag",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ValidationReport"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stichtag": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2017-04-13",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Constructs('{constructId}')/ProcessApi.validate": {
+      "post": {
+        "summary": "Invokes action validate",
+        "tags": [
+          "Constructs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ValidationReport"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: constructId",
+            "in": "path",
+            "name": "constructId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Issues": {
+      "get": {
+        "summary": "Retrieves a list of issues.",
+        "tags": [
+          "Issues"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "fingerprint",
+                  "fingerprint desc",
+                  "ruleId",
+                  "ruleId desc",
+                  "checkGroup",
+                  "checkGroup desc",
+                  "severity",
+                  "severity desc",
+                  "constructId",
+                  "constructId desc",
+                  "constructIds",
+                  "constructIds desc",
+                  "objectType",
+                  "objectType desc",
+                  "objectId",
+                  "objectId desc",
+                  "sourceId",
+                  "sourceId desc",
+                  "field",
+                  "field desc",
+                  "affects",
+                  "affects desc",
+                  "message",
+                  "message desc",
+                  "allowedResolutions",
+                  "allowedResolutions desc",
+                  "status",
+                  "status desc",
+                  "resolution",
+                  "resolution desc",
+                  "resolutionValue",
+                  "resolutionValue desc",
+                  "reason",
+                  "reason desc",
+                  "resolvedBy",
+                  "resolvedBy desc",
+                  "resolvedAt",
+                  "resolvedAt desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "fingerprint",
+                  "ruleId",
+                  "checkGroup",
+                  "severity",
+                  "constructId",
+                  "constructIds",
+                  "objectType",
+                  "objectId",
+                  "sourceId",
+                  "field",
+                  "affects",
+                  "message",
+                  "allowedResolutions",
+                  "status",
+                  "resolution",
+                  "resolutionValue",
+                  "reason",
+                  "resolvedBy",
+                  "resolvedAt"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Issues",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.Issues"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Issues({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single issue.",
+        "tags": [
+          "Issues"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "fingerprint",
+                  "ruleId",
+                  "checkGroup",
+                  "severity",
+                  "constructId",
+                  "constructIds",
+                  "objectType",
+                  "objectId",
+                  "sourceId",
+                  "field",
+                  "affects",
+                  "message",
+                  "allowedResolutions",
+                  "status",
+                  "resolution",
+                  "resolutionValue",
+                  "reason",
+                  "resolvedBy",
+                  "resolvedAt"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved issue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.Issues"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Issues({ID})/ProcessApi.resolve": {
+      "post": {
+        "summary": "Invokes action resolve",
+        "tags": [
+          "Issues"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ValidationReport"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "parameters": [
+          {
+            "description": "key: ID",
+            "in": "path",
+            "name": "ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "01234567-89ab-cdef-0123-456789abcdef"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolution": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ProcessApi.Resolution",
+                        "enum": [
+                          "CHOOSE_BUILDING",
+                          "EXCLUDE_PARTICIPANT",
+                          "FIX_VALUE",
+                          "CONFIRM_ASSUMPTION"
+                        ]
+                      }
+                    ],
+                    "nullable": true
+                  },
+                  "value": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "reason": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/LifecyclePeriods": {
+      "get": {
+        "summary": "Retrieves a list of lifecycle periods.",
+        "tags": [
+          "Lifecycle Periods"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "maloId",
+                  "maloId desc",
+                  "businessState",
+                  "businessState desc",
+                  "validFrom",
+                  "validFrom desc",
+                  "validToExclusive",
+                  "validToExclusive desc",
+                  "provenance",
+                  "provenance desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "maloId",
+                  "businessState",
+                  "validFrom",
+                  "validToExclusive",
+                  "provenance"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved lifecycle periods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of LifecyclePeriods",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.LifecyclePeriods"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/LifecyclePeriods({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single lifecycle period.",
+        "tags": [
+          "Lifecycle Periods"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "maloId",
+                  "businessState",
+                  "validFrom",
+                  "validToExclusive",
+                  "provenance"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved lifecycle period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.LifecyclePeriods"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/MarketLocations": {
+      "get": {
+        "summary": "Retrieves a list of market locations.",
+        "tags": [
+          "Market Locations"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "maloId",
+                  "maloId desc",
+                  "primaryRole",
+                  "primaryRole desc",
+                  "participates",
+                  "participates desc",
+                  "businessState",
+                  "businessState desc",
+                  "assignmentCount",
+                  "assignmentCount desc",
+                  "conflictingAssignment",
+                  "conflictingAssignment desc",
+                  "assignmentSummary",
+                  "assignmentSummary desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "maloId",
+                  "primaryRole",
+                  "participates",
+                  "businessState",
+                  "assignmentCount",
+                  "conflictingAssignment",
+                  "assignmentSummary"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved market locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of MarketLocations",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.MarketLocations"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/MarketLocations('{maloId}')": {
+      "parameters": [
+        {
+          "description": "key: maloId",
+          "in": "path",
+          "name": "maloId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 40
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single market location.",
+        "tags": [
+          "Market Locations"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "maloId",
+                  "primaryRole",
+                  "participates",
+                  "businessState",
+                  "assignmentCount",
+                  "conflictingAssignment",
+                  "assignmentSummary"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved market location",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.MarketLocations"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Outbox": {
+      "get": {
+        "summary": "Retrieves a list of outbox.",
+        "tags": [
+          "Outbox"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "dedupeKey",
+                  "dedupeKey desc",
+                  "constructId",
+                  "constructId desc",
+                  "eventType",
+                  "eventType desc",
+                  "targetProcess",
+                  "targetProcess desc",
+                  "objectId",
+                  "objectId desc",
+                  "payload",
+                  "payload desc",
+                  "status",
+                  "status desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "dedupeKey",
+                  "constructId",
+                  "eventType",
+                  "targetProcess",
+                  "objectId",
+                  "payload",
+                  "status"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved outbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Outbox",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.Outbox"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Outbox({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single outbox.",
+        "tags": [
+          "Outbox"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "dedupeKey",
+                  "constructId",
+                  "eventType",
+                  "targetProcess",
+                  "objectId",
+                  "payload",
+                  "status"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved outbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.Outbox"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Participants": {
+      "get": {
+        "summary": "Retrieves a list of participants.",
+        "tags": [
+          "Participants"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "sourceId",
+                  "sourceId desc",
+                  "sourceFile",
+                  "sourceFile desc",
+                  "sourceSheet",
+                  "sourceSheet desc",
+                  "sourceRowNumber",
+                  "sourceRowNumber desc",
+                  "buildingId",
+                  "buildingId desc",
+                  "role",
+                  "role desc",
+                  "participationRaw",
+                  "participationRaw desc",
+                  "participates",
+                  "participates desc",
+                  "meloId",
+                  "meloId desc",
+                  "maloId",
+                  "maloId desc",
+                  "generationFeedInMaloId",
+                  "generationFeedInMaloId desc",
+                  "supplyStartUtc",
+                  "supplyStartUtc desc",
+                  "contractFromUtc",
+                  "contractFromUtc desc",
+                  "contractToUtc",
+                  "contractToUtc desc",
+                  "city",
+                  "city desc",
+                  "operator",
+                  "operator desc",
+                  "streetAddress",
+                  "streetAddress desc",
+                  "reststromMaloId",
+                  "reststromMaloId desc",
+                  "maloConflict",
+                  "maloConflict desc",
+                  "constructId",
+                  "constructId desc",
+                  "excluded",
+                  "excluded desc",
+                  "exclusionReason",
+                  "exclusionReason desc",
+                  "imsysStatus",
+                  "imsysStatus desc",
+                  "deregistrationStatus",
+                  "deregistrationStatus desc",
+                  "mcmStatus",
+                  "mcmStatus desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "sourceId",
+                  "sourceFile",
+                  "sourceSheet",
+                  "sourceRowNumber",
+                  "buildingId",
+                  "role",
+                  "participationRaw",
+                  "participates",
+                  "meloId",
+                  "maloId",
+                  "generationFeedInMaloId",
+                  "supplyStartUtc",
+                  "contractFromUtc",
+                  "contractToUtc",
+                  "city",
+                  "operator",
+                  "streetAddress",
+                  "reststromMaloId",
+                  "maloConflict",
+                  "constructId",
+                  "excluded",
+                  "exclusionReason",
+                  "imsysStatus",
+                  "deregistrationStatus",
+                  "mcmStatus"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved participants",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Participants",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.Participants"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Participants('{sourceId}')": {
+      "parameters": [
+        {
+          "description": "key: sourceId",
+          "in": "path",
+          "name": "sourceId",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "maxLength": 100
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single participant.",
+        "tags": [
+          "Participants"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "sourceId",
+                  "sourceFile",
+                  "sourceSheet",
+                  "sourceRowNumber",
+                  "buildingId",
+                  "role",
+                  "participationRaw",
+                  "participates",
+                  "meloId",
+                  "maloId",
+                  "generationFeedInMaloId",
+                  "supplyStartUtc",
+                  "contractFromUtc",
+                  "contractToUtc",
+                  "city",
+                  "operator",
+                  "streetAddress",
+                  "reststromMaloId",
+                  "maloConflict",
+                  "constructId",
+                  "excluded",
+                  "exclusionReason",
+                  "imsysStatus",
+                  "deregistrationStatus",
+                  "mcmStatus"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved participant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.Participants"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/ProcessRequests": {
+      "get": {
+        "summary": "Retrieves a list of process requests.",
+        "tags": [
+          "Process Requests"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "operation",
+                  "operation desc",
+                  "maloId",
+                  "maloId desc",
+                  "buildingId",
+                  "buildingId desc",
+                  "effectiveDate",
+                  "effectiveDate desc",
+                  "mode",
+                  "mode desc",
+                  "status",
+                  "status desc",
+                  "resultCode",
+                  "resultCode desc",
+                  "resultMessage",
+                  "resultMessage desc",
+                  "beforeState",
+                  "beforeState desc",
+                  "afterState",
+                  "afterState desc",
+                  "executionTime",
+                  "executionTime desc",
+                  "batchId",
+                  "batchId desc",
+                  "idempotencyKey",
+                  "idempotencyKey desc",
+                  "referenceOperationId",
+                  "referenceOperationId desc",
+                  "actor",
+                  "actor desc",
+                  "reason",
+                  "reason desc",
+                  "reststromMaloId",
+                  "reststromMaloId desc",
+                  "simulated",
+                  "simulated desc",
+                  "trace",
+                  "trace desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "operation",
+                  "maloId",
+                  "buildingId",
+                  "effectiveDate",
+                  "mode",
+                  "status",
+                  "resultCode",
+                  "resultMessage",
+                  "beforeState",
+                  "afterState",
+                  "executionTime",
+                  "batchId",
+                  "idempotencyKey",
+                  "referenceOperationId",
+                  "actor",
+                  "reason",
+                  "reststromMaloId",
+                  "simulated",
+                  "trace"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved process requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of ProcessRequests",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.ProcessRequests"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/ProcessRequests({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single process request.",
+        "tags": [
+          "Process Requests"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "operation",
+                  "maloId",
+                  "buildingId",
+                  "effectiveDate",
+                  "mode",
+                  "status",
+                  "resultCode",
+                  "resultMessage",
+                  "beforeState",
+                  "afterState",
+                  "executionTime",
+                  "batchId",
+                  "idempotencyKey",
+                  "referenceOperationId",
+                  "actor",
+                  "reason",
+                  "reststromMaloId",
+                  "simulated",
+                  "trace"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved process request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.ProcessRequests"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/ProcessRuns": {
+      "get": {
+        "summary": "Retrieves a list of process runs.",
+        "tags": [
+          "Process Runs"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "mode",
+                  "mode desc",
+                  "scope",
+                  "scope desc",
+                  "actor",
+                  "actor desc",
+                  "startedAt",
+                  "startedAt desc",
+                  "finishedAt",
+                  "finishedAt desc",
+                  "summary",
+                  "summary desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "mode",
+                  "scope",
+                  "actor",
+                  "startedAt",
+                  "finishedAt",
+                  "summary"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved process runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of ProcessRuns",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.ProcessRuns"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/ProcessRuns({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single process run.",
+        "tags": [
+          "Process Runs"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "mode",
+                  "scope",
+                  "actor",
+                  "startedAt",
+                  "finishedAt",
+                  "summary"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved process run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.ProcessRuns"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Relationships": {
+      "get": {
+        "summary": "Retrieves a list of relationships.",
+        "tags": [
+          "Relationships"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "kind",
+                  "kind desc",
+                  "source",
+                  "source desc",
+                  "context",
+                  "context desc",
+                  "requestId",
+                  "requestId desc",
+                  "buildingId",
+                  "buildingId desc",
+                  "fromLocationId",
+                  "fromLocationId desc",
+                  "toLocationId",
+                  "toLocationId desc",
+                  "validFrom",
+                  "validFrom desc",
+                  "validToExclusive",
+                  "validToExclusive desc",
+                  "provenance",
+                  "provenance desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "kind",
+                  "source",
+                  "context",
+                  "requestId",
+                  "buildingId",
+                  "fromLocationId",
+                  "toLocationId",
+                  "validFrom",
+                  "validToExclusive",
+                  "provenance"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved relationships",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of Relationships",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.Relationships"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/Relationships({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single relationship.",
+        "tags": [
+          "Relationships"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "kind",
+                  "source",
+                  "context",
+                  "requestId",
+                  "buildingId",
+                  "fromLocationId",
+                  "toLocationId",
+                  "validFrom",
+                  "validToExclusive",
+                  "provenance"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved relationship",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.Relationships"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/VszChecklist": {
+      "get": {
+        "summary": "Retrieves a list of vsz checklist.",
+        "tags": [
+          "Vsz Checklist"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/top"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/search"
+          },
+          {
+            "name": "$filter",
+            "description": "Filter items by property values, see [Filtering](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter)",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/count"
+          },
+          {
+            "name": "$orderby",
+            "description": "Order items by property values, see [Sorting](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "ID desc",
+                  "createdAt",
+                  "createdAt desc",
+                  "createdBy",
+                  "createdBy desc",
+                  "modifiedAt",
+                  "modifiedAt desc",
+                  "modifiedBy",
+                  "modifiedBy desc",
+                  "constructId",
+                  "constructId desc",
+                  "itemCode",
+                  "itemCode desc",
+                  "step",
+                  "step desc",
+                  "label",
+                  "label desc",
+                  "pdfPage",
+                  "pdfPage desc",
+                  "note",
+                  "note desc",
+                  "status",
+                  "status desc",
+                  "confirmedBy",
+                  "confirmedBy desc",
+                  "confirmedAt",
+                  "confirmedAt desc",
+                  "evidence",
+                  "evidence desc"
+                ]
+              }
+            }
+          },
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "constructId",
+                  "itemCode",
+                  "step",
+                  "label",
+                  "pdfPage",
+                  "note",
+                  "status",
+                  "confirmedBy",
+                  "confirmedAt",
+                  "evidence"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved vsz checklist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of VszChecklist",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProcessApi.VszChecklist"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/VszChecklist({ID})": {
+      "parameters": [
+        {
+          "description": "key: ID",
+          "in": "path",
+          "name": "ID",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Retrieves a single vsz checklist.",
+        "tags": [
+          "Vsz Checklist"
+        ],
+        "parameters": [
+          {
+            "name": "$select",
+            "description": "Select properties to be returned, see [Select](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect)",
+            "in": "query",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ID",
+                  "createdAt",
+                  "createdBy",
+                  "modifiedAt",
+                  "modifiedBy",
+                  "constructId",
+                  "itemCode",
+                  "step",
+                  "label",
+                  "pdfPage",
+                  "note",
+                  "status",
+                  "confirmedBy",
+                  "confirmedAt",
+                  "evidence"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved vsz checklist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessApi.VszChecklist"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/execute": {
+      "post": {
+        "summary": "Invokes action execute",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.OperationResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ProcessApi.OperationCommand"
+                      }
+                    ],
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Invokes function health",
+        "tags": [
+          "Service Operations"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.Health"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
+    "/importWorkbook": {
+      "post": {
+        "summary": "Invokes action importWorkbook",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.RegistrationResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "contentBase64": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/preview": {
+      "post": {
+        "summary": "Invokes action preview",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.OperationResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ProcessApi.OperationCommand"
+                      }
+                    ],
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processAll": {
+      "post": {
+        "summary": "Invokes action processAll",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ProcessResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "constructIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registerConstruct": {
+      "post": {
+        "summary": "Invokes action registerConstruct",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.RegistrationResult"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "construct": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ProcessApi.Registration"
+                      }
+                    ],
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resetDemo": {
+      "post": {
+        "summary": "Invokes action resetDemo",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resolveIssues": {
+      "post": {
+        "summary": "Invokes action resolveIssues",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ValidationReport"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "example": "01234567-89ab-cdef-0123-456789abcdef",
+                      "nullable": true
+                    }
+                  },
+                  "resolution": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/ProcessApi.Resolution",
+                        "enum": [
+                          "CHOOSE_BUILDING",
+                          "EXCLUDE_PARTICIPANT",
+                          "FIX_VALUE",
+                          "CONFIRM_ASSUMPTION"
+                        ]
+                      }
+                    ],
+                    "nullable": true
+                  },
+                  "value": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "reason": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runSelfCheck": {
+      "post": {
+        "summary": "Invokes action runSelfCheck",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.return_ProcessApi_runSelfCheck"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/updateSapState": {
+      "post": {
+        "summary": "Invokes action updateSapState",
+        "tags": [
+          "Service Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ProcessApi.ValidationReport"
+                    }
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        },
+        "requestBody": {
+          "description": "Action parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attribute": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "objectId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "value": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "actor": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProcessApi.AuditEvents": {
+        "title": "AuditEvents",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "referenceOperationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "operation": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "eventTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "beforeValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "afterValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "simulated": {
+            "type": "boolean",
+            "nullable": true,
+            "default": true
+          }
+        }
+      },
+      "ProcessApi.Check": {
+        "title": "Check",
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "nullable": true
+          },
+          "confidence": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.ConstructRun": {
+        "title": "ConstructRun",
+        "type": "object",
+        "properties": {
+          "constructId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stoppedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "nullable": true
+          },
+          "dormantCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "eligibleCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "openIssueCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.SwitchItem"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "ProcessApi.Constructs": {
+        "title": "Constructs",
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "constructId": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "buildingId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120,
+            "nullable": true
+          },
+          "operator": {
+            "type": "string",
+            "maxLength": 160,
+            "nullable": true
+          },
+          "streetAddress": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "stichtag": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "registrationSource": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "validatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "switchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "householdCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "eligibleCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "dormantCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "excludedCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "openIssueCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "blockingIssueCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "vszConfirmed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "vszTotal": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Health": {
+        "title": "Health",
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "nullable": true
+          },
+          "sapConnection": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Issue": {
+        "title": "Issue",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "ruleId": {
+            "type": "string",
+            "nullable": true
+          },
+          "checkGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProcessApi.Severity",
+                "enum": [
+                  "ERROR",
+                  "REVIEW",
+                  "WARNING",
+                  "INFO"
+                ]
+              }
+            ],
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "constructIds": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectType": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectId": {
+            "type": "string",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "allowedResolutions": {
+            "type": "string",
+            "nullable": true
+          },
+          "notice": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "resolution": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolutionValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Issues": {
+        "title": "Issues",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "fingerprint": {
+            "type": "string",
+            "maxLength": 300,
+            "nullable": true
+          },
+          "ruleId": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "checkGroup": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "constructId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "constructIds": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "objectType": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          },
+          "objectId": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "sourceId": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          },
+          "affects": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "allowedResolutions": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "resolution": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "resolutionValue": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "resolvedBy": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.LifecyclePeriods": {
+        "title": "LifecyclePeriods",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "maloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "businessState": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "validToExclusive": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "provenance": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.MarketLocations": {
+        "title": "MarketLocations",
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "maloId": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "primaryRole": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "participates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "businessState": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true,
+            "default": "UNKNOWN"
+          },
+          "assignmentCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "conflictingAssignment": {
+            "type": "boolean",
+            "nullable": true,
+            "default": false
+          },
+          "assignmentSummary": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Operation": {
+        "type": "string",
+        "enum": [
+          "SET_DORMANT",
+          "REACTIVATE",
+          "REMOVE_FROM_CONSTRUCT",
+          "CORRECT_TRANSITION",
+          "REVERSE_TRANSITION"
+        ],
+        "title": "Operation"
+      },
+      "ProcessApi.OperationCommand": {
+        "title": "OperationCommand",
+        "type": "object",
+        "properties": {
+          "operation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProcessApi.Operation",
+                "enum": [
+                  "SET_DORMANT",
+                  "REACTIVATE",
+                  "REMOVE_FROM_CONSTRUCT",
+                  "CORRECT_TRANSITION",
+                  "REVERSE_TRANSITION"
+                ]
+              }
+            ],
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "referenceOperationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.OperationResult": {
+        "title": "OperationResult",
+        "type": "object",
+        "properties": {
+          "operation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProcessApi.Operation",
+                "enum": [
+                  "SET_DORMANT",
+                  "REACTIVATE",
+                  "REMOVE_FROM_CONSTRUCT",
+                  "CORRECT_TRANSITION",
+                  "REVERSE_TRANSITION"
+                ]
+              }
+            ],
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "beforeState": {
+            "type": "string",
+            "nullable": true
+          },
+          "afterState": {
+            "type": "string",
+            "nullable": true
+          },
+          "canExecute": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "simulated": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.Check"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.RelationshipDiff"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "ProcessApi.Outbox": {
+        "title": "Outbox",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "dedupeKey": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "constructId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "eventType": {
+            "type": "string",
+            "maxLength": 60,
+            "nullable": true
+          },
+          "targetProcess": {
+            "type": "string",
+            "maxLength": 120,
+            "nullable": true
+          },
+          "objectId": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "payload": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Participant": {
+        "title": "Participant",
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "meloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "participates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "generationFeedInMaloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "supplyStartUtc": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Participants": {
+        "title": "Participants",
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "sourceId": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "sourceFile": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "sourceSheet": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "sourceRowNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "buildingId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "participationRaw": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          },
+          "participates": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "meloId": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "generationFeedInMaloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "supplyStartUtc": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "contractFromUtc": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "contractToUtc": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120,
+            "nullable": true
+          },
+          "operator": {
+            "type": "string",
+            "maxLength": 160,
+            "nullable": true
+          },
+          "streetAddress": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "maloConflict": {
+            "type": "boolean",
+            "nullable": true,
+            "default": false
+          },
+          "constructId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "excluded": {
+            "type": "boolean",
+            "nullable": true,
+            "default": false
+          },
+          "exclusionReason": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          },
+          "imsysStatus": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true,
+            "default": "UNKNOWN"
+          },
+          "deregistrationStatus": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true,
+            "default": "UNKNOWN"
+          },
+          "mcmStatus": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true,
+            "default": "UNKNOWN"
+          }
+        }
+      },
+      "ProcessApi.PlannedRelationship": {
+        "title": "PlannedRelationship",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "nullable": true
+          },
+          "context": {
+            "type": "string",
+            "nullable": true
+          },
+          "pdfRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "fromId": {
+            "type": "string",
+            "nullable": true
+          },
+          "toId": {
+            "type": "string",
+            "nullable": true
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "validToExclusive": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerKey": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.ProcessRequests": {
+        "title": "ProcessRequests",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "operation": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "buildingId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          },
+          "resultCode": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "resultMessage": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "beforeState": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "afterState": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "executionTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "batchId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "maxLength": 160,
+            "nullable": true
+          },
+          "referenceOperationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "simulated": {
+            "type": "boolean",
+            "nullable": true,
+            "default": true
+          },
+          "trace": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.ProcessResult": {
+        "title": "ProcessResult",
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "success": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "alreadyDone": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "blocked": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "review": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "error": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "constructs": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.ConstructRun"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "simulated": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.ProcessRuns": {
+        "title": "ProcessRuns",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "mode": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Registration": {
+        "title": "Registration",
+        "type": "object",
+        "properties": {
+          "buildingId": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "operator": {
+            "type": "string",
+            "nullable": true
+          },
+          "streetAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "stichtag": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.Participant"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "ProcessApi.RegistrationResult": {
+        "title": "RegistrationResult",
+        "type": "object",
+        "properties": {
+          "constructIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "households": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "participating": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.RelationshipDiff": {
+        "title": "RelationshipDiff",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "blocking": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "fromId": {
+            "type": "string",
+            "nullable": true
+          },
+          "toId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.RelationshipRow": {
+        "title": "RelationshipRow",
+        "type": "object",
+        "properties": {
+          "constructId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "nullable": true
+          },
+          "context": {
+            "type": "string",
+            "nullable": true
+          },
+          "fromId": {
+            "type": "string",
+            "nullable": true
+          },
+          "toId": {
+            "type": "string",
+            "nullable": true
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "open": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "provenance": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Relationships": {
+        "title": "Relationships",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "kind": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          },
+          "context": {
+            "type": "string",
+            "maxLength": 30,
+            "nullable": true
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "buildingId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "fromLocationId": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "toLocationId": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "validToExclusive": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "provenance": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.Resolution": {
+        "type": "string",
+        "enum": [
+          "CHOOSE_BUILDING",
+          "EXCLUDE_PARTICIPANT",
+          "FIX_VALUE",
+          "CONFIRM_ASSUMPTION"
+        ],
+        "title": "Resolution"
+      },
+      "ProcessApi.Severity": {
+        "type": "string",
+        "enum": [
+          "ERROR",
+          "REVIEW",
+          "WARNING",
+          "INFO"
+        ],
+        "title": "Severity"
+      },
+      "ProcessApi.Step": {
+        "title": "Step",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.SwitchItem": {
+        "title": "SwitchItem",
+        "type": "object",
+        "properties": {
+          "itemKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "meloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "beforeState": {
+            "type": "string",
+            "nullable": true
+          },
+          "afterState": {
+            "type": "string",
+            "nullable": true
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.Step"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "ProcessApi.SwitchResult": {
+        "title": "SwitchResult",
+        "type": "object",
+        "properties": {
+          "constructId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stichtag": {
+            "type": "string",
+            "format": "date",
+            "example": "2017-04-13",
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.SwitchItem"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.PlannedRelationship"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "simulated": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.ValidationReport": {
+        "title": "ValidationReport",
+        "type": "object",
+        "properties": {
+          "constructId": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "open": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "blocking": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "notices": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.Issue"
+                }
+              ],
+              "nullable": true
+            }
+          }
+        }
+      },
+      "ProcessApi.VszChecklist": {
+        "title": "VszChecklist",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "modifiedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true,
+            "description": "{i18n>UserID.Description}"
+          },
+          "constructId": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "itemCode": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "step": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "nullable": true
+          },
+          "pdfPage": {
+            "type": "string",
+            "maxLength": 10,
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 20,
+            "nullable": true,
+            "default": "UNKNOWN"
+          },
+          "confirmedBy": {
+            "type": "string",
+            "maxLength": 80,
+            "nullable": true
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.return_ProcessApi_runSelfCheck": {
+        "title": "return_ProcessApi_runSelfCheck",
+        "type": "object",
+        "properties": {
+          "passed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "results": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "count": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "The number of entities in the collection. Available when using the [$count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount) query option."
+      },
+      "error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "innererror": {
+                "type": "object",
+                "description": "The structure of this object is service-specific"
+              }
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "top": {
+        "name": "$top",
+        "in": "query",
+        "description": "Show only the first n items, see [Paging - Top](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptiontop)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "example": 50
+      },
+      "skip": {
+        "name": "$skip",
+        "in": "query",
+        "description": "Skip the first n items, see [Paging - Skip](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionskip)",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "count": {
+        "name": "$count",
+        "in": "query",
+        "description": "Include count of items, see [Count](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount)",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "search": {
+        "name": "$search",
+        "in": "query",
+        "description": "Search items by search phrases, see [Searching](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionsearch)",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "error": {
+        "description": "Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

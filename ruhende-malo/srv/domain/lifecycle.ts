@@ -1,5 +1,5 @@
 export type LifecycleOperation='REACTIVATE'|'REMOVE_FROM_CONSTRUCT'|'CORRECT_TRANSITION'|'REVERSE_TRANSITION';
-export type BusinessState='ACTIVE'|'RUHEND';
+export type BusinessState='ACTIVE'|'RUHEND'|'UNKNOWN';
 export interface Period { id?:string; businessState:BusinessState; validFrom?:string; validToExclusive?:string; }
 export interface ReferencedOperation { id:string; operation:string; effectiveDate:string; status:string; referenceOperationId?:string; }
 export interface LifecycleInput { operation:LifecycleOperation; effectiveDate:string; reason?:string; referenceOperationId?:string; currentState:BusinessState; periods:Period[]; reference?:ReferencedOperation; alreadyCompleted?:boolean; alreadyReversed?:boolean; }

@@ -17,8 +17,9 @@ describe('TC21 workbook import',()=>{
     const target=(building:string)=>rows.find(r=>r.buildingId===building&&r.role===ROLES.reststrom)?.reststromMaloId;
     expect(target('B-FRA-01')).toBe('51781215544'); expect(target('B-CGN-01')).toBe('51781215999'); expect(target('B-MUL-01')).toBe('50539603639');
   });
-  it('marks the cross-building MaLo assignment as a conflict',()=>{
-    const duplicate=rows.filter(r=>r.maloId==='50539603888'); expect(duplicate).toHaveLength(2); expect(duplicate.every(r=>r.maloConflict)).toBe(true); expect(new Set(duplicate.map(r=>r.buildingId))).toEqual(new Set(['B-FRA-01','B-CGN-01']));
+  it('allows multiple MeLos for a MaLo but flags cross-building assignment for review',()=>{
+    const duplicate=rows.filter(r=>r.maloId==='50539603888'); expect(duplicate).toHaveLength(2); expect(new Set(duplicate.map(r=>r.meloId))).toHaveLength(2); expect(duplicate.every(r=>r.maloConflict)).toBe(true); expect(new Set(duplicate.map(r=>r.buildingId))).toEqual(new Set(['B-FRA-01','B-CGN-01']));
+    const oneBuilding=rows.filter(r=>r.buildingId==='B-MUL-01'&&r.role===ROLES.household); expect(oneBuilding.every(r=>!r.maloConflict)).toBe(true);
   });
   it('preserves IDs as strings and validates B-MUL-01',()=>{
     expect(rows.every(r=>typeof r.maloId==='string'&&typeof r.meloId==='string')).toBe(true);

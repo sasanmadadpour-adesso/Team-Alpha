@@ -1,138 +1,102 @@
-import { useCallback, useRef, useState } from 'react';
-import { AppShell, type PageId } from './components/AppShell';
-import { ErrorState, LoadingState } from './components/primitives';
-import { type Toast, ToastStack } from './components/overlays';
-import { OverviewPage } from './pages/Overview';
-import { EMPTY_FILTERS, type ExplorerFilters, ExplorerPage } from './pages/Explorer';
-import { type WorkbenchSeed, WorkbenchPage } from './pages/Workbench';
-import { AutomationPage } from './pages/Automation';
-import { HistoryPage } from './pages/History';
-import { TestCenterPage } from './pages/TestCenter';
-import { useAppData, useDerived } from './lib/useAppData';
-import type { OperationKey, Tone } from './lib/domain';
-import './styles/app.css';
+import { confirmDialog, ConfirmHost } from './confirm';
+import { useCallback, useEffect, useState } from 'react';
+import { type Snapshot, loadSnapshot, resetDemo, runSelfCheck } from './api';
+import { ProcessPage } from './pages/Process';
+import { KorrekturPage } from './pages/Korrektur';
+import { ManualPage } from './pages/Manual';
+import { ApiPage } from './pages/ApiPage';
+import './styles.css';
+
+export type Tab = 'process' | 'korrektur' | 'manual' | 'api';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'process', label: 'Process' },
+  { id: 'korrektur', label: 'Korrektur' },
+  { id: 'manual', label: 'MaLo' },
+  { id: 'api', label: 'API' },
+];
+
+export interface PageProps {
+  data: Snapshot;
+  refresh: () => Promise<void>;
+  notify: (message: string) => void;
+  openMalo: (maloId: string) => void;
+  go: (tab: Tab) => void;
+}
 
 export default function App() {
-  const { data, loading, error, reload } = useAppData();
-  const { metrics, buildings, attention } = useDerived(data);
+  const initial = location.hash.slice(1) as Tab;
+  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === initial) ? initial : 'process');
+  const [data, setData] = useState<Snapshot>();
+  const [error, setError] = useState<string>();
+  const [toast, setToast] = useState<string>();
+  const [check, setCheck] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const [focusMalo, setFocusMalo] = useState<string>();
 
-  const [page, setPage] = useState<PageId>('overview');
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const [filters, setFilters] = useState<ExplorerFilters>(EMPTY_FILTERS);
-  const [selectedMalo, setSelectedMalo] = useState<string>();
-  const [historyFilter, setHistoryFilter] = useState('');
-  const [seed, setSeed] = useState<WorkbenchSeed>({});
-  const nextToast = useRef(1);
-
-  const toast = useCallback((tone: Tone, title: string, text?: string) => {
-    const id = nextToast.current++;
-    setToasts((current) => [...current, { id, tone, title, text }]);
-    setTimeout(() => setToasts((current) => current.filter((item) => item.id !== id)), 6000);
+  const refresh = useCallback(async () => {
+    try { setData(await loadSnapshot()); setError(undefined); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }, []);
-
-  const dismiss = useCallback((id: number) => {
-    setToasts((current) => current.filter((item) => item.id !== id));
+  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { location.hash = tab; }, [tab]);
+  useEffect(() => {
+    const onHash = () => { const next = location.hash.slice(1) as Tab; if (TABS.some((t) => t.id === next)) setTab(next); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(undefined), 4000); return () => clearTimeout(t); }, [toast]);
 
-  const openMalo = useCallback((maloId: string) => {
-    setFilters(maloId ? { ...EMPTY_FILTERS, search: maloId } : { ...EMPTY_FILTERS, conflicts: 'ONLY' });
-    setSelectedMalo(maloId || undefined);
-    setPage('explorer');
-  }, []);
-
-  const openBuilding = useCallback((buildingId: string) => {
-    setFilters({ ...EMPTY_FILTERS, building: buildingId });
-    setSelectedMalo(undefined);
-    setPage('explorer');
-  }, []);
-
-  const openHistory = useCallback((maloId?: string) => {
-    setHistoryFilter(maloId ?? '');
-    setPage('history');
-  }, []);
-
-  const startOperation = useCallback((maloId: string, buildingId: string, operation: OperationKey) => {
-    setSeed({ maloId, buildingId, operation, nonce: Date.now() });
-    setSelectedMalo(undefined);
-    setPage('workbench');
-  }, []);
-
-  const counts: Partial<Record<PageId, number>> = {
-    explorer: data.locations.length,
-    history: data.history.length,
+  const reset = async () => {
+    if (!(await confirmDialog('Reset the demo?\n\nThe workbook is re-registered and all simulated changes and history are cleared. The workbook file itself is not changed.'))) return;
+    setBusy(true);
+    try { await resetDemo(); setCheck(undefined); setToast('Demo reset to the workbook baseline'); await refresh(); }
+    catch (e) { setToast(e instanceof Error ? e.message : String(e)); }
+    setBusy(false);
   };
+  const selfCheck = async () => {
+    setBusy(true);
+    try {
+      const r = await runSelfCheck();
+      setCheck(`${r.passed}/${r.passed + r.failed}`);
+      const failed = (JSON.parse(r.results) as { id: string; title: string; passed: boolean }[]).filter((x) => !x.passed);
+      setToast(failed.length ? `Failed: ${failed.map((f) => f.id).join(', ')}` : `All ${r.passed} business scenarios passed`);
+    } catch (e) { setCheck(undefined); setToast(e instanceof Error ? e.message : 'Self-check failed'); }
+    setBusy(false);
+  };
+  const openMalo = (maloId: string) => { setFocusMalo(maloId); setTab('manual'); };
+  const openIssues = data?.issues.filter((i) => i.status === 'OPEN' && i.affects !== '[]').length ?? 0;
+  const props = data && { data, refresh, notify: setToast, openMalo, go: setTab };
 
   return (
-    <AppShell page={page} onNavigate={setPage} counts={counts}>
-      {loading ? (
-        <LoadingState rows={8} label="Anwendungsdaten werden geladen" />
-      ) : error ? (
-        <ErrorState
-          title="Die CAP-API ist nicht erreichbar"
-          text={`${error} — Prüfen Sie, ob das CAP-Backend läuft (npm run dev:cap) und der Vite-Proxy auf Port 4004 zeigt.`}
-          onRetry={() => void reload()}
-        />
-      ) : (
-        <>
-          {page === 'overview' ? (
-            <OverviewPage
-              data={data}
-              metrics={metrics}
-              buildings={buildings}
-              attention={attention}
-              onOpenBuilding={openBuilding}
-              onOpenMalo={openMalo}
-              onOpenHistory={() => openHistory()}
-              onStartProcess={() => { setSeed({ nonce: Date.now() }); setPage('workbench'); }}
-            />
-          ) : null}
+    <div className="page">
+      <header className="top">
+        <div className="brand"><span className="logo">R</span><div><b>Ruhend</b><small>Umstellung auf ruhende MaLo · MK7</small></div></div>
+        <nav className="tabs">
+          {TABS.map((t) => (
+            <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+              {t.label}{t.id === 'korrektur' && openIssues > 0 && <span className="badge">{openIssues}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="right">
+          <span className="sim" title="Everything is simulated in a local SQLite database. Nothing is sent to SAP IS-U.">Simulation · no SAP</span>
+          <button className="ghost" onClick={selfCheck} disabled={busy}>{check ? `Self-check ${check} ✓` : 'Self-check'}</button>
+          <button className="ghost" onClick={reset} disabled={busy}>Reset</button>
+        </div>
+      </header>
 
-          {page === 'explorer' ? (
-            <ExplorerPage
-              data={data}
-              filters={filters}
-              onFilters={setFilters}
-              selectedMalo={selectedMalo}
-              onSelectMalo={setSelectedMalo}
-              onStartOperation={startOperation}
-              onCopied={(value) => toast('info', 'In die Zwischenablage kopiert', value)}
-            />
-          ) : null}
+      {error && <div className="banner error">Backend not reachable: {error}</div>}
+      {!data && !error && <div className="loading">Loading…</div>}
+      {props && tab === 'process' && <ProcessPage {...props} />}
+      {props && tab === 'korrektur' && <KorrekturPage {...props} />}
+      {props && tab === 'manual' && <ManualPage {...props} focusMalo={focusMalo} />}
+      {tab === 'api' && <ApiPage />}
 
-          {page === 'workbench' ? (
-            <WorkbenchPage
-              data={data}
-              seed={seed}
-              onReload={() => reload(true)}
-              onOpenHistory={openHistory}
-              onOpenMalo={openMalo}
-              onToast={toast}
-            />
-          ) : null}
-
-          {page === 'automation' ? (
-            <AutomationPage
-              data={data}
-              onReload={() => reload(true)}
-              onOpenHistory={openHistory}
-              onToast={toast}
-            />
-          ) : null}
-
-          {page === 'history' ? (
-            <HistoryPage
-              data={data}
-              filterMalo={historyFilter}
-              onFilterMalo={setHistoryFilter}
-              onOpenMalo={openMalo}
-            />
-          ) : null}
-
-          {page === 'tests' ? <TestCenterPage onToast={toast} /> : null}
-        </>
-      )}
-
-      <ToastStack toasts={toasts} onDismiss={dismiss} />
-    </AppShell>
+      {toast && <div className="toast">{toast}</div>}
+      <ConfirmHost />
+    </div>
   );
+}
+
+export function Chip({ tone, children, title }: { tone: string; children: React.ReactNode; title?: string }) {
+  return <span className={`chip ${tone}`} title={title}>{children}</span>;
 }
