@@ -3,6 +3,9 @@ import { CapTransitionRepository } from './adapters/cap-transition-repository.js
 import { buildDormantPlan, type PrerequisiteProfile, type TransitionInput, type TransitionPlan } from './domain/transition.js';
 import { CapLifecycleRepository } from './adapters/cap-lifecycle-repository.js';
 import { buildLifecyclePlan,type LifecycleOperation,type LifecyclePlan } from './domain/lifecycle.js';
+import {executeDormant} from './domain/dormant-execution.js';
+import {summarizeBatch} from './domain/batch.js';
+import {runScenarios} from './domain/scenario-runner.js';
 
 interface ActionData { maloId:string; buildingId:string; effectiveDate:string; prerequisiteProfile:string; confirmed?:boolean; reason?:string; referenceOperationId?:string; }
 const profile=(value:string):PrerequisiteProfile=>value==='ASSUMED_DEMO'?'ASSUMED_DEMO':'STRICT';
@@ -22,20 +25,7 @@ export default class MaloService extends cds.ApplicationService {
     });
     this.on('reconcileRelationships',async req=>{const data=req.data as ActionData; return response(await buildDormantPlan(new CapTransitionRepository(cds.tx(req)),{maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:'STRICT'}));});
     this.on('setDormant', async req=>{
-      const data=req.data as ActionData; const input:TransitionInput={maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:profile(data.prerequisiteProfile),confirmed:data.confirmed};
-      if(data.confirmed!==true) return response({...await buildDormantPlan(new CapTransitionRepository(cds.tx(req)),input),status:'BLOCKED',code:'CONFIRMATION_REQUIRED',message:'Explicit confirmation is required.',canExecute:false});
-      const tx=cds.tx(req);
-        const plan=await buildDormantPlan(new CapTransitionRepository(tx),input); if(!plan.canExecute) return response(plan);
-        const requestId=cds.utils.uuid(); const idempotencyKey=`SET_DORMANT|${data.maloId}|${data.buildingId}|${data.effectiveDate}`; const now=new Date().toISOString();
-        await tx.run(INSERT.into('mk7.controlcenter.ProcessRequests').entries({ID:requestId,operation:'SET_DORMANT',maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,mode:'MANUAL',status:'PROCESSING',idempotencyKey,actor:'DEMO_USER',reststromMaloId:plan.reststromMaloId,simulated:true}));
-        await tx.run(INSERT.into('mk7.controlcenter.PrerequisiteChecks').entries(plan.checks.map(item=>({requestId,checkCode:item.code,result:item.result,confidence:item.confidence,notes:item.message}))));
-        await tx.run(UPDATE('mk7.controlcenter.LifecyclePeriods').set({validToExclusive:data.effectiveDate}).where({maloId:data.maloId,businessState:'ACTIVE',validToExclusive:null}));
-        await tx.run(INSERT.into('mk7.controlcenter.LifecyclePeriods').entries({maloId:data.maloId,businessState:'RUHEND',validFrom:data.effectiveDate,provenance:'SIMULATED_TRANSITION'}));
-        await tx.run(UPDATE('mk7.controlcenter.MarketLocations').set({businessState:'RUHEND'}).where({maloId:data.maloId}));
-        const persisted=await tx.run(SELECT.one.from('mk7.controlcenter.MarketLocations').columns('businessState').where({maloId:data.maloId})); if(persisted?.businessState!=='RUHEND') throw new Error('Persisted state verification failed.');
-        await tx.run(INSERT.into('mk7.controlcenter.AuditEvents').entries({requestId,operation:'SET_DORMANT',maloId:data.maloId,actor:'DEMO_USER',effectiveDate:data.effectiveDate,eventTime:now,beforeValue:JSON.stringify({businessState:'ACTIVE'}),afterValue:JSON.stringify({businessState:'RUHEND',reststromMaloId:plan.reststromMaloId}),reason:'Explicitly confirmed simulated Ruhendstellung',simulated:true}));
-        await tx.run(UPDATE('mk7.controlcenter.ProcessRequests').set({status:'SUCCESS'}).where({ID:requestId}));
-      return response({...plan,status:'SUCCESS',code:'SIMULATED_SUCCESS',message:'Simulated Ruhendstellung persisted and verified in SQLite.',beforeState:'ACTIVE',afterState:'RUHEND',canExecute:false},requestId);
+      const data=req.data as ActionData; const result=await executeDormant(cds.tx(req),{maloId:data.maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:profile(data.prerequisiteProfile),confirmed:data.confirmed===true,mode:'MANUAL',actor:'DEMO_USER'}); return response(result.plan,result.requestId);
     });
     const lifecycleAction=async(operation:LifecycleOperation,req:cds.Request)=>{
       const data=req.data as ActionData; const tx=cds.tx(req); const repository=new CapLifecycleRepository(tx); const currentState=await repository.state(data.maloId);
@@ -62,6 +52,16 @@ export default class MaloService extends cds.ApplicationService {
     this.on('removeFromConstruct',req=>lifecycleAction('REMOVE_FROM_CONSTRUCT',req));
     this.on('correctTransition',req=>lifecycleAction('CORRECT_TRANSITION',req));
     this.on('reverseTransition',req=>lifecycleAction('REVERSE_TRANSITION',req));
+    this.on('executeBatch',async req=>{
+      const data=req.data as ActionData;if(data.confirmed!==true)return req.reject(400,'Explicit batch confirmation is required.'); const tx=cds.tx(req); const sourceRows=await tx.run(SELECT.from('mk7.controlcenter.ParticipantSourceRows').columns('maloId').where({buildingId:data.buildingId,role:'Haushaltsverbrauch'})) as {maloId:string}[]; const maloIds=[...new Set(sourceRows.map(row=>row.maloId))],batchId=cds.utils.uuid(),results:Record<string,unknown>[]=[];
+      for(const maloId of maloIds){try{const captured=await executeDormant(tx,{maloId,buildingId:data.buildingId,effectiveDate:data.effectiveDate,prerequisiteProfile:profile(data.prerequisiteProfile),confirmed:true,mode:'BATCH',actor:'DEMO_BATCH',batchId});results.push({...captured.plan,requestId:captured.requestId});}catch(error){results.push({maloId,status:'ERROR',code:'BATCH_ITEM_ERROR',message:error instanceof Error?error.message:'Unexpected batch item error.'});}}
+      return {batchId,buildingId:data.buildingId,...summarizeBatch(results as {status:string;code:string;maloId:string}[]),resultsJson:JSON.stringify(results),simulated:true};
+    });
+    this.on('resetDemo',async req=>{
+      if(req.data.confirmed!==true)return req.reject(400,'Explicit reset confirmation is required.'); const tx=cds.tx(req); await tx.run(DELETE.from('mk7.controlcenter.PrerequisiteChecks'));await tx.run(DELETE.from('mk7.controlcenter.AuditEvents'));await tx.run(DELETE.from('mk7.controlcenter.ProcessRequests'));await tx.run(DELETE.from('mk7.controlcenter.LifecyclePeriods'));await tx.run(UPDATE('mk7.controlcenter.MarketLocations').set({businessState:'ACTIVE'}));
+      const households=await tx.run(SELECT.from('mk7.controlcenter.MarketLocations').columns('maloId').where({primaryRole:'Haushaltsverbrauch'})) as {maloId:string}[];if(households.length)await tx.run(INSERT.into('mk7.controlcenter.LifecyclePeriods').entries(households.map(row=>({maloId:row.maloId,businessState:'ACTIVE',provenance:'WORKBOOK_BASELINE'}))));await tx.run(DELETE.from('mk7.controlcenter.Relationships').where({source:'MOCK_OBSERVED'}));const expected=await tx.run(SELECT.from('mk7.controlcenter.Relationships').where({source:'EXPECTED'})) as Record<string,unknown>[];if(expected.length)await tx.run(INSERT.into('mk7.controlcenter.Relationships').entries(expected.map(({ID,createdAt,createdBy,modifiedAt,modifiedBy,...row})=>({...row,source:'MOCK_OBSERVED',provenance:'EXPLICIT_LOCAL_DEMO_FIXTURE_NOT_SAP'}))));return 'Demo baseline restored in SQLite. Source workbook was not modified.';
+    });
+    this.on('runScenarioTests',async()=>{const executedAt=new Date().toISOString(),cases=await runScenarios();return {executedAt,passed:cases.filter(item=>item.passed).length,failed:cases.filter(item=>!item.passed).length,resultsJson:JSON.stringify(cases)};});
 
     await super.init();
   }

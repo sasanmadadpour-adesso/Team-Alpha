@@ -37,6 +37,8 @@ service MaloService {
     reconciliationJson: LargeString;
     requestId         : UUID;
   }
+  type BatchResponse { batchId: UUID; buildingId: String; total: Integer; success: Integer; skipped: Integer; alreadyDone: Integer; blocked: Integer; review: Integer; error: Integer; resultsJson: LargeString; simulated: Boolean; }
+  type TestRunResponse { executedAt: Timestamp; passed: Integer; failed: Integer; resultsJson: LargeString; }
 
   function health() returns HealthResponse;
   action previewTransition(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String) returns TransitionResponse;
@@ -46,4 +48,7 @@ service MaloService {
   action removeFromConstruct(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, reason: String, confirmed: Boolean) returns TransitionResponse;
   action correctTransition(maloId: String, buildingId: String, effectiveDate: Date, referenceOperationId: UUID, reason: String, confirmed: Boolean) returns TransitionResponse;
   action reverseTransition(maloId: String, buildingId: String, effectiveDate: Date, referenceOperationId: UUID, reason: String, confirmed: Boolean) returns TransitionResponse;
+  action executeBatch(buildingId: String, effectiveDate: Date, prerequisiteProfile: String, confirmed: Boolean) returns BatchResponse;
+  action resetDemo(confirmed: Boolean) returns String;
+  action runScenarioTests() returns TestRunResponse;
 }

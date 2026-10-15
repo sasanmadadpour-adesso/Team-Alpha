@@ -13,3 +13,6 @@ th { background: #eef2f5; }
 .workbench select, .workbench input[type=date] { padding: .5rem; }
 .workbench button { width: fit-content; padding: .55rem 1rem; }
 .result { border-left: .3rem solid #0a6ed1; padding-left: 1rem; }
+.nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.nav button, button { padding: .55rem .85rem; }
+pre { overflow: auto; background: #eef2f5; padding: .75rem; }

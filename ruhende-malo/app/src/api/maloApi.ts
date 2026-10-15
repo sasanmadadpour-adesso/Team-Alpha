@@ -34,3 +34,12 @@ async function action(name:string,body:object):Promise<TransitionResult>{const r
 export const previewTransition=(body:object)=>action('previewTransition',body);
 export const setDormant=(body:object)=>action('setDormant',body);
 export const executeLifecycle=(name:'reactivate'|'removeFromConstruct'|'correctTransition'|'reverseTransition',body:object)=>action(name,body);
+export interface RequestHistory {ID:string;operation:string;maloId:string;buildingId:string;effectiveDate:string;mode:string;status:string;resultCode?:string;resultMessage?:string;beforeState?:string;afterState?:string;actor:string;executionTime?:string;simulated:boolean;}
+export interface BatchResult {batchId:string;buildingId:string;total:number;success:number;skipped:number;alreadyDone:number;blocked:number;review:number;error:number;resultsJson:string;simulated:boolean;}
+export interface ScenarioResult {executedAt:string;passed:number;failed:number;resultsJson:string;}
+async function collection<T>(entity:string,query=''):Promise<T[]>{const response=await fetch(`/odata/v4/malo/${entity}${query}`);if(!response.ok)throw new Error(`${entity} is unavailable (${response.status})`);return ((await response.json()) as ODataCollection<T>).value;}
+export const getHistory=()=>collection<RequestHistory>('ProcessRequests','?$orderby=createdAt desc');
+export const getLocations=()=>collection<{maloId:string;businessState:string;primaryRole:string;participates:boolean;conflictingAssignment:boolean}>('MarketLocations','?$orderby=maloId');
+export async function executeBatch(body:object):Promise<BatchResult>{const response=await fetch('/odata/v4/malo/executeBatch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!response.ok)throw new Error(`Batch API failed (${response.status})`);return response.json();}
+export async function resetDemo(confirmed:boolean):Promise<string>{const response=await fetch('/odata/v4/malo/resetDemo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirmed})});if(!response.ok)throw new Error(`Reset failed (${response.status})`);return (await response.json()).value;}
+export async function runScenarioTests():Promise<ScenarioResult>{const response=await fetch('/odata/v4/malo/runScenarioTests',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!response.ok)throw new Error(`Scenario tests failed (${response.status})`);return response.json();}

@@ -16,3 +16,6 @@
 - The simulated Herauslösung rule closes the selected household MaLo's mock-observed MaMa and associated mock-observed MeMa as of the effective date. It does not change ACTIVE/RUHEND state; Wiederaktivierung remains a separate operation.
 - Korrektur moves the lifecycle boundary created by a referenced successful transition. It requires a reason, retains the original process request and audit event, and appends a referencing correction event.
 - Rücknahme is a later compensating state transition. It requires a reason and successful reference operation, appends history, and never deletes the referenced event.
+- Phase F automatic batch processing is user-triggered simulation, not an unattended scheduler. It uses the same `executeDormant` service as manual execution and records `DEMO_BATCH` as actor.
+- Reset Demo rebuilds ACTIVE lifecycle periods and mock-observed relationship fixtures from already imported SQLite reference records. It never reads, writes, or replaces the source workbook.
+- The in-app Test Center runs isolated deterministic domain fixtures. It reports actual expected/actual assertions but is not represented as Vitest CLI output; `npm test` remains authoritative for developer verification.

@@ -202,3 +202,44 @@ Status: **VERIFIED** on 2026-10-15.
 - automatic batch execution through the shared engine
 - History & Log and real scenario Test Center views
 - confirmed Reset Demo endpoint and final presentation polish
+
+## Phase F — Functional MVP Completion
+
+Status: **VERIFIED** on 2026-10-15.
+
+### Implemented
+
+- `executeBatch` with the same `executeDormant` validation/write engine used by manual mode
+- independent result classification per MaLo and continuation after item-level errors
+- repeat-safe idempotency preventing duplicate lifecycle periods and audit events
+- persistent process history with operation, state transition, effective date, mode, result code/message, actor, timestamp, batch ID, checks, and simulation provenance
+- confirmed `resetDemo` action restoring ACTIVE periods, mock-observed fixtures, and empty process/audit history without modifying Excel
+- backend-driven MaLo Explorer, Process Workbench, Automation, History & Logs, and Test Center views
+- real in-app scenario runner using isolated fixtures and shared domain logic; no preset PASS badges
+- Vitest coverage for batch summaries, duplicate classification, lifecycle behavior, reconciliation, import, and in-app scenarios
+
+### Live acceptance results
+
+| Scenario | Result |
+| --- | --- |
+| B-MUL-01 batch after reset | PASS — 3 `SUCCESS`, 1 `SKIPPED`, 0 errors |
+| repeated identical batch | PASS — 4 `ALREADY_DONE`, no duplicate transitions |
+| persisted request history | PASS — 3 success + 1 skipped with codes, messages, actors, timestamps, and simulated provenance |
+| Reset Demo | PASS — request history emptied and baseline restored |
+| source workbook mutation | None — reset operates only on SQLite |
+
+### Final verification
+
+| Command | Result |
+| --- | --- |
+| `npm run typecheck` | PASS |
+| `npm test` | PASS — 7 files, 33 tests |
+| `npm run build` | PASS — known UI5 chunk-size warning only |
+| isolated in-app scenario runner | PASS — covered by executed Vitest assertion |
+
+### Remaining limitations
+
+- Batch items are logically isolated and errors are retained per item, but SQLite/CAP executes the user-triggered batch sequentially rather than as concurrent jobs.
+- Test Center is a domain scenario runner, not a wrapper around the Vitest CLI.
+- The known Vite/UI5 bundle-size warning remains; visual and bundle optimization belong to Phase G.
+- There is still no SAP connection; all successful outcomes are SQLite simulation results.
