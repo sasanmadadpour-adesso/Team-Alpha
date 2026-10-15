@@ -1,0 +1,46 @@
+<core:FragmentDefinition
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  xmlns:layout="sap.ui.layout">
+  <VBox class="vnbTopology sapUiSmallMarginBottom" width="100%">
+    <MessageStrip
+      text="{warningText}"
+      type="Warning"
+      showIcon="true"
+      visible="{hasDataWarning}"
+      class="sapUiSmallMarginBottom" />
+    <layout:Grid defaultSpan="XL4 L4 M12 S12" hSpacing="1" vSpacing="1" width="100%">
+      <VBox class="vnbTopologyNode vnbImportNode" justifyContent="Center">
+        <HBox alignItems="Center">
+          <core:Icon src="sap-icon://download-from-cloud" size="1.25rem" class="sapUiTinyMarginEnd" />
+          <Title text="{i18n>importNode}" level="H4" />
+        </HBox>
+        <ObjectIdentifier title="{importMaLo}" text="MaLo" class="sapUiTinyMarginTop" />
+        <ObjectStatus text="{i18n>consumptionDirection}" state="Information" />
+      </VBox>
+      <VBox class="vnbTopologyNode vnbHubNode" justifyContent="Center">
+        <HBox alignItems="Center">
+          <core:Icon src="sap-icon://connected" size="1.5rem" class="sapUiTinyMarginEnd" />
+          <Title text="{i18n>sharedMeLoNode}" level="H4" />
+        </HBox>
+        <ObjectIdentifier title="{meLo}" text="MeLo" class="sapUiTinyMarginTop" />
+        <ObjectStatus text="{meteringSystem}" icon="sap-icon://measuring-point" />
+      </VBox>
+      <VBox class="vnbTopologyNode vnbExportNode" justifyContent="Center">
+        <HBox alignItems="Center">
+          <core:Icon src="sap-icon://upload-to-cloud" size="1.25rem" class="sapUiTinyMarginEnd" />
+          <Title text="{i18n>exportNode}" level="H4" />
+        </HBox>
+        <ObjectIdentifier title="{exportMaLo}" text="MaLo" class="sapUiTinyMarginTop" />
+        <ObjectStatus text="{i18n>generationDirection}" state="Success" />
+      </VBox>
+    </layout:Grid>
+    <HBox class="sapUiSmallMarginTop" wrap="Wrap" alignItems="Center">
+      <ObjectStatus
+        text="{= ${hasDualMaLo} ? ${i18n>dualMaLoDetected} : ${i18n>singleMaLoDetected} }"
+        state="{= ${hasDualMaLo} ? 'Information' : 'None' }"
+        icon="sap-icon://chain-link" />
+      <Text text="{displayName}" class="sapUiSmallMarginBegin" />
+    </HBox>
+  </VBox>
+</core:FragmentDefinition>

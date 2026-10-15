@@ -1,0 +1,2 @@
+﻿ID,buildingCount,constructCount,eligibleMeterCount,warningCount,consumptionKwh,generationKwh,localEnergyKwh,residualGridKwh,exportKwh,localCoveragePercent
+ALL,3,17,10,3,137.915,127.331,71.965,65.950,55.366,52.2
