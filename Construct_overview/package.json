@@ -10,7 +10,8 @@
     "test:app": "node --test test/app.test.js",
     "validate-workbook": "node scripts/validate-workbook.js",
     "add-energy-progress": "node scripts/add-energy-progress.js",
-    "generate-year-data": "node scripts/generate-year-data.js"
+    "generate-year-data": "node scripts/generate-year-data.js",
+    "fix-master-data": "node scripts/fix-master-data.js"
   },
   "dependencies": {
     "@playwright/test": "^1.64.1",
@@ -26,6 +27,12 @@
   "cds": {
     "requires": {
       "db": false
+    },
+    "query": {
+      "limit": {
+        "default": 100000,
+        "max": 100000
+      }
     }
   }
 }

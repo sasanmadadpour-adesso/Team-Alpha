@@ -56,6 +56,33 @@ Hourly energy facets are exposed as line-chart annotations. Trend consumers can 
 
 The calculator follows the workbook financial rules: only household participants with `Teilnahme MK7 = Ja` are eligible; local energy is the minimum of generation and eligible consumption; residual and export energy use the corresponding maximum rules; and the Mieterstrom subsidy applies only to locally used solar energy.
 
+## UI behaviour
+
+- **Language:** the `English`/`Deutsch` button in the page header switches the whole app in place (no reload). It recreates the Fiori component with the new UI5 language; CDS labels and data-quality messages are translated per request from `sap-language`. The chosen language is mirrored in the URL (`?sap-language=`) so a manual reload keeps it.
+- **Back links:** `webapp/ext/NavHistory.js` stores the page a user came from in the browser's per-entry `history.state` and shows a "back to ..." link above the app. It needs no cookies or storage, so it works without a consent banner and survives reloads; the pure logic lives in `ext/navLogic.js`.
+- **Tables:** "Show more per row" starts switched on (`Component.js` patches the private mdc `ResponsiveTableType` hook; if UI5 removes it the tables just start collapsed).
+- **House schematic** (`ext/BuildingHouse.js`): grid node and two wires to the house show the average grid import and export per hour over the latest 24 hours (`averageGridImport24hKwh`, `averageGridExport24hKwh` on `Buildings`). Each house floor is a household MaLo with a participation mark; there are no floor numbers because the data does not define floors.
+- **Construct page:** the building in the General group links to the building page (`buildingLink`); synthetic test constructs have no building page and show plain text. MaLo and MeLo appear only in the Topology group.
+- **Metering and market locations** (`ext/LocationTopology.js`): shows own MeLo/MaLo (plants also the export MaLo) -> the building's shared energy counter (MaLo, plus MeLo when the counter is real; virtual counters have only a MaLo) -> grid. The General group shows role, direction, MK7 participation, address and building.
+- **MK7 participation** is shown as a check mark (participating) or red cross (not participating) without text.
+
+## Master data repair
+
+`npm run fix-master-data` (idempotent) edits both workbooks in place: every plant gets its own unique export MaLo, used as `market_location_identifier` of the producer and in all hourly generation rows (previously the plant's MeLo was stored there); each building has a single postcode (that of the producer's delivery address); "Müllheim an der Ruhr" is corrected to "Mülheim an der Ruhr" and "Vilbelerlandstrß" to "Vilbeler Landstraße". MaLo/MeLo have no check digits, so none are validated.
+
+## Data quality rules
+
+`srv/lib/data-quality.js` checks the workbook and returns issues with a code, severity, field, source value, explanation and recommended action in German and English:
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `POSTCODE_MISMATCH` | Warning | A participant's postcode differs from the postcode stored for its building at the generation plant |
+| `DUPLICATE_IMPORT_MALO` | Error | The same import MaLo is assigned to several households |
+| `SHARED_EXPORT_MALO` | Warning | One export MaLo is used by several plants |
+| `EXCLUDED_WITH_READINGS` | Info | Household with `Teilnahme MK7 = nein` still has readings (ignored in settlement) |
+| `UNRECOGNIZED_PARTICIPATION` | Error | `Teilnahme MK7` is neither `Ja` nor `nein` |
+| `SYNTHETIC_EDGE_CASE` | Warning | Built-in synthetic test scenarios |
+
 ## Tests
 
 ```bash

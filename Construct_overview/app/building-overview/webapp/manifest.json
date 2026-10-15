@@ -30,7 +30,7 @@
       "i18n": { "type": "sap.ui.model.resource.ResourceModel", "settings": { "bundleName": "vnb.constructs.i18n.i18n" } },
       "": { "dataSource": "mainService", "preload": true, "settings": { "operationMode": "Server", "autoExpandSelect": true, "earlyRequests": true, "synchronizationMode": "None" } }
     },
-    "resources": { "css": [{ "uri": "css/style.css" }, { "uri": "css/building-house.css" }] },
+    "resources": { "css": [{ "uri": "css/style.css" }, { "uri": "css/building-house.css" }, { "uri": "css/location-topology.css" }] },
     "routing": {
       "config": {},
       "routes": [
@@ -42,19 +42,19 @@
       "targets": {
         "ConstructsList": {
           "type": "Component", "id": "ConstructsList", "name": "sap.fe.templates.ListReport",
-           "options": { "settings": { "contextPath": "/Constructs", "variantManagement": "Page", "views": { "paths": [ { "key": "constructParticipants", "label": "{i18n>constructParticipantsView}", "entitySet": "Constructs", "annotationPath": "com.sap.vocabularies.UI.v1.LineItem" }, { "key": "buildingStructure", "label": "{i18n>buildingStructureView}", "entitySet": "Buildings", "annotationPath": "com.sap.vocabularies.UI.v1.LineItem" } ] }, "navigation": { "Constructs": { "detail": { "route": "ConstructsObjectPage" } }, "Buildings": { "detail": { "route": "BuildingsObjectPage" } } }, "initialLoad": true, "liveMode": false, "content": { "header": { "actions": { "LanguageInfo": { "text": "{i18n>languageHint}", "press": "vnb.constructs.ext.ListActions.showLanguageHint", "visible": true } } } } } }
+           "options": { "settings": { "contextPath": "/Constructs", "variantManagement": "None", "views": { "paths": [ { "key": "constructParticipants", "entitySet": "Constructs", "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#constructParticipants" }, { "key": "buildingStructure", "entitySet": "Buildings", "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#buildingStructure" } ] }, "navigation": { "Constructs": { "detail": { "route": "ConstructsObjectPage" } }, "Buildings": { "detail": { "route": "BuildingsObjectPage" } } }, "initialLoad": true, "liveMode": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } } } } }
         },
         "ConstructsObjectPage": {
           "type": "Component", "id": "ConstructsObjectPage", "name": "sap.fe.templates.ObjectPage",
-           "options": { "settings": { "contextPath": "/Constructs", "editableHeaderContent": false, "content": { "body": { "sections": { "SharedMeLoTopology": { "template": "vnb.constructs.ext.Topology", "title": "{i18n>topologyTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
+           "options": { "settings": { "contextPath": "/Constructs", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "SharedMeLoTopology": { "template": "vnb.constructs.ext.Topology", "title": "{i18n>topologyTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
         },
         "BuildingsList": {
           "type": "Component", "id": "BuildingsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "contextPath": "/Buildings", "variantManagement": "Page", "initialLoad": true, "navigation": { "Buildings": { "detail": { "route": "BuildingsObjectPage" } } } } }
+          "options": { "settings": { "contextPath": "/Buildings", "variantManagement": "None", "initialLoad": true, "navigation": { "Buildings": { "detail": { "route": "BuildingsObjectPage" } } } } }
         },
         "BuildingsObjectPage": {
           "type": "Component", "id": "BuildingsObjectPage", "name": "sap.fe.templates.ObjectPage",
-           "options": { "settings": { "contextPath": "/Buildings", "editableHeaderContent": false, "content": { "body": { "sections": { "BuildingSchematic": { "template": "vnb.constructs.ext.BuildingSchematic", "title": "{i18n>schematicTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
+           "options": { "settings": { "contextPath": "/Buildings", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "BuildingSchematic": { "template": "vnb.constructs.ext.BuildingSchematic", "title": "{i18n>schematicTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
         }
       }
     }

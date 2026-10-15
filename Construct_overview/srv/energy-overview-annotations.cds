@@ -10,20 +10,22 @@ annotate service.Constructs with @(
     { Value: roleLabel, Label: '{i18n>ROLE}' },
     { Value: city, Label: '{i18n>CITY}' },
     { Value: buildingID, Label: '{i18n>BUILDING}' },
-    { Value: participationLabel, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality },
+    { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon },
     { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
     { Value: totalGenerationKwh, Label: '{i18n>GENERATION_KWH}' },
     { Value: warningText, Label: '{i18n>DATA_QUALITY}', Criticality: warningCriticality, CriticalityRepresentation: #WithIcon }
   ],
   UI.FieldGroup #Identity: { Data: [
-    { Value: primaryMaLo, Label: '{i18n>PRIMARY_MALO}' }, { Value: meLo, Label: '{i18n>MELO}' },
     { Value: roleLabel, Label: '{i18n>ROLE}' }, { Value: directionLabel, Label: '{i18n>DIRECTION}' },
-    { Value: participationLabel, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality }, { Value: buildingID, Label: '{i18n>BUILDING}' }
+    { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon },
+    { Value: address, Label: '{i18n>ADDRESS}' },
+    { $Type: 'UI.DataFieldWithUrl', Value: buildingID, Url: buildingLink, Label: '{i18n>BUILDING}', ![@UI.Hidden]: hasNoBuildingLink },
+    { Value: buildingID, Label: '{i18n>BUILDING}', ![@UI.Hidden]: hasBuildingLink }
   ] },
   UI.FieldGroup #Topology: { Data: [
-    { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' }, { Value: meLo, Label: '{i18n>SHARED_MELO}' },
-    { Value: exportMaLo, Label: '{i18n>EXPORT_MALO}' }, { Value: hasDualMaLo, Label: '{i18n>DUAL_MALO}' },
-     { Value: meteringSystem, Label: '{i18n>METERING_SYSTEM}' }, { Value: meterNumber, Label: '{i18n>METER_NUMBER}' }, { Value: meteringOperator, Label: '{i18n>METERING_OPERATOR}' }
+    { Value: meLo, Label: '{i18n>MELO}' }, { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' },
+    { Value: exportMaLo, Label: '{i18n>EXPORT_MALO}' },
+    { Value: meteringSystem, Label: '{i18n>METERING_SYSTEM}' }, { Value: meteringOperator, Label: '{i18n>METERING_OPERATOR}' }
   ] },
   UI.FieldGroup #Contract: { Data: [
     { Value: mk7Operator, Label: '{i18n>MK7_OPERATOR}' }, { Value: supplyStart, Label: '{i18n>SUPPLY_START}' },
@@ -66,10 +68,17 @@ annotate service.Payments with @UI.LineItem: [
   { Value: unit, Label: '{i18n>UNIT}' }, { Value: rate, Label: '{i18n>RATE}' }, { Value: amount, Label: '{i18n>AMOUNT}', Criticality: amountCriticality }
 ];
 
-annotate service.DataQualityIssues with @UI.LineItem: [
-  { Value: severityCode, Label: '{i18n>SEVERITY}', Criticality: severityCriticality },
-  { Value: fieldName, Label: '{i18n>FIELD}' }, { Value: sourceValue, Label: '{i18n>SOURCE_VALUE}' }, { Value: issueText, Label: '{i18n>NOTICE}' }
-];
+annotate service.DataQualityIssues with @(
+  UI.HeaderInfo: { TypeName: '{i18n>DATA_QUALITY_ISSUE}', TypeNamePlural: '{i18n>DATA_QUALITY}' },
+  UI.LineItem: [
+    { Value: severityLabel, Label: '{i18n>SEVERITY}', Criticality: severityCriticality, CriticalityRepresentation: #WithIcon },
+    { Value: title, Label: '{i18n>PROBLEM}' },
+    { Value: fieldLabel, Label: '{i18n>FIELD}' },
+    { Value: sourceValue, Label: '{i18n>SOURCE_VALUE}' },
+    { Value: issueText, Label: '{i18n>DESCRIPTION}' },
+    { Value: recommendation, Label: '{i18n>RECOMMENDATION}' }
+  ]
+);
 
 annotate service.PortfolioSummary with @(
   UI.HeaderInfo: { TypeName: '{i18n>PORTFOLIO}', TypeNamePlural: '{i18n>PORTFOLIO}' },
@@ -115,7 +124,7 @@ annotate service.Buildings with @(
 
 annotate service.BuildingConsumers with @UI.LineItem: [
   { Value: meLo, Label: '{i18n>MELO}' }, { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' },
-  { Value: participationLabel, Label: '{i18n>MK7_PARTICIPATION}' }, { Value: energyConceptCurrentStep, Label: '{i18n>PROGRESS}' },
+  { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon }, { Value: energyConceptCurrentStep, Label: '{i18n>PROGRESS}' },
   { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
   { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }
 ];
@@ -154,4 +163,35 @@ annotate service.BuildingHourlyEnergy with @UI.Chart #Trend: {
     { Measure: consumptionKwh, Role: #Axis1 }, { Measure: generationKwh, Role: #Axis1 },
     { Measure: localEnergyKwh, Role: #Axis1 }, { Measure: residualGridKwh, Role: #Axis1 }, { Measure: exportKwh, Role: #Axis1 }
   ]
+};
+
+
+// Tab definitions of the main list report. The tab titles come from the Text property.
+annotate service.Constructs with @UI.SelectionPresentationVariant #constructParticipants: {
+  Text: '{i18n>constructParticipantsView}',
+  SelectionVariant: { $Type: 'UI.SelectionVariantType', SelectOptions: [] },
+  PresentationVariant: { $Type: 'UI.PresentationVariantType', Visualizations: ['@UI.LineItem'] }
+};
+
+annotate service.Buildings with @UI.SelectionPresentationVariant #buildingStructure: {
+  Text: '{i18n>buildingStructureView}',
+  SelectionVariant: { $Type: 'UI.SelectionVariantType', SelectOptions: [] },
+  PresentationVariant: { $Type: 'UI.PresentationVariantType', Visualizations: ['@UI.LineItem'] }
+};
+
+// Field labels for the filter bar.
+annotate service.Constructs with {
+  primaryMaLo @title: '{i18n>MALO}';
+  meLo @title: '{i18n>MELO}';
+  participationCode @title: '{i18n>MK7_PARTICIPATION}';
+  city @title: '{i18n>CITY}';
+  buildingID @title: '{i18n>BUILDING}';
+  hasDataWarning @title: '{i18n>DATA_QUALITY}';
+};
+
+annotate service.Buildings with {
+  ID @title: '{i18n>BUILDING}';
+  city @title: '{i18n>CITY}';
+  operatorName @title: '{i18n>OPERATOR}';
+  productionTypes @title: '{i18n>PRODUCTION}';
 };

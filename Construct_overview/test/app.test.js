@@ -37,8 +37,9 @@ test('configures the building list report and object page', () => {
   const views = targets.ConstructsList.options.settings.views.paths;
   assert.deepEqual(views.map(view => view.key), ['constructParticipants', 'buildingStructure']);
   assert.deepEqual(views.map(view => view.entitySet), ['Constructs', 'Buildings']);
-   assert.equal(views[0].label, '{i18n>constructParticipantsView}');
-   assert.equal(views[1].label, '{i18n>buildingStructureView}');
+   assert.match(views[0].annotationPath, /SelectionPresentationVariant#constructParticipants$/);
+   assert.match(views[1].annotationPath, /SelectionPresentationVariant#buildingStructure$/);
+  for (const target of ['ConstructsList', 'BuildingsList']) assert.equal(targets[target].options.settings.variantManagement, 'None');
   assert.equal(targets.ConstructsList.options.settings.navigation.Buildings.detail.route, 'BuildingsObjectPage');
 });
 
@@ -71,12 +72,21 @@ test('contains annotation metadata for the building overview KPIs', () => {
    assert.match(houseControl, /hasSolar/);
    assert.match(houseControl, /hasWind/);
    assert.match(houseControl, /targetConstructID/);
+   assert.match(houseControl, /averageGridImport24hKwh/);
+   assert.match(houseControl, /averageGridExport24hKwh/);
+   assert.match(houseControl, /participationCode/);
+   assert.doesNotMatch(houseControl, /floorLabel|floor-number/);
    assert.match(readAppFile('css/building-house.css'), /\.vnbBh-scene/);
    assert.match(manifestText, /css\/building-house\.css/);
    const topology = readAppFile('ext/Topology.fragment.xml');
-   assert.match(topology, /vnbTopologyNode/);
-   assert.doesNotMatch(topology, /averageSolarGeneration24hKwh/);
-   assert.doesNotMatch(topology, /averageWindGeneration24hKwh/);
+   assert.match(topology, /vnb:LocationTopology/);
+   const locations = readAppFile('ext/LocationTopology.js');
+   for (const field of ['sharedMeterMaLo', 'sharedMeterMeLo', 'sharedMeterIsReal', 'isSharedMeter']) assert.ok(locations.includes(field), field);
+   assert.doesNotMatch(locations, /hasDualMaLo|meterNumber/);
+   assert.match(manifestText, /css\/location-topology\.css/);
+   const annotationsText = annotations;
+   assert.doesNotMatch(annotationsText, /Value: hasDualMaLo|Value: meterNumber/);
+   assert.match(annotationsText, /Value: address/);
    const trend = readAppFile('ext/EnergyTrend.js');
    assert.match(trend, /attachModelContextChange/);
    assert.match(trend, /detachModelContextChange/);

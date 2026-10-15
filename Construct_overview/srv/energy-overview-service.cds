@@ -101,6 +101,7 @@ service EnergyOverviewService {
     directionCode : String(20);
     participationCode : String(20);
     participationLabel : String(40);
+    participationMark : String(1);
     isEligible : Boolean;
     hasDualMaLo : Boolean;
     hasDataWarning : Boolean;
@@ -120,6 +121,16 @@ service EnergyOverviewService {
     contractEnd : Timestamp;
     sourceRow : Integer;
     buildingID : String(40);
+    buildingLink : String(80);
+    address : String(300);
+    sharedMeterMaLo : String(40);
+    sharedMeterMeLo : String(50);
+    sharedMeterIsReal : Boolean;
+    sharedMeterConstructID : String(100);
+    isSharedMeter : Boolean;
+    buildingMemberCount : Integer;
+    hasBuildingLink : Boolean;
+    hasNoBuildingLink : Boolean;
     participationCriticality : Integer;
     warningCriticality : Integer;
     directionLabel : String(80);
@@ -199,9 +210,14 @@ service EnergyOverviewService {
     key ID : String(150);
     constructID : String(100);
     severityCode : String(20);
+    severityLabel : String(40);
+    issueCode : String(60);
+    title : String(120);
     fieldName : String(80);
+    fieldLabel : String(120);
     sourceValue : String(200);
-    issueText : String(500);
+    issueText : String(800);
+    recommendation : String(400);
     severityCriticality : Integer;
   }
 
@@ -237,6 +253,8 @@ service EnergyOverviewService {
      averageConsumption24hKwh : Decimal(15,3);
      averageSolarGeneration24hKwh : Decimal(15,3);
      averageWindGeneration24hKwh : Decimal(15,3);
+     averageGridImport24hKwh : Decimal(15,3);
+     averageGridExport24hKwh : Decimal(15,3);
      consumptionIntervalCount24h : Integer;
      solarIntervalCount24h : Integer;
      windIntervalCount24h : Integer;
@@ -256,6 +274,8 @@ service EnergyOverviewService {
     exportMaLo : String(40);
     participationCode : String(20);
     participationLabel : String(40);
+    participationMark : String(1);
+    participationCriticality : Integer;
     isEligible : Boolean;
     energyConceptCurrentStep : Integer;
     energyConceptTotalSteps : Integer;

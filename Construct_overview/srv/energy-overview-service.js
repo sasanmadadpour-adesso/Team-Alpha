@@ -3,18 +3,21 @@ const { createWorkbookRepository } = require('./lib/workbook-loader');
 const { calculate } = require('./lib/energy-calculator');
 const { project } = require('./lib/vnb-projector');
 const { trends } = require('./lib/energy-trends');
+const { apply } = require('./lib/query');
+const { localize, summarize } = require('./lib/data-quality');
+
+const issueIndex = new WeakMap();
+function issuesByConstruct(data) {
+  if (!issueIndex.has(data)) {
+    const index = new Map();
+    for (const issue of data.issues) index.set(issue.constructID, [...(index.get(issue.constructID) || []), issue]);
+    issueIndex.set(data, index);
+  }
+  return issueIndex.get(data);
+}
 
 function filterRows(rows, req) {
-  const where = req.query?.SELECT?.where;
-  if (!where) return rows;
-  const filters = [];
-  for (let i = 0; i < where.length - 2; i += 1) {
-    const field = where[i]?.ref?.[0];
-    const operator = typeof where[i + 1] === 'string' ? where[i + 1] : where[i + 1]?.val;
-    const expected = where[i + 2]?.val;
-    if (field && operator === '=' && expected !== undefined) filters.push([field, expected]);
-  }
-  return filters.length ? rows.filter(row => filters.every(([key, expected]) => String(row[key]) === String(expected))) : rows;
+  return apply(rows, req);
 }
 
 function requestedNavigation(req) {
@@ -105,7 +108,12 @@ module.exports = cds.service.impl(function () {
        const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : nav === 'members' ? data.connections : nav === 'consumers' ? data.consumers : nav === 'solarProducers' ? data.producers.filter(row => row.productionType === 'Solar') : nav === 'windProducers' ? data.producers.filter(row => row.productionType === 'Wind') : nav === 'producers' ? data.producers : nav === 'hourlyEnergy' ? data.buildingHourlyEnergy : data[property];
       const parentId = parentKey(req);
       const childEntity = ['BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy'].includes(entity);
-      const rows = parentId ? source.filter(row => row.constructID === parentId || row.buildingID === parentId || row.ID === parentId) : source;
+      let rows = parentId ? source.filter(row => row.constructID === parentId || row.buildingID === parentId || row.ID === parentId) : source;
+      if (source === data.issues) rows = rows.map(row => localize(row, req.locale));
+      if (source === data.constructs) {
+        const byConstruct = issuesByConstruct(data);
+        rows = rows.map(row => (byConstruct.has(row.ID) ? { ...row, warningText: summarize(byConstruct.get(row.ID), req.locale) } : row));
+      }
       return filterRows(rows, req);
     });
   }

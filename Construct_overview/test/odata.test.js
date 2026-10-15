@@ -23,6 +23,11 @@ test('serves VNB compatibility entities and navigation over OData', async t => {
   const id = constructs.value[0].ID;
   const hourly = await (await fetch(`${base}/Constructs('${id}')/hourlyValues`)).json();
   const payments = await (await fetch(`${base}/Constructs('${id}')/payments`)).json();
+  const countResponse = await fetch(`${base}/Constructs?$count=true&$top=2`);
+  const counted = await countResponse.json();
+  assert.equal(counted['@odata.count'], 25);
+  assert.equal(counted.value.length, 2);
+  assert.equal(await (await fetch(`${base}/Buildings/$count`)).text(), '3');
   const members = await (await fetch(`${base}/Constructs('${id}')/members`)).json();
    assert.equal(hourly.value.length, 8760);
   assert.ok(payments.value.length > 0);

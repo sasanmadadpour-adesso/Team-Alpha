@@ -4,7 +4,9 @@ const { createWorkbookRepository } = require('../srv/lib/workbook-loader');
 const { project } = require('../srv/lib/vnb-projector');
 
 test('projects the workbook into the VNB construct model', () => {
-  const result = project(createWorkbookRepository().getSnapshot());
+  const snapshot = createWorkbookRepository().getSnapshot();
+  const snapshotPlantIds = new Set(snapshot.participants.filter(row => row.exportMarketLocationId).map(row => row.ID));
+  const result = project(snapshot);
   const sourceConstructs = result.constructs.filter(row => !row.isSynthetic);
   const sourceHourly = result.hourly.filter(row => !row.constructID.startsWith('TEST-'));
   assert.equal(sourceConstructs.length, 17);
@@ -12,7 +14,7 @@ test('projects the workbook into the VNB construct model', () => {
   assert.equal(result.constructs.length, 17 + 8);
   assert.equal(result.hourly.length, 17 * 8760 + 8 * 24);
   assert.equal(result.buildings.length, 3);
-  assert.equal(result.issues.filter(row => !row.sourceValue.startsWith('EDGE-')).length, 3);
+  assert.equal(result.issues.filter(row => row.issueCode !== 'SYNTHETIC_EDGE_CASE').length, 3);
   assert.equal(result.portfolio[0].eligibleMeterCount, 10);
   assert.equal(result.consumers.length, 11);
   assert.equal(result.producers.length, 3);
@@ -29,7 +31,7 @@ test('projects the workbook into the VNB construct model', () => {
   assert.ok(result.buildings.every(row => row.consumptionIntervalCount24h >= 0));
   assert.ok(result.buildings.every(row => row.solarProducerCount >= 0 && row.windProducerCount >= 0));
   assert.ok(result.consumers.every(row => row.targetConstructID === row.ID));
-  assert.ok(result.producers.every(row => row.targetConstructID === row.ID || row.targetConstructID === null));
+  assert.ok(result.producers.every(row => /^\d{11}$/.test(row.ID) && snapshotPlantIds.has(row.targetConstructID)));
 });
 
 test('preserves hourly allocation identities in the VNB projection', () => {
@@ -49,7 +51,7 @@ test('creates payment records and stable data quality records', () => {
   assert.ok(first.payments.some(row => row.paymentTypeCode === 'PARTICIPANT_BILL'));
   assert.ok(first.payments.some(row => row.paymentTypeCode === 'METERING_SERVICE'));
   assert.deepEqual(first.issues.map(row => row.ID), second.issues.map(row => row.ID));
-  assert.ok(first.constructs.filter(row => row.hasDataWarning && !row.isSynthetic).every(row => row.warningCode === 'ID_SEMANTIC_CONFLICT'));
+  assert.ok(first.constructs.filter(row => row.hasDataWarning && !row.isSynthetic).every(row => row.warningCode && row.dataQualityIssueCount > 0));
 });
 
 test('projects synthetic many-to-one MaLo/MeLo edge cases', () => {
@@ -60,4 +62,25 @@ test('projects synthetic many-to-one MaLo/MeLo edge cases', () => {
   assert.ok(result.connections.some(row => row.scenarioCode === 'EDGE-MULTI-DIRECTION' && row.directionCode === 'IMPORT'));
   assert.ok(result.connections.some(row => row.scenarioCode === 'EDGE-MULTI-DIRECTION' && row.directionCode === 'EXPORT'));
   assert.ok(result.issues.some(row => row.sourceValue === 'EDGE-INVALID'));
+});
+
+test('projects 24h grid import/export averages and construct building links', () => {
+  const { calculate } = require('../srv/lib/energy-calculator');
+  const snapshot = createWorkbookRepository().getSnapshot();
+  const result = project(snapshot);
+  const balances = calculate(snapshot).hourlyBalances;
+  for (const building of result.buildings) {
+    const latest = new Date(building.latestMeasurementTime);
+    const rows = balances.filter(row => row.buildingId === building.ID && new Date(row.startTime) > new Date(latest - 24 * 3600000) && new Date(row.startTime) <= latest);
+    assert.equal(rows.length, 24);
+    const mean = field => rows.reduce((total, row) => total + row[field], 0) / rows.length;
+    assert.ok(Math.abs(building.averageGridImport24hKwh - mean('residualGridEnergyKwh')) < 0.002, `${building.ID} import`);
+    assert.ok(Math.abs(building.averageGridExport24hKwh - mean('exportEnergyKwh')) < 0.002, `${building.ID} export`);
+  }
+  for (const construct of result.constructs) {
+    if (construct.isSynthetic) assert.equal(construct.buildingLink, '');
+    else assert.equal(construct.buildingLink, `#/Buildings('${construct.buildingID}')`);
+    assert.equal(construct.hasBuildingLink, !construct.isSynthetic);
+    assert.equal(construct.hasNoBuildingLink, Boolean(construct.isSynthetic));
+  }
 });

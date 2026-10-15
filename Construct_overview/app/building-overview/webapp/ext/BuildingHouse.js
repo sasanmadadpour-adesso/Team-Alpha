@@ -88,17 +88,19 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const hasWind = Boolean(building.hasWind);
       const statusKey = hasSolar && hasWind ? "solarWindActive" : hasSolar ? "solarActive" : hasWind ? "windActive" : "noProduction";
 
-      const floors = consumers.map((consumer, index) => {
-        const linked = Boolean(consumer.targetConstructID);
-        return `<div class="vnbBh-floor"><span class="vnbBh-floor-number">${t("floorLabel")} ${String(index + 1).padStart(2, "0")}</span>${malo(consumer.importMaLo, consumer.targetConstructID)}<span class="vnbBh-state">${linked ? t("detailLink") : t("memberLabel")}</span></div>`;
+      // Participation is shown as an icon only; the text stays available as tooltip and for screen readers.
+      const floors = consumers.map(consumer => {
+        const participating = consumer.participationCode === "YES";
+        const label = escape(consumer.participationLabel || "");
+        return `<div class="vnbBh-floor">${malo(consumer.importMaLo, consumer.targetConstructID)}<span class="vnbBh-mk7 ${participating ? "vnbBh-mk7-yes" : "vnbBh-mk7-no"}" role="img" title="${label}" aria-label="${escape(this._text("mk7Participation"))}: ${label}">${participating ? "&#10003;" : "&#10005;"}</span></div>`;
       }).join("") || `<p class="vnbBh-note">${t("noMembers")}</p>`;
 
       const members = (rows, emptyText) => rows.length
         ? rows.map(row => `<div class="vnbBh-source-member">${malo(row.marketLocationIdentifier, row.targetConstructID)}</div>`).join("")
         : `<p class="vnbBh-note">${escape(emptyText)}</p>`;
 
-      const wire = (visible, className, value) => visible
-        ? `<div class="vnbBh-wire ${className}"><span class="vnbBh-wire-label">${escape(formatKwh(value))} kWh</span></div>`
+      const wire = (visible, className, value, caption) => visible
+        ? `<div class="vnbBh-wire ${className}"><span class="vnbBh-wire-label">${caption ? `${escape(caption)} ` : ""}${escape(formatKwh(value))} kWh</span></div>`
         : "";
 
       const solarSource = hasSolar ? `
@@ -120,6 +122,10 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const legend = [
         hasSolar ? `<span class="vnbBh-key vnbBh-key-solar"><i></i>${t("solarGeneration")}</span>` : "",
         hasWind ? `<span class="vnbBh-key vnbBh-key-wind"><i></i>${t("windGeneration")}</span>` : "",
+        `<span class="vnbBh-key vnbBh-key-import"><i></i>${t("gridImport")}</span>`,
+        `<span class="vnbBh-key vnbBh-key-export"><i></i>${t("gridExport")}</span>`,
+        `<span><b class="vnbBh-mk7 vnbBh-mk7-yes">&#10003;</b> ${t("mk7Yes")}</span>`,
+        `<span><b class="vnbBh-mk7 vnbBh-mk7-no">&#10005;</b> ${t("mk7No")}</span>`,
         `<span>${t("underlinedDetail")}</span>`,
         `<span>${escape(building.consumptionIntervalCount24h ?? 0)} ${t("availableIntervals")}</span>`
       ].join("");
@@ -134,13 +140,25 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
           <span class="vnbBh-status">${t(statusKey)}</span>
         </header>
         <div class="vnbBh-scene">
+          <section class="vnbBh-grid">
+            <div class="vnbBh-pylon" aria-hidden="true"><i></i><i></i><i></i></div>
+            <h4>${t("gridNode")}</h4>
+            <p>${t("gridNodeHint")}</p>
+          </section>
+          <div class="vnbBh-wires vnbBh-gridwires">
+            <p class="vnbBh-wire-caption">${t("average24h")}</p>
+            ${wire(true, "vnbBh-wire-import", building.averageGridImport24hKwh, this._text("gridImportShort"))}
+            ${wire(true, "vnbBh-wire-export", building.averageGridExport24hKwh, this._text("gridExportShort"))}
+          </div>
           <div class="vnbBh-zone">
-            <div class="vnbBh-roof"><div class="vnbBh-meter"><strong>${t("energyMeter")}</strong><span class="vnbBh-malo vnbBh-small">${escape(building.sharedMeterMaLo || "")}</span></div></div>
-            <section class="vnbBh-house">
-              <div class="vnbBh-house-heading"><h4>${t("constructHouse")}</h4><span class="vnbBh-icon" aria-hidden="true">&#8962;</span></div>
-              <div class="vnbBh-floors">${floors}</div>
-              <p class="vnbBh-foot">${escape(consumers.length)} ${t("householdMembers")}</p>
-            </section>
+            <div class="vnbBh-building">
+              <div class="vnbBh-roof"><div class="vnbBh-meter"><strong>${t("energyMeter")}</strong><span class="vnbBh-malo vnbBh-small">${escape(building.sharedMeterMaLo || "")}</span></div></div>
+              <section class="vnbBh-house">
+                <div class="vnbBh-house-heading"><h4>${t("constructHouse")}</h4><span class="vnbBh-icon" aria-hidden="true">&#8962;</span></div>
+                <div class="vnbBh-floors">${floors}</div>
+                <p class="vnbBh-foot">${escape(consumers.length)} ${t("householdMembers")}</p>
+              </section>
+            </div>
           </div>
           <div class="vnbBh-wires">
             <p class="vnbBh-wire-caption">${t("average24h")}</p>
