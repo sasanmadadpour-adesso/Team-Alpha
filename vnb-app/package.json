@@ -1,0 +1,34 @@
+{
+  "name": "vnb-construct-explorer",
+  "version": "1.0.0",
+  "description": "Bilingual VNB construct and settlement explorer built with SAP CAP and SAP Fiori elements",
+  "private": true,
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "build": "cds build --production",
+    "test": "node --test test/*.test.js",
+    "lint": "cds compile srv --to edmx > NUL"
+  },
+  "dependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds": "^9",
+    "express": "^5"
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^9"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": ":memory:"
+        }
+      }
+    }
+  }
+}
