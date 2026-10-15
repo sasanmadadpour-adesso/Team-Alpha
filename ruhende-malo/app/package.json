@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --config vite.config.ts",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit --pretty false && tsc -p tsconfig.node.json --pretty false"
   },

@@ -21,9 +21,25 @@ npm run dev
 
 CAP runs on `http://localhost:4004` and Vite on `http://localhost:5173` by default. Vite proxies `/odata` to CAP. The local SQLite file `db.sqlite` is stored in the project root and excluded from Git.
 
-For a presentation, start the backend with `npx cds serve` instead of `cds watch`.
-`cds watch` redeploys the schema whenever repository files change, which clears the
-simulated process history.
+The development script uses `cds serve` (not `cds watch`) so simulated process
+history remains persistent while presenting. `npm run dev` first runs a
+project-scoped cleanup that stops stale CAP/Vite processes belonging to this
+repository. It does not kill unrelated applications. The app intentionally
+fails instead of silently switching the UI to another port, because the Vite
+proxy targets CAP on port 4004. Both servers shut down if either exits.
+Vite explicitly loads `app/vite.config.ts` so generated JavaScript cannot override
+the strict-port setting:
+
+```bash
+npm run stop:local
+lsof -nP -iTCP:4004 -sTCP:LISTEN
+lsof -nP -iTCP:5173 -sTCP:LISTEN
+# If a non-MK7 process owns a port, stop it separately or choose another setup.
+npm run dev
+```
+
+`cds watch` can redeploy the schema whenever repository files change, which clears
+the simulated process history, so it is not used by `npm run dev`.
 
 ## Verification
 

@@ -8,9 +8,11 @@
     "app"
   ],
   "scripts": {
-    "dev": "concurrently -n CAP,UI -c blue,green \"npm run dev:cap\" \"npm run dev:ui\"",
-    "dev:cap": "cds watch",
+    "dev": "concurrently --kill-others -n CAP,UI -c blue,green \"npm run dev:cap\" \"npm run dev:ui\"",
+    "predev": "npm run stop:local",
+    "dev:cap": "cds serve",
     "dev:ui": "npm run dev --workspace app",
+    "stop:local": "tsx scripts/stop-local.ts",
     "deploy:local": "npm run import:data",
     "import:data": "tsx scripts/import-workbook.ts",
     "build": "npm run build:cap && npm run build --workspace app",
