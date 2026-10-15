@@ -20,5 +20,24 @@ service MaloService {
     sapConnection: String;
   }
 
+  type TransitionResponse {
+    status            : String;
+    code              : String;
+    message           : String;
+    maloId            : String;
+    buildingId        : String;
+    reststromMaloId   : String;
+    effectiveDate     : Date;
+    beforeState       : String;
+    afterState        : String;
+    canExecute        : Boolean;
+    simulated         : Boolean;
+    prerequisiteProfile : String;
+    checksJson        : LargeString;
+    requestId         : UUID;
+  }
+
   function health() returns HealthResponse;
+  action previewTransition(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String) returns TransitionResponse;
+  action setDormant(maloId: String, buildingId: String, effectiveDate: Date, prerequisiteProfile: String, confirmed: Boolean) returns TransitionResponse;
 }

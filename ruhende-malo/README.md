@@ -49,3 +49,10 @@ curl 'http://localhost:4004/odata/v4/malo/health()'
 ## Importing source data
 
 `npm run import:data` reads only `data/source/Datensatz_Deutsch.xlsx`, sheet `MK7 Teilnehmer`. The import deploys the local schema and transactionally replaces workbook-derived reference data. It never modifies the Excel file. MaLo and MeLo IDs remain strings.
+
+## Simulated Ruhendstellung
+
+The Workbench previews and executes a local ACTIVE → RUHEND transition. The
+default strict profile blocks because SAP and market evidence is unavailable.
+The user must explicitly select `ASSUMED_DEMO` and confirm execution. A success
+means only that SQLite was updated and verified; it is not an SAP update.

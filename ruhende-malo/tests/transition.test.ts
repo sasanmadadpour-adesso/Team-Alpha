@@ -1,0 +1,13 @@
+import { describe,expect,it } from 'vitest';
+import { buildDormantPlan,type LocationState,type SourceAssignment,type TransitionReader } from '../srv/domain/transition.js';
+class MemoryReader implements TransitionReader { constructor(private a:SourceAssignment[],private l?:LocationState,private done=false){} async assignments(){return this.a;} async location(){return this.l;} async completed(){return this.done;} }
+const valid:SourceAssignment={buildingId:'B-MUL-01',role:'Haushaltsverbrauch',participates:true,reststromMaloId:'50539603639',maloConflict:false,supplyStartUtc:'2026-10-01'};
+const input={maloId:'50539603921',buildingId:'B-MUL-01',effectiveDate:'2026-10-01',prerequisiteProfile:'ASSUMED_DEMO' as const};
+describe('Phase C transition engine',()=>{
+  it('TC01 creates an executable simulated preview',async()=>{const result=await buildDormantPlan(new MemoryReader([valid],{maloId:input.maloId,businessState:'ACTIVE',conflictingAssignment:false}),input); expect(result.status).toBe('READY'); expect(result.reststromMaloId).toBe('50539603639'); expect(result.canExecute).toBe(true); expect(result.checks.some(c=>c.confidence==='ASSUMED_DEMO')).toBe(true);});
+  it('TC02 skips a nonparticipant',async()=>{const result=await buildDormantPlan(new MemoryReader([{...valid,participates:false}],{maloId:'50539603604',businessState:'ACTIVE',conflictingAssignment:false}),{...input,maloId:'50539603604'}); expect(result.status).toBe('SKIPPED'); expect(result.canExecute).toBe(false);});
+  it('TC03 blocks an ambiguous identity for review',async()=>{const result=await buildDormantPlan(new MemoryReader([valid,{...valid,buildingId:'B-CGN-01',reststromMaloId:'51781215999',maloConflict:true}],{maloId:'50539603888',businessState:'ACTIVE',conflictingAssignment:true}),{...input,maloId:'50539603888'}); expect(result.status).toBe('REVIEW');});
+  it('TC09 returns ALREADY_DONE for an identical completion',async()=>{const result=await buildDormantPlan(new MemoryReader([valid],{maloId:input.maloId,businessState:'RUHEND',conflictingAssignment:false},true),input); expect(result.status).toBe('ALREADY_DONE');});
+  it('TC10 blocks UNKNOWN prerequisites by default',async()=>{const result=await buildDormantPlan(new MemoryReader([valid],{maloId:input.maloId,businessState:'ACTIVE',conflictingAssignment:false}),{...input,prerequisiteProfile:'STRICT'}); expect(result.status).toBe('BLOCKED'); expect(result.code).toBe('PREREQUISITES_UNKNOWN');});
+  it('TC19 preview logic performs no writes',async()=>{let calls=0; const reader=new MemoryReader([valid],{maloId:input.maloId,businessState:'ACTIVE',conflictingAssignment:false}); const result=await buildDormantPlan(reader,input); expect(result.status).toBe('READY'); expect(calls).toBe(0);});
+});

@@ -8,3 +8,8 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
 table { width: 100%; border-collapse: collapse; font-size: .875rem; }
 th, td { padding: .6rem; text-align: left; border-bottom: 1px solid #d5dadd; white-space: nowrap; }
 th { background: #eef2f5; }
+.workbench { display: grid; gap: .8rem; }
+.workbench label:not(.check) { display: grid; gap: .25rem; max-width: 32rem; }
+.workbench select, .workbench input[type=date] { padding: .5rem; }
+.workbench button { width: fit-content; padding: .55rem 1rem; }
+.result { border-left: .3rem solid #0a6ed1; padding-left: 1rem; }

@@ -70,3 +70,49 @@ Status: **VERIFIED** on 2026-10-15.
 
 - preview/execution and relationship reconciliation in Phases C/D
 - lifecycle mutations and audit events
+
+## Phase C — Simulated Ruhendstellung
+
+Status: **VERIFIED** on 2026-10-15.
+
+### Implemented
+
+- shared, read-only transition validation engine used by preview and execution
+- CAP actions `previewTransition` and `setDormant`
+- strict `UNKNOWN` prerequisite handling and explicit `ASSUMED_DEMO` profile
+- validation for identity conflicts, participation, building assignment,
+  residual-supply target, effective date, lifecycle state, and idempotency
+- transactional ACTIVE → RUHEND persistence with read-back verification
+- append-only audit event, process request, prerequisite checks, and lifecycle period
+- functional Workbench with selection, date, preview, explicit confirmation,
+  execution, and detailed results
+
+### Executed verification
+
+| Command/check | Result |
+| --- | --- |
+| `npm test` | PASS — 3 test files, 12 tests |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS — only the known UI5 bundle-size warning |
+| strict preview for `50539603921` | PASS — `BLOCKED / PREREQUISITES_UNKNOWN` and no mutation |
+| `ASSUMED_DEMO` preview | PASS — `READY`, ACTIVE → RUHEND, target `50539603639` |
+| confirmed `setDormant` | PASS — `SIMULATED_SUCCESS`, persisted and verified |
+| repeated identical `setDormant` | PASS — `ALREADY_DONE`, no duplicate transition |
+| nonparticipant `50539603604` | PASS — `SKIPPED`, no mutation |
+| ambiguous `50539603888` | PASS — `REVIEW`, no mutation |
+| persisted API read-back | PASS — MaLo state `RUHEND`, one audit event, half-open ACTIVE/RUHEND periods |
+
+### Phase C acceptance gate
+
+- [x] preview is read-only
+- [x] execution requires explicit confirmation
+- [x] unknown evidence blocks by default
+- [x] demo assumptions are explicit and visible
+- [x] successful state persists in SQLite and survives browser refresh
+- [x] append-only audit event records simulated provenance
+- [x] no response claims a real SAP update
+
+### Remaining after Phase C
+
+- expected-versus-observed MeMa/MaMa reconciliation and prerequisite fixtures
+- remaining lifecycle operations and batch execution
