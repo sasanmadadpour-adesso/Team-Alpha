@@ -1,0 +1,170 @@
+{
+  "Construct_overview/.cdsrc.json": {
+    "mtime": 1792066937.9238536,
+    "seen": 1792095902.841248,
+    "ast_hash": "fb7e0b96017c54624ed26bc58fd034f2",
+    "semantic_hash": "fb7e0b96017c54624ed26bc58fd034f2"
+  },
+  "Construct_overview/app/building-overview/webapp/Component.js": {
+    "mtime": 1792069473.333832,
+    "seen": 1792095902.8412557,
+    "ast_hash": "775cb9d2685f2b8c93cd80b715937c7e",
+    "semantic_hash": "775cb9d2685f2b8c93cd80b715937c7e"
+  },
+  "Construct_overview/app/building-overview/webapp/ext/EnergyTrend.js": {
+    "mtime": 1792098697.1369605,
+    "seen": 1792098775.0310078,
+    "ast_hash": "9c92fcdb671df1b9f5915a1243af735a",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/ext/ListActions.js": {
+    "mtime": 1792069473.3278322,
+    "seen": 1792095902.8412628,
+    "ast_hash": "3ffeeffe0be2828aebaae76d225b5688",
+    "semantic_hash": "3ffeeffe0be2828aebaae76d225b5688"
+  },
+  "Construct_overview/app/building-overview/webapp/manifest.json": {
+    "mtime": 1792098046.6714325,
+    "seen": 1792098775.031014,
+    "ast_hash": "e9fc32ec1a89ea89d38cbce655555c9e",
+    "semantic_hash": ""
+  },
+  "Construct_overview/package.json": {
+    "mtime": 1792096116.4513297,
+    "seen": 1792098775.0310166,
+    "ast_hash": "5266b990da97bb243d974ab36bc8940e",
+    "semantic_hash": ""
+  },
+  "Construct_overview/scripts/add-energy-progress.js": {
+    "mtime": 1792070797.2648296,
+    "seen": 1792095902.8412719,
+    "ast_hash": "14c53ea9ed947b718aa0c5cdcd951e87",
+    "semantic_hash": "14c53ea9ed947b718aa0c5cdcd951e87"
+  },
+  "Construct_overview/scripts/generate-year-data.js": {
+    "mtime": 1792097893.4886363,
+    "seen": 1792098775.0310206,
+    "ast_hash": "56ebf9789e480e839fbf2589cbf0fede",
+    "semantic_hash": ""
+  },
+  "Construct_overview/scripts/validate-workbook.js": {
+    "mtime": 1792066862.496079,
+    "seen": 1792095902.8412771,
+    "ast_hash": "bce18586a42c8e99948e2dbdf5aa0bcd",
+    "semantic_hash": "bce18586a42c8e99948e2dbdf5aa0bcd"
+  },
+  "Construct_overview/srv/energy-overview-service.js": {
+    "mtime": 1792089673.517315,
+    "seen": 1792095902.8412795,
+    "ast_hash": "b35473329aa8b86ac4d808587fc47ee7",
+    "semantic_hash": "b35473329aa8b86ac4d808587fc47ee7"
+  },
+  "Construct_overview/srv/lib/energy-calculator.js": {
+    "mtime": 1792078794.7034082,
+    "seen": 1792095902.8412824,
+    "ast_hash": "9a662f8b0f0e0e70ef2d6258d8c9c2a1",
+    "semantic_hash": "9a662f8b0f0e0e70ef2d6258d8c9c2a1"
+  },
+  "Construct_overview/srv/lib/energy-trends.js": {
+    "mtime": 1792097869.6969202,
+    "seen": 1792098775.0310287,
+    "ast_hash": "50366a562ccaec933da5c0d821c2837f",
+    "semantic_hash": ""
+  },
+  "Construct_overview/srv/lib/vnb-projector.js": {
+    "mtime": 1792089654.7177405,
+    "seen": 1792095902.841288,
+    "ast_hash": "65c7125ea057306fe61c338a0424a209",
+    "semantic_hash": "65c7125ea057306fe61c338a0424a209"
+  },
+  "Construct_overview/srv/lib/workbook-loader.js": {
+    "mtime": 1792070665.319085,
+    "seen": 1792095902.8412905,
+    "ast_hash": "7f280ef653fa4b245e9da209d212f68e",
+    "semantic_hash": "7f280ef653fa4b245e9da209d212f68e"
+  },
+  "Construct_overview/test/app.test.js": {
+    "mtime": 1792098055.8735075,
+    "seen": 1792098775.0310342,
+    "ast_hash": "c53981000fa275eded63785c58a567d8",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/energy-calculator.test.js": {
+    "mtime": 1792079285.9014447,
+    "seen": 1792095902.8412964,
+    "ast_hash": "2e8bdd2acfaf19c71bde6a3f9ef965ff",
+    "semantic_hash": "2e8bdd2acfaf19c71bde6a3f9ef965ff"
+  },
+  "Construct_overview/test/energy-progress.test.js": {
+    "mtime": 1792070812.2301009,
+    "seen": 1792095902.8412986,
+    "ast_hash": "63b0d7458ead410298bc9d62c9be35c8",
+    "semantic_hash": "63b0d7458ead410298bc9d62c9be35c8"
+  },
+  "Construct_overview/test/energy-trends.test.js": {
+    "mtime": 1792098055.8806992,
+    "seen": 1792098775.0310397,
+    "ast_hash": "f62259ae8f050f09540d6df8090b51bc",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/odata.test.js": {
+    "mtime": 1792098055.8974202,
+    "seen": 1792098775.0310423,
+    "ast_hash": "02207c00b509f03534a7211d4fb45184",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/vnb-projector.test.js": {
+    "mtime": 1792098131.1022785,
+    "seen": 1792098775.031045,
+    "ast_hash": "a73b18f92ebde4b39517bfcd206d711b",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/workbook-loader.test.js": {
+    "mtime": 1792078662.7175996,
+    "seen": 1792095902.8413095,
+    "ast_hash": "30a46ffa8aeb599fb00e8cef966f3318",
+    "semantic_hash": "30a46ffa8aeb599fb00e8cef966f3318"
+  },
+  "opencode.json": {
+    "mtime": 1792054979.7323167,
+    "seen": 1792095902.841312,
+    "ast_hash": "881379d4541f41ed841053fa019b809b",
+    "semantic_hash": "881379d4541f41ed841053fa019b809b"
+  },
+  "AGENTS.md": {
+    "mtime": 1792095876.54792,
+    "seen": 1792095911.8192306,
+    "ast_hash": "f36539ecc9af68f33ebd72770ce4a19e",
+    "semantic_hash": ""
+  },
+  "Construct_overview/README.md": {
+    "mtime": 1792077567.948665,
+    "seen": 1792095911.819234,
+    "ast_hash": "7f42291724f140706c73faea41240fa0",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/index.html": {
+    "mtime": 1792069473.335832,
+    "seen": 1792095911.8192356,
+    "ast_hash": "05630ba3b0c4de521025e69d11b3ad3d",
+    "semantic_hash": ""
+  },
+  "Construct_overview/construct-visualization-prototype.html": {
+    "mtime": 1792087789.3228972,
+    "seen": 1792095911.8192382,
+    "ast_hash": "ebb330b96af65eb8caf4ec629fe8e79d",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1792095887.146684,
+    "seen": 1792095911.8192403,
+    "ast_hash": "9b35e4bdfbf6eeb5a014a99535ea7ca6",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/ext/BuildingHouse.js": {
+    "mtime": 1792098635.3887691,
+    "seen": 1792098775.031004,
+    "ast_hash": "5a32f5a0fd07f103dd57eb31e52d790e",
+    "semantic_hash": ""
+  }
+}
