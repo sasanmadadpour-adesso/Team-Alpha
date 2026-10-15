@@ -7,6 +7,7 @@
     "start": "cds-serve",
     "watch": "cds watch",
     "test": "node --test test/**/*.test.js",
+    "test:app": "node --test test/app.test.js",
     "validate-workbook": "node scripts/validate-workbook.js"
   },
   "dependencies": {

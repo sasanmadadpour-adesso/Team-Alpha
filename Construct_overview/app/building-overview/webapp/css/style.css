@@ -1,0 +1,8 @@
+:root { --vnb-teal: #0f828f; --vnb-blue: #0a6ed1; }
+html, body, [data-sap-ui-component], .sapUiComponentContainer, .sapUiComponentContainer > div, .sapUiComponentContainer .sapUiView, .sapUiComponentContainer .sapMNav { width: 100%; height: 100% !important; min-height: 100vh; }
+.vnbTopology { padding: 1rem; border: 1px solid var(--sapGroup_ContentBorderColor, #d9d9d9); border-radius: .75rem; background: linear-gradient(135deg, #f8fbfd, #f2f8f8); box-sizing: border-box; }
+.vnbTopologyNode { position: relative; min-height: 7.5rem; padding: 1rem 1.25rem; border-radius: .65rem; border: 1px solid #d5dadd; background: #fff; box-sizing: border-box; box-shadow: 0 .125rem .35rem rgb(0 0 0 / 6%); }
+.vnbHubNode { border: 2px solid var(--vnb-teal); background: #f4fbfb; }
+.vnbImportNode { border-top: .25rem solid var(--vnb-blue); }
+.vnbExportNode { border-top: .25rem solid #30914c; }
+@media (min-width: 64rem) { .vnbImportNode::after, .vnbHubNode::after { content: ""; position: absolute; right: -1.6rem; top: 50%; width: 1.6rem; border-top: 2px dashed var(--vnb-teal); } }

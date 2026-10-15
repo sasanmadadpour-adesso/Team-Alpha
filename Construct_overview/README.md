@@ -1,6 +1,6 @@
 # Mieterstrom CAP Backend Simulator
 
-This is a local SAP CAP backend simulator for the English workbook in the repository root. It exposes normalized access to all workbook sheets and business-ready energy settlement projections for a future Fiori Elements frontend.
+This is the combined SAP CAP and SAP Fiori Elements VNB Grid View application. It reads the English workbook in the repository root, projects the workbook into construct, energy, payment, quality, and portfolio views, and serves the VNB frontend from the same CAP process.
 
 ## Run locally
 
@@ -11,6 +11,14 @@ npm install
 npm run validate-workbook
 npm start
 ```
+
+The Fiori Elements application is available at:
+
+```text
+http://localhost:4004/building-overview/webapp/index.html
+```
+
+It is a read-only Construct List Report with an Object Page for each MaLo/MeLo construct. The object page includes topology, hourly energy, payments, and data-quality sections. The app is served by the same CAP process as the OData service and uses a relative, same-origin service URL, which keeps the layout suitable for a later SAP BTP deployment. SAPUI5 is loaded from `https://ui5.sap.com`, so the local browser needs network access to render the UI.
 
 The OData V4 service is available at:
 
@@ -30,7 +38,7 @@ The workbook is checked before each request. A changed file is validated and loa
 
 Raw normalized data is available through `ProducerOnboardings`, `Mk7Participants`, `ConsumptionReadings`, `GenerationReadings`, `EnergyPrices`, `FieldDescriptions`, and `FinancialRules`.
 
-Business projections are available through `BuildingOverviews`, `ParticipantOverviews`, `HourlyEnergyBalances`, `BuildingFinancialSummaries`, and `PortfolioSummary`.
+Business projections are available through `BuildingOverviews`, `ParticipantOverviews`, `HourlyEnergyBalances`, `BuildingFinancialSummaries`, and `PortfolioSummary`. The VNB-compatible views are `Constructs`, `ConstructHourlyValues`, `Payments`, `DataQualityIssues`, and `Buildings`.
 
 The calculator follows the workbook financial rules: only household participants with `Teilnahme MK7 = Ja` are eligible; local energy is the minimum of generation and eligible consumption; residual and export energy use the corresponding maximum rules; and the Mieterstrom subsidy applies only to locally used solar energy.
 
@@ -38,4 +46,10 @@ The calculator follows the workbook financial rules: only household participants
 
 ```bash
 npm test
+```
+
+The application structure can also be checked independently with:
+
+```bash
+npm run test:app
 ```

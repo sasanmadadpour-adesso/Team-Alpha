@@ -1,9 +1,0 @@
-node_modules/
-gen/
-*.db
-*.sqlite
-.cdsrc-private.json
-.idea/
-.vscode/
-npm-debug.log*
-scripts/__pycache__/

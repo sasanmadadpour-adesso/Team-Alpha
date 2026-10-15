@@ -77,6 +77,7 @@ function mapWorkbook(workbook) {
 
   const producerOnboardings = source['Producer Onboarding'].map((r, i) => ({
     ID: `producer-${i + 1}`,
+    sourceRow: i + 2,
     firstName: text(r, 'first_name'), lastName: text(r, 'last_name'), email: text(r, 'email'),
     salutation: text(r, 'salutation'), isBusiness: boolean(r, 'is_business'), isReverseCharge: boolean(r, 'is_reverse_charge'),
     deliveryStreet: text(r, 'deliv_address_street'), deliveryHouseNumber: text(r, 'deliv_address_house_number'),
@@ -91,6 +92,7 @@ function mapWorkbook(workbook) {
   }));
   const participants = source['MK7 Participants'].map((r, i) => ({
     ID: text(r, 'metering_location_id_MeLo') || `participant-${i + 1}`,
+    sourceRow: i + 2,
     city: text(r, 'city'), operator: text(r, 'mk7_operator'), streetAddress: text(r, 'street_address'), role: text(r, 'mk7_role'),
     participation: text(r, 'Teilnahme MK7'), supplyStartUtc: timestamp(value(r, 'mk7_supply_start_utc')),
     meteringLocationId: text(r, 'metering_location_id_MeLo'), meterNumber: text(r, 'meter_number'),
