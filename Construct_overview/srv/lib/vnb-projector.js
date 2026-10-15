@@ -29,6 +29,14 @@ function syntheticData() {
     if (warning) issues.push({ ID: `${id}-WARNING`, constructID: id, severityCode: 'WARNING', fieldName: 'syntheticScenario', sourceValue: code, issueText: `Synthetic edge case: ${title}.`, severityCriticality: 2 });
     scenarios.push({ ID: code, title, description: `Synthetic dataset scenario: ${title}.`, relationshipShape: `${imports} import + ${exports} export MaLos → 1 MeLo`, roleCoverage: roles, readingCoverage: readings, warningCount: warning ? 1 : 0, isSynthetic: true });
   });
+  for (const construct of constructs) {
+    const rows = hourly.filter(row => row.constructID === construct.ID);
+    construct.totalConsumptionKwh = sum(rows, 'consumptionKwh');
+    construct.totalGenerationKwh = sum(rows, 'generationKwh');
+    construct.localEnergyKwh = sum(rows, 'localAllocationKwh');
+    construct.residualGridKwh = sum(rows, 'residualGridKwh');
+    construct.exportKwh = sum(rows, 'exportKwh');
+  }
   return { constructs, hourly, issues, connections, scenarios };
 }
 
