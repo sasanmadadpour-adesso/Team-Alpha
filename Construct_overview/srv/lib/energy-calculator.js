@@ -6,6 +6,10 @@ function calculate(snapshot) {
   const excluded = snapshot.participants.filter(p => p.role === 'Household Consumption' && p.participation !== 'Ja');
   const participantByMeter = new Map(snapshot.participants.map(p => [p.meteringLocationId, p]));
   const buildings = [...new Set(snapshot.participants.map(p => p.buildingId))];
+  const consumptionByBuildingTime = new Map();
+  const generationByBuildingTime = new Map();
+  for (const row of snapshot.consumption) { const key = `${row.buildingId}-${row.startTime}`; if (!consumptionByBuildingTime.has(key)) consumptionByBuildingTime.set(key, []); consumptionByBuildingTime.get(key).push(row); }
+  for (const row of snapshot.generation) { const key = `${row.buildingId}-${row.startTime}`; if (!generationByBuildingTime.has(key)) generationByBuildingTime.set(key, []); generationByBuildingTime.get(key).push(row); }
   const priceByTime = new Map(snapshot.prices.map(p => [p.startTime, p]));
   const balanceMap = new Map();
   const participantTotals = new Map(eligible.map(p => [p.meteringLocationId, { consumption: 0, local: 0, residual: 0 }]));
@@ -15,8 +19,8 @@ function calculate(snapshot) {
     const generation = snapshot.generation.filter(r => r.buildingId === buildingId);
     const times = new Set([...consumption, ...generation].map(r => r.startTime));
     for (const startTime of times) {
-      const generationRows = generation.filter(r => r.startTime === startTime);
-      const eligibleConsumption = consumption.filter(r => r.startTime === startTime && participantByMeter.get(r.meteringLocationId)?.role === 'Household Consumption' && participantByMeter.get(r.meteringLocationId)?.participation === 'Ja');
+      const generationRows = generationByBuildingTime.get(`${buildingId}-${startTime}`) || [];
+      const eligibleConsumption = (consumptionByBuildingTime.get(`${buildingId}-${startTime}`) || []).filter(r => participantByMeter.get(r.meteringLocationId)?.role === 'Household Consumption' && participantByMeter.get(r.meteringLocationId)?.participation === 'Ja');
       const generationKwh = sum(generationRows, 'generationKwh');
       const eligibleConsumptionKwh = sum(eligibleConsumption, 'consumptionKwh');
       const localEnergyKwh = Math.min(generationKwh, eligibleConsumptionKwh);

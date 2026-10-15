@@ -118,6 +118,12 @@ service EnergyOverviewService {
     directionLabel : String(80);
     isSynthetic : Boolean;
     testScenario : String(60);
+    energyConceptCurrentStep : Integer;
+    energyConceptContactCompleted : Boolean;
+    energyConceptDataVerified : Boolean;
+    energyConceptAgreementSigned : Boolean;
+    energyConceptMeterReady : Boolean;
+    energyConceptActive : Boolean;
     hourlyValues : Association to many ConstructHourlyValues on hourlyValues.constructID = ID;
     payments : Association to many Payments on payments.constructID = ID;
     sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
@@ -198,5 +204,97 @@ service EnergyOverviewService {
     operatorName : String(100);
     latitude : Decimal(10,6);
     longitude : Decimal(10,6);
+    productionTypes : String(100);
+    installedCapacityKw : Decimal(15,3);
+    consumerCount : Integer;
+    participatingConsumerCount : Integer;
+    activeConsumerCount : Integer;
+    averageEnergyConceptStep : Decimal(5,1);
+    totalEnergyConceptSteps : Integer;
+    totalConsumptionKwh : Decimal(15,3);
+    totalGenerationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
+    selfSufficiencyPercent : Decimal(7,2);
+    consumers : Association to many BuildingConsumers on consumers.buildingID = ID;
+    producers : Association to many BuildingProducers on producers.buildingID = ID;
+    hourlyEnergy : Association to many BuildingHourlyEnergy on hourlyEnergy.buildingID = ID;
+  }
+
+  @readonly entity BuildingConsumers {
+    key ID : String(100);
+    buildingID : String(40);
+    meLo : String(50);
+    importMaLo : String(40);
+    exportMaLo : String(40);
+    participationCode : String(20);
+    participationLabel : String(40);
+    isEligible : Boolean;
+    energyConceptCurrentStep : Integer;
+    energyConceptTotalSteps : Integer;
+    energyConceptContactCompleted : Boolean;
+    energyConceptDataVerified : Boolean;
+    energyConceptAgreementSigned : Boolean;
+    energyConceptMeterReady : Boolean;
+    energyConceptActive : Boolean;
+    totalConsumptionKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    localEnergySharePercent : Decimal(7,1);
+  }
+
+  @readonly entity BuildingProducers {
+    key ID : String(100);
+    buildingID : String(40);
+    productionType : String(30);
+    marketLocationIdentifier : String(40);
+    installedCapacityKw : Decimal(15,3);
+    generationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
+    localUtilizationPercent : Decimal(7,1);
+  }
+
+  @readonly entity BuildingHourlyEnergy {
+    key ID : String(100);
+    buildingID : String(40);
+    startTime : Timestamp;
+    endTime : Timestamp;
+    hourLabel : String(8);
+    consumptionKwh : Decimal(15,3);
+    generationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
+    marketPriceEurKwh : Decimal(15,6);
+  }
+
+  @readonly entity ConstructEnergyTrends {
+    key ID : String(180);
+    parentID : String(100);
+    bucketStart : Timestamp;
+    bucketEnd : Timestamp;
+    bucketLabel : String(20);
+    granularity : String(10);
+    consumptionKwh : Decimal(15,3);
+    generationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
+  }
+
+  @readonly entity BuildingEnergyTrends {
+    key ID : String(180);
+    parentID : String(40);
+    bucketStart : Timestamp;
+    bucketEnd : Timestamp;
+    bucketLabel : String(20);
+    granularity : String(10);
+    consumptionKwh : Decimal(15,3);
+    generationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
   }
 }

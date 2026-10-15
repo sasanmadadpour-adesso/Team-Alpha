@@ -9,9 +9,15 @@ test('projects the workbook into the VNB construct model', () => {
   const sourceHourly = result.hourly.filter(row => !row.constructID.startsWith('TEST-'));
   assert.equal(sourceConstructs.length, 17);
   assert.equal(sourceHourly.length, 17 * 24);
+  assert.equal(result.constructs.length, 17);
+   assert.equal(result.hourly.length, 17 * 8760);
   assert.equal(result.buildings.length, 3);
   assert.equal(result.issues.filter(row => !row.sourceValue.startsWith('EDGE-')).length, 3);
   assert.equal(result.portfolio[0].eligibleMeterCount, 10);
+  assert.equal(result.consumers.length, 11);
+  assert.equal(result.producers.length, 3);
+   assert.equal(result.buildingHourlyEnergy.length, 3 * 8760);
+  assert.ok(result.consumers.every(row => row.energyConceptCurrentStep >= 1 && row.energyConceptCurrentStep <= 5));
   assert.ok(result.constructs.some(row => row.roleCode === 'HOUSEHOLD'));
   assert.ok(result.constructs.some(row => row.roleCode === 'GENERATION'));
   assert.ok(result.constructs.some(row => row.roleCode === 'RESIDUAL'));
@@ -21,7 +27,7 @@ test('preserves hourly allocation identities in the VNB projection', () => {
   const result = project(createWorkbookRepository().getSnapshot());
   const household = result.constructs.find(row => row.roleCode === 'HOUSEHOLD' && row.isEligible);
   const rows = result.hourly.filter(row => row.constructID === household.ID);
-  assert.equal(rows.length, 24);
+   assert.equal(rows.length, 8760);
   for (const row of rows) assert.ok(Math.abs(row.consumptionKwh - row.localAllocationKwh - row.residualGridKwh) < 0.001);
 });
 
