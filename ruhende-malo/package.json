@@ -1,0 +1,48 @@
+{
+  "name": "mk7-control-center",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MK7 Control Center — lokale SAP-CAP-Simulation",
+  "workspaces": [
+    "app"
+  ],
+  "scripts": {
+    "dev": "concurrently -n CAP,UI -c blue,green \"npm run dev:cap\" \"npm run dev:ui\"",
+    "dev:cap": "cds watch",
+    "dev:ui": "npm run dev --workspace app",
+    "deploy:local": "cds deploy --to sqlite:db.sqlite",
+    "build": "npm run build:cap && npm run build --workspace app",
+    "build:cap": "cds build --production",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspace app",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "cds-serve"
+  },
+  "dependencies": {
+    "@cap-js/sqlite": "^3.1.2",
+    "@sap/cds": "^10.1.1"
+  },
+  "devDependencies": {
+    "@cap-js/cds-types": "^0.20.0",
+    "@sap/cds-dk": "^10.1.0",
+    "@types/node": "^24.7.2",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^7.0.0",
+    "vitest": "^5.0.5"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
