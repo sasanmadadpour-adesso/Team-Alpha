@@ -1,18 +1,18 @@
 import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { geoOrthographic, geoPath, geoGraticule10, geoDistance } from 'd3-geo';
 import { feature } from 'topojson-client';
-import worldTopology from './data/countries-50m.json';
+import landTopology from './data/land-110m.json';
+import germany from './data/germany.json';
 
 const SIZE = 300;
 const MIN_ZOOM = 1.6;
-const MAX_ZOOM = 5;
-const DEFAULT_ZOOM = 2.6;
-const GERMANY_ID = '276';
+const MAX_ZOOM = 10;
+const DEFAULT_ZOOM = 3.2;
+const GRID_HIDE_ZOOM = 5;
+const HOME_ROTATION = [-10.4, -51.1];
+const HOME_ZOOM = DEFAULT_ZOOM;
 
-const allCountries = feature(worldTopology, worldTopology.objects.countries).features;
-const land = feature(worldTopology, worldTopology.objects.land);
-const germany = allCountries.find(country => country.id === GERMANY_ID);
-const otherCountries = { type: 'FeatureCollection', features: allCountries.filter(country => country.id !== GERMANY_ID) };
+const land = feature(landTopology, landTopology.objects.land);
 
 function isFrontFacing(rotation, lon, lat) {
   // Center of the visible hemisphere, given the current rotation.
@@ -23,13 +23,16 @@ function isFrontFacing(rotation, lon, lat) {
 }
 
 export default function Globe({ points, routes, selected, onSelectPoint, onHoverPoint, onLeave }) {
-  const [rotation, setRotation] = useState([-10.4, -51.1]);
+  const [rotation, setRotation] = useState(HOME_ROTATION);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const dragState = useRef(null);
   const canvasRef = useRef(null);
+  const frameRef = useRef(null);
+  const pendingRotation = useRef(null);
 
-  const zoomIn = useCallback(() => setZoom(z => Math.min(MAX_ZOOM, +(z + 0.4).toFixed(2))), []);
-  const zoomOut = useCallback(() => setZoom(z => Math.max(MIN_ZOOM, +(z - 0.4).toFixed(2))), []);
+  const zoomIn = useCallback(() => setZoom(z => Math.min(MAX_ZOOM, +(z + 0.6).toFixed(2))), []);
+  const zoomOut = useCallback(() => setZoom(z => Math.max(MIN_ZOOM, +(z - 0.6).toFixed(2))), []);
+  const resetView = useCallback(() => { setRotation(HOME_ROTATION); setZoom(HOME_ZOOM); }, []);
 
   // Native wheel/trackpad zoom, like a map app.
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
     if (!node) return;
     const onWheel = (event) => {
       event.preventDefault();
-      setZoom(z => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +(z - event.deltaY * 0.0025).toFixed(2))));
+      setZoom(z => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, +(z - event.deltaY * 0.004).toFixed(2))));
     };
     node.addEventListener('wheel', onWheel, { passive: false });
     return () => node.removeEventListener('wheel', onWheel);
@@ -51,6 +54,7 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
 
   const path = useMemo(() => geoPath(projection), [projection]);
   const graticule = useMemo(() => geoGraticule10(), []);
+  const showGrid = zoom < GRID_HIDE_ZOOM;
 
   const projected = useMemo(() => points
     .map(point => ({ ...point, visible: isFrontFacing(rotation, point.lon, point.lat), screen: projection([point.lon, point.lat]) }))
@@ -66,6 +70,17 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
     })
     .filter(Boolean), [routes, rotation, path]);
 
+  // Rotation updates are batched to one per animation frame, so fast drag
+  // movements don't trigger more re-renders (and path recomputation) than
+  // the screen can actually paint.
+  const flushRotation = useCallback(() => {
+    frameRef.current = null;
+    if (pendingRotation.current) {
+      setRotation(pendingRotation.current);
+      pendingRotation.current = null;
+    }
+  }, []);
+
   const onPointerDown = useCallback((event) => {
     dragState.current = { startX: event.clientX, startY: event.clientY, startRotation: rotation };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -78,13 +93,16 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
     const [startLon, startLat] = dragState.current.startRotation;
     const nextLon = startLon + dx * 0.4;
     const nextLat = Math.max(-80, Math.min(80, startLat - dy * 0.4));
-    setRotation([nextLon, nextLat]);
-  }, []);
+    pendingRotation.current = [nextLon, nextLat];
+    if (frameRef.current === null) frameRef.current = requestAnimationFrame(flushRotation);
+  }, [flushRotation]);
 
   const onPointerUp = useCallback((event) => {
     dragState.current = null;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
   }, []);
+
+  useEffect(() => () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); }, []);
 
   return (
     <div
@@ -117,8 +135,7 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
 
         <g clipPath="url(#sphereClip)">
           <path d={path(land)} className="globe-land" />
-          <path d={path(otherCountries)} className="globe-country-border" />
-          <path d={path(graticule)} className="globe-graticule" />
+          {showGrid && <path d={path(graticule)} className="globe-graticule" />}
           {germany && <path d={path(germany)} className="globe-germany" />}
           {visibleRoutes.map(route => (
             <path
@@ -136,6 +153,7 @@ export default function Globe({ points, routes, selected, onSelectPoint, onHover
 
       <div className="globe-zoom-controls" onPointerDown={event => event.stopPropagation()}>
         <button type="button" className="globe-zoom-btn" onClick={zoomIn} disabled={zoom >= MAX_ZOOM} aria-label="Globus vergrößern">+</button>
+        <button type="button" className="globe-zoom-btn globe-reset-btn" onClick={resetView} aria-label="Ansicht zurücksetzen">⌂</button>
         <button type="button" className="globe-zoom-btn" onClick={zoomOut} disabled={zoom <= MIN_ZOOM} aria-label="Globus verkleinern">−</button>
       </div>
 
