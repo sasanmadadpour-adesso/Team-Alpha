@@ -33,3 +33,4 @@ export interface TransitionResult { status:string; code:string; message:string; 
 async function action(name:string,body:object):Promise<TransitionResult>{const response=await fetch(`/odata/v4/malo/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!response.ok) throw new Error(`Transition API failed (${response.status})`); return response.json();}
 export const previewTransition=(body:object)=>action('previewTransition',body);
 export const setDormant=(body:object)=>action('setDormant',body);
+export const executeLifecycle=(name:'reactivate'|'removeFromConstruct'|'correctTransition'|'reverseTransition',body:object)=>action(name,body);

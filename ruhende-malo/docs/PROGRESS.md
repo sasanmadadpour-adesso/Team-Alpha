@@ -164,3 +164,41 @@ The mock-observed records are local fixtures and are not SAP observations.
 
 - lifecycle operations Wiederaktivierung, Herauslösung, Korrektur, and Rücknahme
 - automatic batch execution, history views, scenario Test Center, and Reset Demo
+
+## Phase E — Complete MaLo Lifecycle
+
+Status: **VERIFIED** on 2026-10-15.
+
+### Implemented
+
+- CAP actions `reactivate`, `removeFromConstruct`, `correctTransition`, and `reverseTransition`
+- reusable lifecycle planning service with half-open interval and chronology validation
+- Wiederaktivierung from RUHEND to ACTIVE while preserving prior ACTIVE and RUHEND periods
+- distinct Herauslösung behavior that closes relevant mock-observed MeMa/MaMa without silently reactivating the MaLo
+- referenced Korrektur with mandatory reason, boundary validation, and immutable original evidence
+- referenced Rücknahme as an auditable compensating transition without deleting original history
+- idempotency checks for every lifecycle action and duplicate reversal protection
+- CAP request transactions, persisted read-back verification, before/after snapshots, and audit reference IDs
+- minimal Workbench controls for all five operations, reason, and reference request ID
+- lifecycle tests for success, invalid chronology, invalid sequences, overlaps, repeated operations, duplicate reversals, and history-preserving plans
+
+### Executed verification
+
+| Command/check | Result |
+| --- | --- |
+| `npm test` | PASS — 5 test files, 30 tests |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS — only the known UI5 bundle-size warning |
+| live Ruhendstellung | PASS — ACTIVE → RUHEND |
+| live Wiederaktivierung | PASS — RUHEND → ACTIVE with prior periods retained |
+| live Korrektur | PASS — referenced boundary moved and audit appended |
+| live Herauslösung | PASS — relationships closed; ACTIVE state remained ACTIVE |
+| live Rücknahme | PASS — compensating RUHEND → ACTIVE transition retained its reference |
+| repeated Rücknahme | PASS — `ALREADY_DONE`, no duplicate compensation |
+| final `npm run import:data` | PASS — presentation database restored to baseline |
+
+### Remaining after Phase E
+
+- automatic batch execution through the shared engine
+- History & Log and real scenario Test Center views
+- confirmed Reset Demo endpoint and final presentation polish

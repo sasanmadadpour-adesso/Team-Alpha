@@ -12,3 +12,7 @@
 - Participating household rows produce expected MeMa and MaMa relationships. Participating generation rows produce MeMa only; household MaMa rules are not applied to Einspeise-MaLo.
 - A matching mock-observed relationship is required for the Phase D demo baseline. Missing, extra, conflicting, invalid, or overlapping relationships block Ruhendstellung.
 - vSZ readiness, relevant master data, and supplier/market process status remain `UNKNOWN` under strict policy. `ASSUMED_DEMO` explicitly assumes each check for local simulation only.
+- Phase E models lifecycle periods as half-open intervals `[validFrom, validToExclusive)` and rejects contradictory overlaps and invalid operation chronology.
+- The simulated Herauslösung rule closes the selected household MaLo's mock-observed MaMa and associated mock-observed MeMa as of the effective date. It does not change ACTIVE/RUHEND state; Wiederaktivierung remains a separate operation.
+- Korrektur moves the lifecycle boundary created by a referenced successful transition. It requires a reason, retains the original process request and audit event, and appends a referencing correction event.
+- Rücknahme is a later compensating state transition. It requires a reason and successful reference operation, appends history, and never deletes the referenced event.
