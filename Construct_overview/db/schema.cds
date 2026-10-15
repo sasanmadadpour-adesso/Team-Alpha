@@ -37,7 +37,7 @@ entity ProducerOnboardings {
 }
 
 @readonly
-entity Mk7Participants {
+  entity Mk7Participants {
   key ID : String(40);
   city : String(100);
   operator : String(100);
@@ -56,6 +56,12 @@ entity Mk7Participants {
   contractStartUtc : UtcTimestamp;
   contractEndUtc : UtcTimestamp;
   buildingId : String(40);
+  energyConceptCurrentStep : Integer;
+  energyConceptContactCompleted : Boolean;
+  energyConceptDataVerified : Boolean;
+  energyConceptAgreementSigned : Boolean;
+  energyConceptMeterReady : Boolean;
+  energyConceptActive : Boolean;
 }
 
 @readonly

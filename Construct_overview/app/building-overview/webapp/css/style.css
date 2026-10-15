@@ -6,3 +6,26 @@ html, body, [data-sap-ui-component], .sapUiComponentContainer, .sapUiComponentCo
 .vnbImportNode { border-top: .25rem solid var(--vnb-blue); }
 .vnbExportNode { border-top: .25rem solid #30914c; }
 @media (min-width: 64rem) { .vnbImportNode::after, .vnbHubNode::after { content: ""; position: absolute; right: -1.6rem; top: 50%; width: 1.6rem; border-top: 2px dashed var(--vnb-teal); } }
+.buildingSchematic { padding: 1rem; background: linear-gradient(145deg, #f8fbfd, #eef7f7); border: 1px solid #d5dadd; border-radius: .75rem; }
+.schematicEnergyFlow { gap: 1rem; padding: 1rem; border-bottom: 4px solid #7f8c8d; }
+.energyNode { min-width: 10rem; padding: 1rem; border-radius: .75rem; border: 1px solid #c9d3d8; background: #fff; box-shadow: 0 .125rem .35rem rgb(0 0 0 / 7%); }
+.energyProducer { border-top: .3rem solid #e9730c; }
+.energyBuilding { border-top: .3rem solid #0f828f; }
+.energyGrid { border-top: .3rem solid #0a6ed1; }
+.energyArrow { color: #0f828f; }
+.flatList { background: transparent; }
+.flatCard { margin: .4rem 0; padding: .8rem 1rem; border: 1px solid #d5dadd; border-left: .35rem solid #a9b4ba; border-radius: .5rem; background: #fff; }
+.milestones { max-width: 14rem; margin: .35rem 0; }
+.vnbEnergyTrend { padding: 1rem; border: 1px solid #d5dadd; border-radius: .75rem; background: linear-gradient(145deg, #f8fbfd, #eef7f7); }
+.vnbTrendToolbar { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.vnbTrendHeading { margin-right: auto; font-size: 1.1rem; font-weight: 600; color: #263238; }
+.vnbTrendRange { padding: .35rem .75rem; border: 1px solid #b8c4c9; border-radius: 1rem; background: #fff; color: #263238; cursor: pointer; }
+.vnbTrendRangeSelected { border-color: var(--vnb-teal); background: #e6f5f5; color: #075d66; font-weight: 600; }
+.vnbTrendStatus { min-height: 1.4rem; color: #5b6b73; font-size: .875rem; }
+.vnbTrendChart { overflow-x: auto; padding: .5rem 0; }
+.vnbTrendChart svg { display: block; width: 100%; min-width: 38rem; height: 17.5rem; }
+.vnbTrendAxis { stroke: #c9d3d8; stroke-width: 1; }
+.vnbTrendLegend { display: flex; gap: 1rem; flex-wrap: wrap; color: #43545c; font-size: .8rem; }
+.vnbTrendLegend span { display: inline-flex; align-items: center; gap: .35rem; }
+.vnbTrendLegend i { display: inline-block; width: .65rem; height: .65rem; border-radius: 50%; }
+@media (max-width: 48rem) { .schematicEnergyFlow { flex-direction: column; align-items: stretch; } .energyArrow { transform: rotate(90deg); align-self: center; } .energyNode { min-width: 0; } }

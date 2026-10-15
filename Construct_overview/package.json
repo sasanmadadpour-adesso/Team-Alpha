@@ -8,7 +8,9 @@
     "watch": "cds watch",
     "test": "node --test test/**/*.test.js",
     "test:app": "node --test test/app.test.js",
-    "validate-workbook": "node scripts/validate-workbook.js"
+    "validate-workbook": "node scripts/validate-workbook.js",
+    "add-energy-progress": "node scripts/add-energy-progress.js"
+    ,"generate-year-data": "node scripts/generate-year-data.js"
   },
   "dependencies": {
     "@sap/cds": "^9.5.0",

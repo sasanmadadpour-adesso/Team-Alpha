@@ -34,13 +34,20 @@ test('configures the building list report and object page', () => {
   assert.equal(targets.ConstructsList.name, 'sap.fe.templates.ListReport');
   assert.equal(targets.ConstructsObjectPage.name, 'sap.fe.templates.ObjectPage');
   assert.match(JSON.stringify(manifest['sap.ui5'].routing.routes), /Constructs\(\{key\}\)/);
+  const views = targets.ConstructsList.options.settings.views.paths;
+  assert.deepEqual(views.map(view => view.key), ['constructParticipants', 'buildingStructure']);
+  assert.deepEqual(views.map(view => view.entitySet), ['Constructs', 'Buildings']);
+   assert.equal(views[0].label, '{i18n>constructParticipantsView}');
+   assert.equal(views[1].label, '{i18n>buildingStructureView}');
+  assert.equal(targets.ConstructsList.options.settings.navigation.Buildings.detail.route, 'BuildingsObjectPage');
 });
 
 test('contains annotation metadata for the building overview KPIs', () => {
-  const annotations = fs.readFileSync(
+   const annotations = fs.readFileSync(
     path.join(__dirname, '..', 'srv', 'energy-overview-annotations.cds'),
-    'utf8'
-  );
+     'utf8'
+   );
+   const manifestText = readAppFile('manifest.json');
 
   for (const field of [
     'primaryMaLo',
@@ -52,6 +59,11 @@ test('contains annotation metadata for the building overview KPIs', () => {
   ]) {
     assert.match(annotations, new RegExp(`Value: ${field}`));
   }
-  assert.match(annotations, /hourlyValues\/@UI\.LineItem/);
+   assert.match(manifestText, /EnergyTrend/);
   assert.match(annotations, /payments\/@UI\.LineItem/);
+  assert.match(manifestText, /BuildingsList/);
+  assert.match(manifestText, /BuildingSchematic/);
+  assert.match(readAppFile('ext/BuildingSchematic.fragment.xml'), /energyConceptCurrentStep/);
+  assert.match(annotations, /UI\.Chart #Trend/);
+  assert.match(annotations, /ENERGY_TREND/);
 });

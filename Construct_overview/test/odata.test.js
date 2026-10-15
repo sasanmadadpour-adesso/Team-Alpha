@@ -22,6 +22,15 @@ test('serves VNB compatibility entities and navigation over OData', async t => {
   const id = constructs.value[0].ID;
   const hourly = await (await fetch(`${base}/Constructs('${id}')/hourlyValues`)).json();
   const payments = await (await fetch(`${base}/Constructs('${id}')/payments`)).json();
-  assert.equal(hourly.value.length, 24);
+   assert.equal(hourly.value.length, 8760);
   assert.ok(payments.value.length > 0);
+  const buildings = await (await fetch(`${base}/Buildings`)).json();
+  assert.equal(buildings.value.length, 3);
+  const buildingId = buildings.value[0].ID;
+  const consumers = await (await fetch(`${base}/Buildings('${buildingId}')/consumers`)).json();
+  const producers = await (await fetch(`${base}/Buildings('${buildingId}')/producers`)).json();
+  const buildingHourly = await (await fetch(`${base}/Buildings('${buildingId}')/hourlyEnergy`)).json();
+  assert.ok(consumers.value.length > 0);
+  assert.equal(producers.value.length, 1);
+   assert.equal(buildingHourly.value.length, 8760);
 });

@@ -15,7 +15,7 @@ const REQUIRED_SHEETS = [
 
 const REQUIRED_COLUMNS = {
   'Producer Onboarding': ['first_name', 'last_name', 'building_id'],
-  'MK7 Participants': ['mk7_role', 'Teilnahme MK7', 'metering_location_id_MeLo', 'building_id'],
+  'MK7 Participants': ['mk7_role', 'Teilnahme MK7', 'metering_location_id_MeLo', 'building_id', 'energy_concept_current_step'],
   'Hourly Consumption': ['start_time', 'building_id', 'metering_location_id_MeLo', 'consumption_kwh'],
   'Hourly Generation': ['start_time', 'building_id', 'generation_kwh'],
   'Energy Pricing': ['start_time', 'market_price_eur_kwh', 'retail_price_eur_kwh'],
@@ -98,7 +98,13 @@ function mapWorkbook(workbook) {
     meteringLocationId: text(r, 'metering_location_id_MeLo'), meterNumber: text(r, 'meter_number'),
     importMarketLocationId: text(r, 'market_location_id_import_MaLo'), exportMarketLocationId: text(r, 'market_location_id_export_MaLo'),
     cityPostalCode: text(r, 'city_postal_code'), meteringOperator: text(r, 'metering_operator'), gridOperatorName: text(r, 'grid_operator_name_sap'),
-    meteringSystem: text(r, 'metering_system'), contractStartUtc: timestamp(value(r, 'contract_start_utc')), contractEndUtc: timestamp(value(r, 'contract_end_utc')), buildingId: text(r, 'building_id')
+    meteringSystem: text(r, 'metering_system'), contractStartUtc: timestamp(value(r, 'contract_start_utc')), contractEndUtc: timestamp(value(r, 'contract_end_utc')), buildingId: text(r, 'building_id'),
+    energyConceptCurrentStep: number(r, 'energy_concept_current_step'),
+    energyConceptContactCompleted: boolean(r, 'energy_concept_contact_completed'),
+    energyConceptDataVerified: boolean(r, 'energy_concept_data_verified'),
+    energyConceptAgreementSigned: boolean(r, 'energy_concept_agreement_signed'),
+    energyConceptMeterReady: boolean(r, 'energy_concept_meter_ready'),
+    energyConceptActive: boolean(r, 'energy_concept_active')
   }));
   const consumption = source['Hourly Consumption'].map((r, i) => ({
     ID: `${text(r, 'building_id')}-${text(r, 'metering_location_id_MeLo')}-${text(r, 'start_time')}`,

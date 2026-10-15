@@ -48,7 +48,6 @@ annotate service.Constructs with @(
       { $Type: 'UI.ReferenceFacet', ID: 'Identity', Label: '{i18n>GENERAL}', Target: '@UI.FieldGroup#Identity' },
       { $Type: 'UI.ReferenceFacet', ID: 'Topology', Label: '{i18n>TOPOLOGY}', Target: '@UI.FieldGroup#Topology' }
     ] },
-    { $Type: 'UI.ReferenceFacet', ID: 'Energy', Label: '{i18n>HOURLY_ENERGY}', Target: 'hourlyValues/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'Payments', Label: '{i18n>PAYMENTS}', Target: 'payments/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'Warnings', Label: '{i18n>DATA_QUALITY}', Target: 'sourceIssues/@UI.LineItem' },
     { $Type: 'UI.ReferenceFacet', ID: 'Contract', Label: '{i18n>CONTRACT_SOURCE}', Target: '@UI.FieldGroup#Contract' }
@@ -80,3 +79,79 @@ annotate service.PortfolioSummary with @(
     { Value: generationKwh, Label: '{i18n>GENERATION_KWH}' }, { Value: localCoveragePercent, Label: '{i18n>LOCAL_COVERAGE}' }
   ]
 );
+
+annotate service.Buildings with @(
+  UI.HeaderInfo: { TypeName: '{i18n>BUILDING}', TypeNamePlural: '{i18n>BUILDINGS}', Title: { Value: ID }, Description: { Value: streetAddress } },
+  UI.SelectionFields: [ID, city, operatorName, productionTypes],
+  UI.PresentationVariant: { SortOrder: [{ Property: city, Descending: false }], Visualizations: ['@UI.LineItem'] },
+  UI.LineItem: [
+    { Value: ID, Label: '{i18n>BUILDING}' }, { Value: city, Label: '{i18n>CITY}' },
+    { Value: streetAddress, Label: '{i18n>ADDRESS}' }, { Value: productionTypes, Label: '{i18n>PRODUCTION}' },
+    { Value: participatingConsumerCount, Label: '{i18n>PARTICIPATING_CONSUMERS}' },
+    { Value: averageEnergyConceptStep, Label: '{i18n>PROGRESS}' },
+    { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
+    { Value: totalGenerationKwh, Label: '{i18n>GENERATION_KWH}' },
+    { Value: selfSufficiencyPercent, Label: '{i18n>SELF_SUFFICIENCY}' }
+  ],
+  UI.FieldGroup #BuildingSummary: { Data: [
+    { Value: ID, Label: '{i18n>BUILDING}' }, { Value: city, Label: '{i18n>CITY}' },
+    { Value: streetAddress, Label: '{i18n>ADDRESS}' }, { Value: operatorName, Label: '{i18n>OPERATOR}' },
+    { Value: productionTypes, Label: '{i18n>PRODUCTION}' }, { Value: installedCapacityKw, Label: '{i18n>CAPACITY_KW}' }
+  ] },
+  UI.FieldGroup #EnergySummary: { Data: [
+    { Value: consumerCount, Label: '{i18n>CONSUMERS}' }, { Value: participatingConsumerCount, Label: '{i18n>PARTICIPATING_CONSUMERS}' },
+    { Value: averageEnergyConceptStep, Label: '{i18n>PROGRESS}' }, { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
+    { Value: totalGenerationKwh, Label: '{i18n>GENERATION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
+    { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }, { Value: exportKwh, Label: '{i18n>EXPORT_KWH}' },
+    { Value: selfSufficiencyPercent, Label: '{i18n>SELF_SUFFICIENCY}' }
+  ] },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', ID: 'BuildingSummary', Label: '{i18n>GENERAL}', Target: '@UI.FieldGroup#BuildingSummary' },
+    { $Type: 'UI.ReferenceFacet', ID: 'EnergySummary', Label: '{i18n>ENERGY_SUMMARY}', Target: '@UI.FieldGroup#EnergySummary' },
+    { $Type: 'UI.ReferenceFacet', ID: 'Consumers', Label: '{i18n>CONSUMERS}', Target: 'consumers/@UI.LineItem' },
+     { $Type: 'UI.ReferenceFacet', ID: 'Producers', Label: '{i18n>PRODUCERS}', Target: 'producers/@UI.LineItem' }
+  ]
+);
+
+annotate service.BuildingConsumers with @UI.LineItem: [
+  { Value: meLo, Label: '{i18n>MELO}' }, { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' },
+  { Value: participationLabel, Label: '{i18n>MK7_PARTICIPATION}' }, { Value: energyConceptCurrentStep, Label: '{i18n>PROGRESS}' },
+  { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
+  { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }
+];
+
+annotate service.BuildingProducers with @UI.LineItem: [
+  { Value: productionType, Label: '{i18n>PRODUCTION}' }, { Value: marketLocationIdentifier, Label: '{i18n>MALO}' },
+  { Value: installedCapacityKw, Label: '{i18n>CAPACITY_KW}' }, { Value: generationKwh, Label: '{i18n>GENERATION_KWH}' },
+  { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' }, { Value: exportKwh, Label: '{i18n>EXPORT_KWH}' }
+];
+
+annotate service.BuildingHourlyEnergy with @UI.LineItem: [
+  { Value: hourLabel, Label: '{i18n>HOUR}' }, { Value: consumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
+  { Value: generationKwh, Label: '{i18n>GENERATION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
+  { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }, { Value: exportKwh, Label: '{i18n>EXPORT_KWH}' }
+];
+
+annotate service.ConstructHourlyValues with @UI.Chart #Trend: {
+  ChartType: #Line,
+  Title: '{i18n>ENERGY_TREND}',
+  Dimensions: [startTime],
+  DimensionAttributes: [{ Dimension: startTime, Role: #Category }],
+  Measures: [consumptionKwh, generationKwh, localAllocationKwh, residualGridKwh, exportKwh],
+  MeasureAttributes: [
+    { Measure: consumptionKwh, Role: #Axis1 }, { Measure: generationKwh, Role: #Axis1 },
+    { Measure: localAllocationKwh, Role: #Axis1 }, { Measure: residualGridKwh, Role: #Axis1 }, { Measure: exportKwh, Role: #Axis1 }
+  ]
+};
+
+annotate service.BuildingHourlyEnergy with @UI.Chart #Trend: {
+  ChartType: #Line,
+  Title: '{i18n>ENERGY_TREND}',
+  Dimensions: [startTime],
+  DimensionAttributes: [{ Dimension: startTime, Role: #Category }],
+  Measures: [consumptionKwh, generationKwh, localEnergyKwh, residualGridKwh, exportKwh],
+  MeasureAttributes: [
+    { Measure: consumptionKwh, Role: #Axis1 }, { Measure: generationKwh, Role: #Axis1 },
+    { Measure: localEnergyKwh, Role: #Axis1 }, { Measure: residualGridKwh, Role: #Axis1 }, { Measure: exportKwh, Role: #Axis1 }
+  ]
+};
