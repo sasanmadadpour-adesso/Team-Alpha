@@ -4,7 +4,7 @@
 
 ## 0. Mission: deliver a working presentation MVP
 
-Build a **local, SAP-oriented, German-language web application** called **MK7 Control Center**. It simulates the business process **„Umstellung auf ruhende MaLo“** (dormant market location) and its lifecycle around a virtual summation meter (**vSZ**). The user develops in **VS Code with OpenCode**, wants fast agent-driven implementation, and has one source workbook, `Datensatz_Deutsch.xlsx`.
+Build a **local, SAP-oriented, English-language web application** called **MK7 Control Center**. It simulates the business process **„Umstellung auf ruhende MaLo“** (dormant market location) and its lifecycle around a virtual summation meter (**vSZ**). The user develops in **VS Code with OpenCode**, wants fast agent-driven implementation, and has one source workbook, `Datensatz_Deutsch.xlsx`.
 
 **Make something that actually works**, not a collection of beautiful hardcoded mockups. The presentation must include:
 
@@ -15,7 +15,7 @@ Build a **local, SAP-oriented, German-language web application** called **MK7 Co
 5. **MeMa/MaMa** expected-versus-observed reconciliation with valid time slices.
 6. Both single-request **manual** and multi-request **automatic batch** execution through the SAME backend engine.
 7. Persistent simulated state, immutable audit events, repeat-safe processing, error/review states, a **Reset Demo** control, and executable tests with honest PASS/FAIL results.
-8. Clear **`SIMULATION — KEINE SAP-VERBINDUNG`** labeling everywhere a viewer could mistake the demo for real SAP.
+8. Clear **`SIMULATION — NO SAP CONNECTION`** labeling everywhere a viewer could mistake the demo for real SAP.
 
 **Finish a running vertical slice first**: import data → display it → preview one MaLo → execute simulated Ruhendstellung → refresh and see persisted state. Then add remaining features incrementally. The user has a tight self-imposed working session; do **not** argue about duration, estimate schedules, or build unnecessary infrastructure. Prioritize a verified end-to-end demo over scope expansion.
 
@@ -277,20 +277,27 @@ Preview and Execute MUST call the **same business validations**. Keep preview pu
 - `ERROR`: unexpected runtime/storage/validation fault; technical details available in log, no false success.
 - `UNKNOWN`: a **check confidence/result**, not evidence of approval.
 
-Use descriptive German user-facing messages (`MaLo ist in mehreren Gebäuden zugeordnet`, `Keine Reststrom-MaLo vorhanden`, `Zeitscheiben überschneiden sich`, `Marktstatus nicht verifiziert`, etc.). Log machine-readable codes as well as text.
+Use descriptive English user-facing messages (`MaLo is assigned to multiple buildings`, `No residual-supply MaLo exists`, `Time slices overlap`, `Market status is not verified`, etc.). Log machine-readable codes as well as text.
 
-## 7. GUI specification — SAP-inspired, functional, German
+## 7. GUI specification — SAP-inspired, functional, English
 
-Use `@ui5/webcomponents-react` design patterns, a Fiori-inspired light theme, accessible controls, responsive desktop-first layout, and restrained blue/gray/green/status colors. Avoid fake SAP logo/official product endorsements; call it **MK7 Control Center — Simulation**. Use German business terminology consistently.
+Use `@ui5/webcomponents-react` design patterns, a Fiori-inspired light theme, accessible controls, responsive desktop-first layout, and restrained blue/gray/green/status colors. Avoid fake SAP logo/official product endorsements; call it **MK7 Control Center — Simulation**. Use English UI text consistently while preserving canonical German business terms and exact source values where translation would alter source fidelity.
+
+### Language policy
+
+- All project-authored documentation, UI labels, runtime messages, tests, comments, and future repository content MUST be in English.
+- Translate existing project-authored German text to English whenever it is encountered.
+- Do not translate or modify immutable source artifacts, exact workbook sheet/header/cell values, IDs, filenames, quoted procedure labels, or canonical German domain terms when exact fidelity is required.
+- The global safety warning is `SIMULATION — NO SAP CONNECTION`.
 
 ### Required navigation
 
-1. **Übersicht** — true database-driven cards: 3 constructs, 11 household records, 10 eligible rows, 1 globally conflicting MaLo, active/dormant counts; recent runs and obvious `Demo` flag.
+1. **Overview** — true database-driven cards: 3 constructs, 11 household records, 10 eligible rows, 1 globally conflicting MaLo, active/dormant counts; recent runs and obvious `Demo` flag.
 2. **MaLo Explorer** — searchable/filterable table by ID, building, role, participation, business state; select row to view MeLo, Reststrom target, dates, ambiguous-source warning, expected and observed relationships.
-3. **Prozess-Workbench** — choose building/MaLo + operation + Stichtag (+ reason/ref ID for correction/reversal); preview checks; show before/after; enable execute only after valid checks and explicit confirmation. Button labels: `Prüfen`, `Ausführen`, `Wiederaktivieren`, `Korrigieren`, `Rücknehmen` when relevant.
-4. **Automatisierung** — building selector and `Batch starten` for eligible household requests; shared engine, per-MaLo status, progress/results, no overclaim of unattended scheduling. Batch is automatically processed **after button click**, not a 24/7 background job.
-5. **Historie & Protokoll** — request list, outcome, actor (`DEMO_USER`/`DEMO_BATCH`), effective date, actual UTC event timestamp, clear `simulated` provenance, per-step check details, before/after changes, error classification.
-6. **Testcenter** — execute *real domain scenario assertions* against isolated fixtures, report real PASS/FAIL and error details, not preset green badges. Show testcase ID and expectation; isolated test runs must not modify presentation state.
+3. **Process Workbench** — choose building/MaLo + operation + effective date (+ reason/ref ID for correction/reversal); preview checks; show before/after; enable execute only after valid checks and explicit confirmation. Button labels: `Check`, `Execute`, `Reactivate`, `Correct`, `Reverse` when relevant.
+4. **Automation** — building selector and `Start batch` for eligible household requests; shared engine, per-MaLo status, progress/results, no overclaim of unattended scheduling. Batch is automatically processed **after button click**, not a 24/7 background job.
+5. **History & Log** — request list, outcome, actor (`DEMO_USER`/`DEMO_BATCH`), effective date, actual UTC event timestamp, clear `simulated` provenance, per-step check details, before/after changes, error classification.
+6. **Test Center** — execute *real domain scenario assertions* against isolated fixtures, report real PASS/FAIL and error details, not preset green badges. Show testcase ID and expectation; isolated test runs must not modify presentation state.
 
 Five to six pages is fine, but **the main Workbench and Explorer must work first**. Build a real, usable UI rather than placeholders. Avoid massive modal workflows when a clear side panel is sufficient. Include loading, empty, success and error states; keyboard and accessibility basics.
 
@@ -299,9 +306,9 @@ Five to six pages is fine, but **the main Workbench and Explorer must work first
 - All counters computed from the actual current import + simulated status, not hardcoded.
 - Never display `SAP_VERIFIED` in local simulation.
 - Explicit status chips for `ASSUMED_DEMO`, `UNKNOWN`, `BLOCKED`, `REVIEW`, `SIMULATED_SUCCESS`.
-- `Prüfen` does not mutate; `Ausführen` does only when valid.
+- `Check` does not mutate; `Execute` does only when valid.
 - Disable or explain unavailable actions (e.g. real SAP updates) rather than fake execution.
-- `Demo zurücksetzen` requires confirmation; reset shows actual completed action.
+- `Reset demo` requires confirmation; reset shows actual completed action.
 - Refresh retains changes because SQLite is authoritative.
 - All operation outcomes render from actual backend results.
 - Unknown supplier/prerequisite states are visible; demo can use a **user-chosen assumption profile** with unmistakable warning, never a secret bypass.
@@ -341,9 +348,9 @@ Run tests **for real**; show meaningful names and failures. Testcenter must exec
 
 ### Required live demo path
 
-1. Open Übersicht: real input counts and prominent `SIMULATION` badge.
+1. Open Overview: real input counts and prominent `SIMULATION` badge.
 2. Open MaLo Explorer; show building `B-MUL-01` and participation `Ja`/`nein`.
-3. Workbench: MaLo `50539603921` → `Prüfen` → visibly label demo prerequisites/market assumptions → confirm → `Ausführen` → RUHEND in SQLite → refresh to prove persistence.
+3. Workbench: MaLo `50539603921` → `Check` → visibly label demo prerequisites/market assumptions → confirm → `Execute` → RUHEND in SQLite → refresh to prove persistence.
 4. Select `50539603888`: demonstrate identity conflict and **no update**.
 5. Reactivate the first MaLo on a later valid date; show ACTIVE and complete history; optionally correct/reverse a separate safe fixture.
 6. Reset; run `B-MUL-01` batch → **expected 3 successes, 1 skipped**, assuming the explicit mock checks/relationships pass. Do not process ambiguous `50539603888` in a silent happy-path batch.
@@ -416,14 +423,14 @@ Execute in this order. Each stage must pass its gate before moving on. Implement
 - Check Node.js/npm and current repo. Use compatible stable CAP Node.js/TypeScript/SQLite and Vite/React/UI5 dependencies.
 - Scaffold CDS schema, CAP service and a working UI shell.
 - Add `npm run dev` instructions so both API/UI work locally without a cloud account.
-- Show `SIMULATION — KEINE SAP-VERBINDUNG` globally.
+- Show `SIMULATION — NO SAP CONNECTION` globally.
 - **Gate:** both servers start, browser shows shell, CAP health/read route responds, no fatal console errors.
 
 ### Phase B — Import workbook and show truthful data
 
 - Discover/read `Datensatz_Deutsch.xlsx`, map exact columns and Excel serial dates, seed SQLite.
 - Persist source row identity and conflicts.
-- Build Übersicht and MaLo Explorer with real APIs.
+- Build Overview and MaLo Explorer with real APIs.
 - **Gate:** counts match 17 total/3 Reststrom/3 generators/11 households/10 participants/3 buildings; target IDs correct; duplicate MaLo visible.
 
 ### Phase C — First complete Ruhendstellung

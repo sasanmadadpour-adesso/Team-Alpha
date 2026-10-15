@@ -1,6 +1,8 @@
-# Annahmen und Grenzen
+# Assumptions and Limitations
 
-- Phase A enthält ausschließlich das lokale technische Grundgerüst.
-- Es besteht keine SAP-Verbindung. Der SAP-Adapter schlägt absichtlich mit `NOT_CONFIGURED` fehl.
-- Der persistierte Systemstatus ist ein technischer Phase-A-Datensatz, kein Workbook- oder SAP-Geschäftsdatensatz.
-- Workbook-Import und fachliche MaLo-Daten beginnen erst in Phase B.
+- Phase A contains only the local technical foundation.
+- There is no SAP connection. The SAP adapter intentionally fails with `NOT_CONFIGURED`.
+- The persisted system status is a technical Phase A record, not a workbook or SAP business record.
+- The import uses only `MK7 Teilnehmer`; hourly measurements are irrelevant to Phase B.
+- Empty SAP-related source attributes are retained as unverified source data and are not interpreted as successful checks.
+- `supplyStartUtc` is a workbook/demo date, not a confirmed Ruhendstellung effective date.

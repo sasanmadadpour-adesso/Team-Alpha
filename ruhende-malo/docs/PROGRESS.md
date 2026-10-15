@@ -1,46 +1,72 @@
-# Projektfortschritt
+# Project Progress
 
 ## Phase A — Bootstrap
 
-Status: **VERIFIZIERT** am 15.10.2026.
+Status: **VERIFIED** on 2026-10-15.
 
-### Umfang
+### Implemented
 
-- CAP-Backend mit CDS-Modell und OData-V4-Service
-- persistente lokale SQLite-Konfiguration
-- modulare Verzeichnisse für Domain, CAP-Service und Adapter
-- React-/Vite-Shell mit UI5 Web Components
-- Vite-Proxy zum CAP-Backend
-- globaler Warnhinweis `SIMULATION — KEINE SAP-VERBINDUNG`
-- Vitest, TypeScript-Prüfung und Build-Skripte
+- CAP backend with a CDS model and OData V4 service
+- persistent local SQLite configuration
+- modular domain, CAP service, and adapter structure
+- React/Vite shell using UI5 Web Components
+- Vite proxy to the CAP backend
+- global `SIMULATION — NO SAP CONNECTION` warning
+- Vitest, TypeScript, and build scripts
 
-### Ausgeführte Verifikation
+### Executed verification
 
-| Kommando/Prüfung | Ergebnis |
+| Command/check | Result |
 | --- | --- |
-| `npm install` | PASS — 184 Pakete installiert; npm meldet 7 transitive Audit-Funde (4 high, 3 critical), keine automatische Breaking-Change-Korrektur durchgeführt |
-| `npm run deploy:local` | PASS — `db.sqlite` angelegt und `SystemStatuses` aus CSV initialisiert |
-| `npm test` | PASS — 1 Testdatei, 1 Test bestanden |
-| `npm run typecheck` | PASS — Backend- und Frontend-TypeScript ohne Fehler |
-| `npm run build` | PASS — CAP-Produktionsbuild und Vite-Build erfolgreich; Vite meldet lediglich einen Hinweis zur Chunk-Größe der UI5-Ressourcen |
-| `npm run dev` | PASS — CAP auf Port 4004 und Vite auf Port 5173 gestartet |
-| CAP OData `SystemStatuses` | PASS — persistierter Datensatz aus `db.sqlite` gelesen |
-| CAP-Funktion `health()` | PASS — `OK`, `SIMULATION`, `NOT_CONFIGURED` |
-| Vite `/` | PASS — HTML-Shell ausgeliefert |
-| Vite-Proxy `/odata/v4/malo/SystemStatuses` | PASS — OData-Antwort über Frontend-Port erhalten |
+| `npm install` | PASS — 184 packages installed; npm reported 7 transitive audit findings and no breaking automatic fix was applied |
+| `npm run deploy:local` | PASS — created `db.sqlite` and initialized `SystemStatuses` |
+| `npm test` | PASS — 1 test file and 1 test passed at the Phase A gate |
+| `npm run typecheck` | PASS — backend and frontend TypeScript passed |
+| `npm run build` | PASS — CAP and Vite builds passed; Vite only reported a UI5 chunk-size warning |
+| `npm run dev` | PASS — CAP started on port 4004 and Vite on port 5173 |
+| CAP OData `SystemStatuses` | PASS — read the persisted SQLite record |
+| CAP `health()` function | PASS — `OK`, `SIMULATION`, `NOT_CONFIGURED` |
+| Vite proxy | PASS — returned the OData response through the frontend port |
 
-### Gate Phase A
+## Phase B — Workbook and Core Data Model
 
-- [x] CAP startet erfolgreich.
-- [x] SQLite ist persistent auf `db.sqlite` konfiguriert.
-- [x] React/Vite startet erfolgreich.
-- [x] Frontend-API-Pfad erreicht CAP über den Vite-Proxy.
-- [x] Typecheck und Build sind erfolgreich.
-- [x] Warnung `SIMULATION — KEINE SAP-VERBINDUNG` ist global in der App-Shell sichtbar.
+Status: **VERIFIED** on 2026-10-15.
 
-### Bewusst offen nach Phase A
+### Implemented
 
-- Workbook-Import und echte Quelldatensätze (Phase B)
-- Fachliche MaLo-Operationen und Lifecycle-Persistenz (ab Phase C)
-- Optimierung des großen UI5-Frontend-Bundles
-- Bewertung bzw. gezielte Aktualisierung der von `npm audit` gemeldeten transitiven Abhängigkeiten
+- CDS entities for buildings, MaLo, MeLo, source rows, relationships, lifecycle periods, requests, checks, audit events, and import runs
+- idempotent import from `data/source/Datensatz_Deutsch.xlsx`, sheet `MK7 Teilnehmer`
+- string-safe MaLo/MeLo IDs and UTC-stable Excel date conversion
+- dynamically derived residual-supply MaLo for each building
+- visible conflict marker for MaLo `50539603888`
+- read-only OData APIs and a minimal CAP-backed data table
+- source mapping in `docs/DATA_MAPPING.md`
+
+### Executed verification
+
+| Command/check | Result |
+| --- | --- |
+| `npm run import:data` twice | PASS — 17 source rows, 3 buildings, 16 global MaLos, one conflict, no duplicate imports |
+| `npm test` | PASS — 2 test files and 6 tests |
+| `npm run typecheck` | PASS — backend, importer, and frontend |
+| `npm run build` | PASS — CAP and Vite; only the known UI5 chunk warning |
+| OData source-row count | PASS — 17 |
+| OData buildings | PASS — 3 buildings with dynamically derived residual-supply targets |
+| OData conflict filter | PASS — only `50539603888`, with distinct building, MeLo, and target assignments |
+| OData B-MUL households | PASS — 4 records, 3 participating, `50539603604` not participating |
+
+### Phase B acceptance gate
+
+- [x] 17 source rows
+- [x] 3 residual-supply, 3 generation, and 11 household rows
+- [x] 10 participating household rows
+- [x] 3 buildings
+- [x] IDs stored as strings and serial `46296` converted to `2026-10-01`
+- [x] residual-supply targets derived from workbook data
+- [x] ambiguous MaLo assignments remain unresolved and visible
+- [x] actual SQLite contents and API responses verified
+
+### Remaining after Phase B
+
+- preview/execution and relationship reconciliation in Phases C/D
+- lifecycle mutations and audit events

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MK7 Control Center — lokale SAP-CAP-Simulation",
+  "description": "MK7 Control Center — local SAP CAP simulation",
   "workspaces": [
     "app"
   ],
@@ -12,6 +12,7 @@
     "dev:cap": "cds watch",
     "dev:ui": "npm run dev --workspace app",
     "deploy:local": "cds deploy --to sqlite:db.sqlite",
+    "import:data": "tsx scripts/import-workbook.ts",
     "build": "npm run build:cap && npm run build --workspace app",
     "build:cap": "cds build --production",
     "typecheck": "tsc --noEmit && npm run typecheck --workspace app",
@@ -21,7 +22,8 @@
   },
   "dependencies": {
     "@cap-js/sqlite": "^3.1.2",
-    "@sap/cds": "^10.1.1"
+    "@sap/cds": "^10.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@cap-js/cds-types": "^0.20.0",

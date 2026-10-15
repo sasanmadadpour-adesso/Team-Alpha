@@ -4,3 +4,7 @@ body { margin: 0; }
 main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
 .status-card { margin-top: 1rem; padding: 1.25rem; background: white; border: 1px solid #d5dadd; border-radius: .5rem; }
 .error { color: #aa0808; }
+.table-wrap { overflow-x: auto; margin-top: 1rem; background: white; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th, td { padding: .6rem; text-align: left; border-bottom: 1px solid #d5dadd; white-space: nowrap; }
+th { background: #eef2f5; }
