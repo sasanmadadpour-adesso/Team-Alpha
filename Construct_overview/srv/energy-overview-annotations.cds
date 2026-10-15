@@ -23,7 +23,7 @@ annotate service.Constructs with @(
   UI.FieldGroup #Topology: { Data: [
     { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' }, { Value: meLo, Label: '{i18n>SHARED_MELO}' },
     { Value: exportMaLo, Label: '{i18n>EXPORT_MALO}' }, { Value: hasDualMaLo, Label: '{i18n>DUAL_MALO}' },
-    { Value: meteringSystem, Label: '{i18n>METERING_SYSTEM}' }, { Value: meteringOperator, Label: '{i18n>METERING_OPERATOR}' }
+     { Value: meteringSystem, Label: '{i18n>METERING_SYSTEM}' }, { Value: meterNumber, Label: '{i18n>METER_NUMBER}' }, { Value: meteringOperator, Label: '{i18n>METERING_OPERATOR}' }
   ] },
   UI.FieldGroup #Contract: { Data: [
     { Value: mk7Operator, Label: '{i18n>MK7_OPERATOR}' }, { Value: supplyStart, Label: '{i18n>SUPPLY_START}' },

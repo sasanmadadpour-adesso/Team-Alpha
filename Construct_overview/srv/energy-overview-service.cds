@@ -88,7 +88,14 @@ service EnergyOverviewService {
     meLo : String(50);
     city : String(100);
     streetAddress : String(255);
-    meterNumber : String(40);
+     meterNumber : String(40);
+     hasSolar : Boolean;
+     hasWind : Boolean;
+     averageConsumption24hKwh : Decimal(15,3);
+     averageSolarGeneration24hKwh : Decimal(15,3);
+     averageWindGeneration24hKwh : Decimal(15,3);
+     measurementIntervalCount24h : Integer;
+     latestMeasurementTime : Timestamp;
     roleCode : String(30);
     roleLabel : String(80);
     directionCode : String(20);
@@ -126,7 +133,8 @@ service EnergyOverviewService {
     energyConceptActive : Boolean;
     hourlyValues : Association to many ConstructHourlyValues on hourlyValues.constructID = ID;
     payments : Association to many Payments on payments.constructID = ID;
-    sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
+     sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
+     members : Association to many MaLoConnections on members.constructID = ID;
   }
 
   @readonly entity MaLoConnections {
@@ -142,8 +150,9 @@ service EnergyOverviewService {
     isSynthetic : Boolean;
     hasDataWarning : Boolean;
     warningText : String(500);
-    scenarioCode : String(60);
-    constructID : String(100);
+     scenarioCode : String(60);
+     constructID : String(100);
+     targetConstructID : String(100);
   }
 
   @readonly entity TestScenarios {
@@ -215,10 +224,27 @@ service EnergyOverviewService {
     totalGenerationKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
-    exportKwh : Decimal(15,3);
-    selfSufficiencyPercent : Decimal(7,2);
-    consumers : Association to many BuildingConsumers on consumers.buildingID = ID;
-    producers : Association to many BuildingProducers on producers.buildingID = ID;
+     exportKwh : Decimal(15,3);
+     selfSufficiencyPercent : Decimal(7,2);
+     sharedMeterMaLo : String(40);
+     sharedMeterMeLo : String(50);
+     sharedMeterIsReal : Boolean;
+     sharedMeterIsVirtual : Boolean;
+     hasSolar : Boolean;
+     hasWind : Boolean;
+     solarProducerCount : Integer;
+     windProducerCount : Integer;
+     averageConsumption24hKwh : Decimal(15,3);
+     averageSolarGeneration24hKwh : Decimal(15,3);
+     averageWindGeneration24hKwh : Decimal(15,3);
+     consumptionIntervalCount24h : Integer;
+     solarIntervalCount24h : Integer;
+     windIntervalCount24h : Integer;
+     latestMeasurementTime : Timestamp;
+     consumers : Association to many BuildingConsumers on consumers.buildingID = ID;
+     producers : Association to many BuildingProducers on producers.buildingID = ID;
+     solarProducers : Association to many BuildingProducers on solarProducers.buildingID = ID and solarProducers.productionType = 'Solar';
+     windProducers : Association to many BuildingProducers on windProducers.buildingID = ID and windProducers.productionType = 'Wind';
     hourlyEnergy : Association to many BuildingHourlyEnergy on hourlyEnergy.buildingID = ID;
   }
 
@@ -241,7 +267,8 @@ service EnergyOverviewService {
     totalConsumptionKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
-    localEnergySharePercent : Decimal(7,1);
+     localEnergySharePercent : Decimal(7,1);
+     targetConstructID : String(100);
   }
 
   @readonly entity BuildingProducers {
@@ -253,7 +280,8 @@ service EnergyOverviewService {
     generationKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
-    localUtilizationPercent : Decimal(7,1);
+     localUtilizationPercent : Decimal(7,1);
+     targetConstructID : String(100);
   }
 
   @readonly entity BuildingHourlyEnergy {
@@ -282,6 +310,7 @@ service EnergyOverviewService {
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
+    intervalCount : Integer;
   }
 
   @readonly entity BuildingEnergyTrends {
@@ -296,5 +325,6 @@ service EnergyOverviewService {
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
+    intervalCount : Integer;
   }
 }

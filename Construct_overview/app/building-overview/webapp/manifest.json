@@ -30,7 +30,7 @@
       "i18n": { "type": "sap.ui.model.resource.ResourceModel", "settings": { "bundleName": "vnb.constructs.i18n.i18n" } },
       "": { "dataSource": "mainService", "preload": true, "settings": { "operationMode": "Server", "autoExpandSelect": true, "earlyRequests": true, "synchronizationMode": "None" } }
     },
-    "resources": { "css": [{ "uri": "css/style.css" }] },
+    "resources": { "css": [{ "uri": "css/style.css" }, { "uri": "css/building-house.css" }] },
     "routing": {
       "config": {},
       "routes": [
