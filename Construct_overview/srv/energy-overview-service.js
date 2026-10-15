@@ -46,12 +46,12 @@ module.exports = cds.service.impl(function () {
   for (const [entity, property] of Object.entries(derived)) {
     this.on('READ', entity, req => filterRows(calculate(repository.getSnapshot())[property], req));
   }
-  for (const entity of ['Constructs', 'ConstructHourlyValues', 'Payments', 'DataQualityIssues', 'Buildings']) {
+  for (const entity of ['Constructs', 'ConstructHourlyValues', 'Payments', 'DataQualityIssues', 'Buildings', 'MaLoConnections', 'TestScenarios']) {
     this.on('READ', entity, req => {
       const data = vnb();
-      const property = { Constructs: 'constructs', ConstructHourlyValues: 'hourly', Payments: 'payments', DataQualityIssues: 'issues', Buildings: 'buildings' }[entity];
+       const property = { Constructs: 'constructs', ConstructHourlyValues: 'hourly', Payments: 'payments', DataQualityIssues: 'issues', Buildings: 'buildings', MaLoConnections: 'connections', TestScenarios: 'scenarios' }[entity];
       const nav = requestedNavigation(req);
-      const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : data[property];
+       const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : data[property];
       const parentId = req.query?.SELECT?.from?.ref?.find(item => typeof item === 'object' && item.where)?.where?.find(item => item?.val)?.val;
       const rows = parentId ? source.filter(row => row.constructID === parentId || row.ID === parentId) : source;
       return filterRows(rows, req);

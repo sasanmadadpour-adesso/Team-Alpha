@@ -116,9 +116,39 @@ service EnergyOverviewService {
     participationCriticality : Integer;
     warningCriticality : Integer;
     directionLabel : String(80);
+    isSynthetic : Boolean;
+    testScenario : String(60);
     hourlyValues : Association to many ConstructHourlyValues on hourlyValues.constructID = ID;
     payments : Association to many Payments on payments.constructID = ID;
     sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
+  }
+
+  @readonly entity MaLoConnections {
+    key ID : String(150);
+    malo : String(40);
+    meLo : String(50);
+    directionCode : String(20);
+    roleCode : String(30);
+    validFrom : Timestamp;
+    validTo : Timestamp;
+    supplier : String(100);
+    contractReference : String(80);
+    isSynthetic : Boolean;
+    hasDataWarning : Boolean;
+    warningText : String(500);
+    scenarioCode : String(60);
+    constructID : String(100);
+  }
+
+  @readonly entity TestScenarios {
+    key ID : String(60);
+    title : String(160);
+    description : String(500);
+    relationshipShape : String(120);
+    roleCoverage : String(200);
+    readingCoverage : String(200);
+    warningCount : Integer;
+    isSynthetic : Boolean;
   }
 
   @readonly entity ConstructHourlyValues {
