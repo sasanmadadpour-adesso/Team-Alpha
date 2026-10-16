@@ -3,7 +3,7 @@ import { Copy, X } from 'lucide-react';
 import { execute, loadPeriods, preview, resolveIssue, updateSapState, type Case, type CaseIssue, type Operation, type OperationResult, type Period, type Resolution } from '../api';
 import { fmtDate, fmtDateTime, useI18n, type Key } from '../i18n';
 import { confirmDialog } from '../confirm';
-import { StatusChip, ToneIcon, caseHeadline, errorText, primaryIssue, statusLabel, useApp } from '../ui';
+import { StateIcon, StatusChip, ToneIcon, caseHeadline, errorText, primaryIssue, statusLabel, stepUi, useApp } from '../ui';
 
 const STATUS_INPUT: Record<string, { attribute: 'imsys' | 'abmeldung' | 'mcm'; value: string }> = {
   V10: { attribute: 'imsys', value: 'INSTALLED' },
@@ -101,13 +101,16 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
             <h4>{t('case.progress')}</h4>
             <div className="steps-v">
               {c.steps.length === 0 && <p className="subtle">{c.status === 'EXCLUDED' ? c.exclusionReason : t('case.notrun')}</p>}
-              {c.steps.map((s, i) => (
-                <div key={s.id} className={`sv ${s.state}`} style={{ ['--i' as string]: i }} title={s.detail}>
-                  <i>{s.state === 'OK' || s.state === 'DONE' ? '✓' : s.state === 'FAIL' ? '✕' : s.state === 'WAIT' ? '!' : ''}</i>
-                  <span>{t(`step.${s.id}`)}</span>
-                  <small>{t(`stepstate.${s.state}`)}</small>
-                </div>
-              ))}
+              {c.steps.map((s, i) => {
+                const ui = c.status === 'NEW' ? 'todo' : stepUi(s.id, s.state);
+                return (
+                  <div key={s.id} className={`sv sv-${ui}`} style={{ ['--i' as string]: i }} title={c.status === 'NEW' ? '' : s.detail}>
+                    <StateIcon state={ui} size={20} />
+                    <span>{t(`step.${s.id}`)}</span>
+                    <small>{c.status === 'NEW' ? t('state.notrun') : t(`state.${ui}`)}</small>
+                  </div>
+                );
+              })}
             </div>
           </section>
 

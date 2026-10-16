@@ -5,7 +5,7 @@ Everything in this application is a **local simulation**. There is no SAP connec
 ## Scope (solution map "Marktrolle VNB")
 
 - **MVP boxes implemented:** Anmeldung Konstrukt, Prüfung der Daten, Korrektur Daten (manual lane), Konstrukt Übersicht, Umstellung auf ruhende MaLo inkl. MeMa/MaMa.
-- **Aufbau vSZ / Übergabezähler (PDF pp. 2–9):** not implemented. They are represented as a per-construct checklist (steps 1–4.7) that a person must confirm with evidence. They are never confirmed automatically.
+- **Aufbau vSZ (PDF pp. 2–9):** executed by the pipeline in stage 3 **in the simulated SAP**, with the parameters from the PDF, and verified against the data where possible (see `docs/PROCESS_STAGES.md`). Nothing is written to a real SAP system. Step 1 (DSO-DP order) comes from the simulated state; unknown constructs need a confirmation with evidence.
 - **Downstream boxes** (Einzug Reststrom Lieferant UTILMD, Schlussrechnung/Abrechnung INVOIC, Anpassung EDM, Messwertprozesse MSCONS): not implemented. The process records **outbox events** with status `NOT_IMPLEMENTED` as the interface; nothing is sent. Timing:
   - EDM: when a construct passes the vSZ gate.
   - **UTILMD Einzug Reststrom:** only after the first ruhende MaLo of the construct. Grid-operator practice (e.g. Stromnetz Berlin) is that the virtual MaLo is assigned to the Reststrom supplier only after the first ruhende MaLo is confirmed.
@@ -19,7 +19,7 @@ Everything in this application is a **local simulation**. There is no SAP connec
 - **Stichtag** of a construct defaults to the earliest `mk7_versorgungsbeginn_utc` of its participating households (2026-10-01). This is a **demo default**, not a confirmed legal date. It can be changed through `setStichtag`.
 - `vertragsbeginn_utc` / `vertragsende_utc` (2026-10-01 → 2026-10-02 for every row) look like placeholders. They are displayed but not used as the dormancy window.
 - **Baseline business state:** household MaLos start as `ACTIVE` (provenance `BASELINE_ASSUMED_ACTIVE`). The workbook contains no state; ACTIVE is the documented demo assumption.
-- **Simulated SAP state.** iMSys per MeLo (V10), supplier Abmeldung per MaLo (V11), MCM per generator (V09) and the Aufbau vSZ checklist are *not* in the workbook. In a real integration they would be read from SAP IS-U and market communication. For the demo they come from the explicitly labeled fixture `data/fixtures/sap-simulated-state.json`, which is applied on workbook import and reset:
+- **Simulated SAP state.** iMSys per MeLo (V10), supplier Abmeldung per MaLo (V11), MCM per generator (V09) and the Aufbau vSZ checklist are *not* in the workbook. In a real integration they would be read from SAP IS-U and market communication. For the demo they come from the explicitly labeled fixture `data/fixtures/sap-simulated-state.json`. The pipeline **reads** it at run time (audit event `SAP_READ`); nothing is pre-confirmed at import or reset, and only values that are still UNKNOWN are filled:
   - Default: iMSys INSTALLED, Abmeldung CONFIRMED, MCM COMPLETED, vSZ confirmed for all three constructs.
   - Deliberate realistic gaps: Abmeldung **PENDING** for `50539603876`, and **no iMSys** at the MeLo of `50539603103`.
   - Constructs registered through the API or by file upload start with **UNKNOWN** status and are blocked until the status arrives (`POST /updateSapState`) or a person confirms it with a reason.

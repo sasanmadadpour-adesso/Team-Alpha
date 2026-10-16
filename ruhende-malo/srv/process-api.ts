@@ -9,7 +9,7 @@ import { RULES, type Resolution } from './construct/rules.js';
 import type { SwitchItem, SwitchPlan } from './construct/switch-plan.js';
 import { runScenarios } from './construct/scenario-runner.js';
 import { continueProcessing, listCases } from './construct/cases.js';
-import { SAP_VALUES, loadSapFixture, updateSapState, type SapAttribute } from './construct/sap-state.js';
+import { SAP_VALUES, updateSapState, type SapAttribute } from './construct/sap-state.js';
 import { executeLifecycle, planLifecycle } from './construct/lifecycle-ops.js';
 import type { LifecyclePlan } from './domain/lifecycle.js';
 
@@ -202,7 +202,7 @@ export default class ProcessApi extends cds.ApplicationService {
       const tx = cds.tx(req);
       const { rows, checksum } = await readParticipantWorkbook();
       await tx.run(DELETE.from('mk7.controlcenter.AuditEvents'));
-      await registerConstructs(tx, rows, { file: WORKBOOK_PATH.split('/').at(-1)!, checksum, actor: 'RESET' }, { replaceAll: true, sapFixture: await loadSapFixture() });
+      await registerConstructs(tx, rows, { file: WORKBOOK_PATH.split('/').at(-1)!, checksum, actor: 'RESET' }, { replaceAll: true });
       return 'Demo reset: workbook baseline re-registered, simulated state and history cleared. The workbook itself is unchanged.';
     }));
     this.on('runSelfCheck', guard(async () => {

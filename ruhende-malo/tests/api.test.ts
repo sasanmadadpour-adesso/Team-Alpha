@@ -59,15 +59,33 @@ describe('REST API v1 — construct process', () => {
     expect(cases.find((c) => c.maloId === '50539603604')?.status).toBe('NOT_PARTICIPATING');
   });
 
+  it('re-validating without a run does not mark constructs as processed (cases stay NEW)', async () => {
+    await post('Constructs/B-MUL-01/validate');
+    const cases = await get('cases()');
+    expect(cases.filter((c) => c.status === 'NEW').length).toBe(13);
+    expect((await get('Constructs?$select=constructId,validatedAt')).every((c) => !c.validatedAt)).toBe(true);
+  });
+
   it('preview never writes', async () => {
     const before = (await get('ProcessRequests')).length;
     const plan = await post('Constructs/B-MUL-01/previewSwitch');
-    expect(plan.body.code).toBe('READY');
+    expect(plan.body.code).toBe('VSZ_NOT_READY'); // SAP status is only read when the process runs
+    expect((await get('VszChecklist')).every((v) => v.status === 'UNKNOWN')).toBe(true);
     expect((await get('ProcessRequests')).length).toBe(before);
   });
 
-  it('first automatic run: clean MaLos become ruhend at once, problems stop only their MaLo', async () => {
+  it('first automatic run: reads SAP, clean MaLos become ruhend at once, problems stop only their MaLo', async () => {
     const run = await post('processAll');
+    // Stage 3 executes / checks the 10 vSZ steps per construct during the run.
+    const vsz = await get('VszChecklist');
+    const byCode = (c: string, code: string) => vsz.find((v) => v.constructId === c && v.itemCode === code);
+    expect(byCode('B-MUL-01', 'RESTSTROM_MALO')).toMatchObject({ status: 'DONE' });
+    expect(byCode('B-MUL-01', 'RESTSTROM_MALO')?.evidence).toContain('50539603639');
+    expect(byCode('B-MUL-01', 'GERAETEINFOSATZ')?.evidence).toContain('VG-50539603639');
+    expect(byCode('B-MUL-01', 'STECKBRIEFE')).toMatchObject({ status: 'CHECKED' });
+    expect(byCode('B-MUL-01', 'MESSKONZEPT')).toMatchObject({ status: 'CONFIRMED' });
+    expect(byCode('B-CGN-01', 'IMSYS_EINBAU')).toMatchObject({ status: 'PARTIAL' }); // 50539603103 has no iMSys
+    expect((await get("AuditEvents?$filter=operation eq 'VSZ_SETUP'")).length).toBe(3);
     expect(run.body.success).toBe(6);
     for (const m of ['50539603921', '50539603000', '50539603944', '50539603532', '50539603234', '50539603873']) expect(await state(m)).toBe('RUHEND');
     for (const m of ['50539603888', '50539603876', '50539603103', '50539603604']) expect(await state(m)).toBe('ACTIVE');

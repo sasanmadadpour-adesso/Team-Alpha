@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, CircleDashed, Clock, GitFork, Minus, PencilLine, X } from 'lucide-react';
+import type { StepState } from './api';
 import type { Case, CaseIssue, CaseStatus, Snapshot } from './api';
 import { useI18n, type Key } from './i18n';
 
@@ -110,6 +111,37 @@ export function ToneIcon({ tone, size = 18 }: { tone: Tone; size?: number }) {
   return <CircleDashed size={size} strokeWidth={2} />;
 }
 
+/* ---------------- One state system for the whole UI ----------------
+ * Every place that shows a state (card rail, timeline, drawer steps, lists) uses these, so the same
+ * situation always looks and reads the same.
+ */
+export type UiState = 'ok' | 'partial' | 'act' | 'err' | 'wait' | 'planned' | 'todo' | 'na' | 'now';
+
+/** A participant's step state → UI state. Prüfung waits on a decision; prerequisites wait on an outside status. */
+export function stepUi(stepId: string, state: StepState): UiState {
+  if (state === 'OK' || state === 'DONE') return 'ok';
+  if (state === 'TODO') return 'planned';
+  if (state === 'NA') return 'na';
+  if (state === 'SKIP') return 'todo';
+  if (state === 'FAIL') return stepId === 'PREREQ' ? 'wait' : 'err';
+  return stepId === 'PRUEFUNG' ? 'act' : 'wait';
+}
+
+export function StateIcon({ state, size = 24 }: { state: UiState; size?: number }) {
+  const g = Math.round(size * 0.52);
+  const icon = state === 'ok' || state === 'partial' ? <Check size={g} strokeWidth={3} />
+    : state === 'act' ? <GitFork size={g} strokeWidth={2.4} />
+      : state === 'err' ? <PencilLine size={g} strokeWidth={2.4} />
+        : state === 'wait' ? <Clock size={g} strokeWidth={2.4} />
+          : state === 'na' ? <Minus size={g} strokeWidth={2.4} /> : null;
+  return <i className={`st st-${state}`} style={{ ['--s' as string]: `${size}px` }} aria-hidden="true">{icon}</i>;
+}
+
+export function StateChip({ state, label }: { state: UiState; label?: string }) {
+  const { t } = useI18n();
+  return <span className={`chip st-chip st-${state}`}><StateIcon state={state} size={14} />{label ?? t(`state.${state}`)}</span>;
+}
+
 /* ---------------- Progress ring ---------------- */
 export function Ring({ value, total }: { value: number; total: number }) {
   const r = 21, c = 2 * Math.PI * r;
@@ -124,44 +156,76 @@ export function Ring({ value, total }: { value: number; total: number }) {
   );
 }
 
-/* ---------------- Process rail (5 stages from the solution map) ---------------- */
-export type RailState = 'ok' | 'wait' | 'act' | 'now' | 'todo';
-export function Rail({ nodes, running }: { nodes: { label: string; state: RailState }[]; running?: boolean }) {
-  const done = nodes.filter((n) => n.state === 'ok').length;
-  const width = nodes.length > 1 ? (Math.max(0, done - 1) / (nodes.length - 1)) * 80 : 0;
+/* ---------------- Process rail: the 6 stages (solution map + PDF + FRs) ---------------- */
+export type RailState = UiState;
+export interface RailNode { id: string; label: string; state: RailState; count: string; hint: string }
+export const STAGES = ['ANMELDUNG', 'PRUEFUNG', 'VSZ', 'PREREQ', 'UMSTELLUNG', 'UEBERGABE'] as const;
+
+export function Rail({ nodes, running }: { nodes: RailNode[]; running?: boolean }) {
+  const n = nodes.length;
+  let reached = 0;
+  while (reached < n && nodes[reached].state === 'ok') reached++;
+  const span = 100 - 100 / n;
+  const width = n > 1 ? (Math.max(0, reached - 1) / (n - 1)) * span : 0;
   return (
-    <div className={`rail ${running ? 'running' : ''}`}>
+    <div className="rail-wrap">
+    <div className={`rail ${running ? 'running' : ''}`} style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, ['--edge' as string]: `${50 / n}%` }}>
       <div className="rail-fill" style={{ width: `${width}%` }} />
-      {nodes.map((n) => (
-        <div key={n.label} className={`rail-node ${n.state}`}>
-          <i>{n.state === 'ok' ? <Check size={13} strokeWidth={3} /> : n.state === 'act' ? <GitFork size={12} strokeWidth={2.4} /> : n.state === 'wait' ? <Clock size={12} strokeWidth={2.4} /> : null}</i>
-          <span>{n.label}</span>
+      {nodes.map((node) => (
+        <div key={node.id} className={`rail-node ${node.state}`} title={`${node.hint}${node.count && node.count !== '–' ? ` (${node.count})` : ''}`}>
+          <StateIcon state={node.state} size={24} />
+          <span>{node.label}</span>
         </div>
       ))}
+    </div>
     </div>
   );
 }
 
-/** Stage states of a construct, derived from its cases and checklist (same truth as the case list). */
-export function constructRail(t: (k: Key | string) => string, data: Snapshot, constructId: string, running = false) {
+/** Stage states and counters of a construct, derived from the same live cases as every other view. */
+export function constructRail(t: (k: Key | string, p?: Record<string, string | number>) => string, data: Snapshot, constructId: string, running = false, reveal?: number) {
   const cases = data.cases.filter((c) => c.constructId === constructId);
   const c = data.constructs.find((x) => x.constructId === constructId)!;
   const validated = !!c.validatedAt;
-  const participating = cases.filter((x) => x.kind === 'HOUSEHOLD' && !['EXCLUDED', 'NOT_PARTICIPATING'].includes(x.status));
-  const done = participating.filter((x) => x.status === 'DONE').length;
-  const open = cases.some((x) => ['DECISION', 'CORRECTION'].includes(x.status));
-  const waiting = cases.some((x) => x.status === 'WAITING');
+  const participants = cases.filter((x) => !['EXCLUDED', 'NOT_PARTICIPATING'].includes(x.status));
+  const households = participants.filter((x) => x.kind === 'HOUSEHOLD');
+  const done = households.filter((x) => x.status === 'DONE').length;
+  const items = openItems(data.cases).filter((w) => (w.issue?.constructIds.split(',') ?? [w.c.constructId]).includes(constructId));
+  const findings = items.filter((w) => w.category === 'DECISION' || w.category === 'CORRECTION').length;
   const vszOk = c.vszConfirmed === c.vszTotal;
-  const handover = data.outbox.some((e) => e.constructId === constructId);
-  const nodes: { label: string; state: RailState }[] = [
-    { label: t('stage.ANMELDUNG'), state: 'ok' },
-    { label: t('stage.PRUEFUNG'), state: running && !validated ? 'now' : !validated ? 'todo' : open ? 'act' : 'ok' },
-    { label: t('stage.VSZ'), state: vszOk ? (validated ? 'ok' : 'todo') : 'wait' },
-    { label: t('stage.UMSTELLUNG'), state: running ? 'now' : participating.length && done === participating.length ? 'ok' : done > 0 ? (waiting ? 'wait' : 'act') : 'todo' },
-    { label: t('stage.UEBERGABE'), state: handover && done === participating.length ? 'ok' : handover ? 'wait' : 'todo' },
+  const hint = (i: number) => `${t(`stage.${STAGES[i - 1]}`)} — ${t(`stage.${i}.what`)}`;
+
+  /**
+   * A stage is judged only by what happens IN that stage, aggregated over the participants' own step states
+   * (the same steps the case drawer shows). Participants stopped in an earlier stage don't make it look untouched.
+   */
+  const STEP_IDS: Record<string, string[]> = { PRUEFUNG: ['PRUEFUNG'], PREREQ: ['PREREQ'], UMSTELLUNG: ['MEMA', 'MAMA', 'RUHEND'], UEBERGABE: ['UEBERGABE'] };
+  const stage = (id: string): { state: RailState; count: string } => {
+    if (!validated) return { state: running ? 'now' : 'todo', count: '–' };
+    let relevant = 0, passed = 0, act = 0, wait = 0;
+    for (const x of participants) {
+      const st = x.steps.filter((s) => STEP_IDS[id].includes(s.id) && s.state !== 'NA').map((s) => s.state);
+      if (!st.length) continue;
+      relevant++;
+      if (st.includes('FAIL')) act++;
+      else if (st.includes('WAIT')) wait++;
+      else if (st.every((v) => v === 'OK' || v === 'DONE')) passed++;
+    }
+    const state: RailState = act ? 'act' : wait ? 'wait' : relevant === 0 || passed === relevant ? 'ok' : passed > 0 ? 'partial' : 'todo';
+    return { state, count: relevant ? `${passed}/${relevant}` : '–' };
+  };
+  const pruefung = stage('PRUEFUNG'), prereq = stage('PREREQ'), umst = stage('UMSTELLUNG'), ueb = stage('UEBERGABE');
+  const nodes: RailNode[] = [
+    { id: 'ANMELDUNG', label: t('rail.ANMELDUNG'), state: validated ? 'ok' : running ? 'now' : 'todo', count: String(cases.length), hint: hint(1) },
+    { id: 'PRUEFUNG', label: t('rail.PRUEFUNG'), state: pruefung.state === 'wait' || (findings && pruefung.state === 'ok') ? 'act' : pruefung.state, count: pruefung.count, hint: hint(2) },
+    { id: 'VSZ', label: t('rail.VSZ'), state: !validated ? (running ? 'now' : 'todo') : vszOk ? 'ok' : 'wait', count: `${c.vszConfirmed}/${c.vszTotal}`, hint: hint(3) },
+    { id: 'PREREQ', label: t('rail.PREREQ'), state: prereq.state === 'act' ? 'wait' : prereq.state, count: prereq.count, hint: hint(4) }, // prerequisites wait for an external status
+    { id: 'UMSTELLUNG', label: t('rail.UMSTELLUNG'), state: umst.state, count: umst.count, hint: hint(5) },
+    { id: 'UEBERGABE', label: t('rail.UEBERGABE'), state: ueb.state, count: ueb.count, hint: hint(6) },
   ];
-  const openCount = openItems(data.cases).filter((w) => (w.issue?.constructIds.split(',') ?? [w.c.constructId]).includes(constructId)).length;
-  return { nodes, done, total: participating.length, open: openCount };
+  // Playback: stages before `reveal` show their real result, the current one is running, later ones wait.
+  const shown: RailNode[] = reveal === undefined ? nodes : nodes.map((n, i) => (i < reveal ? n : i === reveal ? { ...n, state: 'now' as UiState, count: '…' } : { ...n, state: 'todo' as UiState, count: '–' }));
+  return { nodes: shown, done, total: households.length, open: items.length, items, validated, handover: data.outbox.filter((e) => e.constructId === constructId).length };
 }
 
 /* ---------------- Toasts ---------------- */

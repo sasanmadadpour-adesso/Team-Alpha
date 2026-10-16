@@ -16,7 +16,7 @@ export function eventConstructs(e: AuditEvent, data: Snapshot): string[] {
 
 /** What an entry is about: the construct for construct events, otherwise the MaLo. */
 export function eventSubject(e: AuditEvent, data: Snapshot): string {
-  if (e.operation === 'REGISTER_CONSTRUCT' || e.operation === 'CONFIRM_VSZ') return eventConstructs(e, data)[0] ?? '';
+  if (['REGISTER_CONSTRUCT', 'CONFIRM_VSZ', 'SAP_READ', 'VSZ_SETUP'].includes(e.operation)) return eventConstructs(e, data)[0] ?? '';
   return e.maloId ?? '';
 }
 
@@ -38,7 +38,7 @@ export function HistoryList({ events, limit = 8 }: { events: AuditEvent[]; limit
           <li key={e.ID} style={{ ['--i' as string]: i, cursor: c ? 'pointer' : 'default' }} onClick={() => c && openCase(c.caseId)}>
             <span className={`ic ${tn}`}>{tn === 'ok' ? <Check size={12} strokeWidth={3} /> : tn === 'act' ? <GitFork size={12} /> : <span className="pip" />}</span>
             <div>
-              <span className={e.maloId && e.operation !== 'REGISTER_CONSTRUCT' ? 'mono' : ''}>{eventSubject(e, data)}</span> {t(`act.${e.operation}`)}
+              <span className={e.maloId ? 'mono' : ''}>{eventSubject(e, data)}</span> {t(`act.${e.operation}`)}
               <small>{actor(e.actor)} · {relTime(lang, e.eventTime)}</small>
             </div>
           </li>
@@ -103,7 +103,7 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
                 <tr key={e.ID} onClick={() => c && openCase(c.caseId)} className={c ? 'link' : ''}>
                   <td title={relTime(lang, e.eventTime)}>{fmtDateTime(lang, e.eventTime)}</td>
                   <td><span className={`chip ${tone(e.operation) || 'neutral'}`}>{t(`act.${e.operation}`)}</span></td>
-                  <td className={e.maloId && e.operation !== 'REGISTER_CONSTRUCT' ? 'mono' : ''}>{eventSubject(e, data)}</td>
+                  <td className={e.maloId ? 'mono' : ''}>{eventSubject(e, data)}</td>
                   <td>{actor(e.actor)}</td>
                   <td className="why">{e.operation === 'SET_DORMANT' || e.operation === 'VALIDATE' ? '' : e.reason}</td>
                 </tr>

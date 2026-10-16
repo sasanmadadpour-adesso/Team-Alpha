@@ -2,7 +2,6 @@ import cds from '@sap/cds';
 import { ROLES, type ParticipantRow } from '../../scripts/workbook.js';
 import { VSZ_ITEMS } from './vsz.js';
 import { refreshConstructs } from './service.js';
-import { applySapFixture, type SapFixture } from './sap-state.js';
 
 /** Step S1 — Anmeldung Konstrukt. One code path for Excel import and JSON registration. */
 const ns = (name: string) => `mk7.controlcenter.${name}`;
@@ -46,7 +45,7 @@ export function defaultStichtag(rows: ParticipantRow[]): string | undefined {
  * Registers (or re-registers) constructs. Replaces the source rows and process state of the given
  * constructs; audit history is append-only and kept. `replaceAll` wipes every construct first (workbook baseline).
  */
-export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[], source: RegistrationSource, options: { replaceAll?: boolean; stichtag?: string; sapFixture?: SapFixture } = {}): Promise<RegistrationResult> {
+export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[], source: RegistrationSource, options: { replaceAll?: boolean; stichtag?: string } = {}): Promise<RegistrationResult> {
   const constructIds = [...new Set(rows.map((r) => r.buildingId))];
   const now = new Date().toISOString();
   const scope = options.replaceAll ? {} : { constructId: { in: constructIds } };
@@ -118,7 +117,6 @@ export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[]
     sourceFile: source.file, sourceChecksum: source.checksum, startedAt: now, completedAt: now, status: 'SUCCESS',
     totalRows: rows.length, buildingCount: constructIds.length, conflictCount: conflicted.length, message: `Registered ${constructIds.join(', ')}`,
   }));
-  if (options.sapFixture) await applySapFixture(tx, constructIds, options.sapFixture);
   await refreshConstructs(tx);
   const households = rows.filter((r) => r.role === ROLES.household);
   return { constructIds, rows: rows.length, households: households.length, participating: households.filter((r) => r.participates).length };

@@ -19,5 +19,12 @@ export const VSZ_ITEMS: VszItem[] = [
 ];
 
 export interface ChecklistState { itemCode: string; status: string }
-export const vszComplete = (items: ChecklistState[]) => items.length === VSZ_ITEMS.length && items.every((i) => i.status === 'CONFIRMED');
-export const vszMissing = (items: ChecklistState[]) => VSZ_ITEMS.filter((v) => items.find((i) => i.itemCode === v.itemCode)?.status !== 'CONFIRMED');
+/**
+ * Step outcome: DONE = executed by the pipeline in the simulated SAP · CHECKED = verified against the data ·
+ * PARTIAL = verified, remainder handled per MaLo (stage 4) · CONFIRMED = confirmed by a person/external status ·
+ * UNKNOWN = no information yet · MISSING = verified and not fulfilled.
+ */
+export const VSZ_PASSED = ['DONE', 'CHECKED', 'PARTIAL', 'CONFIRMED'];
+export const vszPassed = (status: string) => VSZ_PASSED.includes(status);
+export const vszComplete = (items: ChecklistState[]) => items.length === VSZ_ITEMS.length && items.every((i) => vszPassed(i.status));
+export const vszMissing = (items: ChecklistState[]) => VSZ_ITEMS.filter((v) => !vszPassed(items.find((i) => i.itemCode === v.itemCode)?.status ?? 'UNKNOWN'));

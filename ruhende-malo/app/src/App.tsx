@@ -9,6 +9,7 @@ import { ConstructPage } from './pages/Construct';
 import { CasesPage } from './pages/Cases';
 import { ApiPage } from './pages/ApiPage';
 import { ProtokollPage } from './pages/Protokoll';
+import { StagesPage } from './pages/Stages';
 import { CaseDrawer } from './pages/CaseDrawer';
 import './styles.css';
 
@@ -65,7 +66,7 @@ export default function App() {
     if (file.current) file.current.value = '';
   };
 
-  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/api') ? 'api' : 'overview';
+  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/api') ? 'api' : route.startsWith('/ablauf') ? 'stages' : 'overview';
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
   const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
 
@@ -115,6 +116,7 @@ export default function App() {
               {section === 'overview' && !constructId && <OverviewPage />}
               {constructId && <ConstructPage constructId={decodeURIComponent(constructId)} />}
               {section === 'cases' && <CasesPage />}
+              {section === 'stages' && <StagesPage />}
               {section === 'log' && <ProtokollPage initialConstruct={logConstruct} />}
               {section === 'api' && <ApiPage />}
             </div>

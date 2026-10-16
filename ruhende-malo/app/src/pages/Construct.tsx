@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowLeft, Check, ChevronDown, Clock, Download, GitFork, Play, Sun, Wind, Home } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Download, Play, Sun, Wind, Home } from 'lucide-react';
 import { confirmVsz, processConstruct, type Case, type Relationship } from '../api';
 import { fmtDate, useI18n } from '../i18n';
-import { NEEDS_ATTENTION, StatusChip, caseHeadline, errorText, useApp } from '../ui';
+import { NEEDS_ATTENTION, StateChip, StateIcon, StatusChip, caseHeadline, constructRail, errorText, stepUi, useApp, type UiState } from '../ui';
 import { HistoryList, eventConstructs } from './Protokoll';
 
-type StepTone = 'ok' | 'wait' | 'act' | 'todo';
+type StepTone = UiState;
 
 export function ConstructPage({ constructId }: { constructId: string }) {
   const { data, refresh, toast, openCase, go } = useApp();
@@ -24,7 +24,6 @@ export function ConstructPage({ constructId }: { constructId: string }) {
   const generators = cases.filter((x) => x.kind === 'GENERATOR' && x.status !== 'EXCLUDED');
   const findings = new Set(cases.flatMap((x) => x.issues.map((i) => i.ID))).size;
   const relsOf = (ctx: string) => rels.filter((r) => r.context === ctx);
-  const memaTone = (n: number, expected: number): StepTone => (n === 0 ? 'todo' : n >= expected ? 'ok' : 'wait');
 
   const cont = async () => {
     setBusy(true);
@@ -32,17 +31,30 @@ export function ConstructPage({ constructId }: { constructId: string }) {
     setBusy(false);
   };
 
-  const steps: { key: string; title: string; ref?: string; sub: string; tone: StepTone; detail?: ReactNode }[] = [
-    { key: 'anm', title: t('co.s.anmeldung'), sub: t('co.s.anmeldung.d', { rows: cases.length + 1, src: 'MK7 Teilnehmer', hh: households.length, part: participating.length }), tone: 'ok' },
-    { key: 'pru', title: t('co.s.pruefung'), sub: !c.validatedAt ? t('co.s.pruefung.not') : findings ? t('co.s.pruefung.open', { n: findings }) : t('co.s.pruefung.ok'), tone: !c.validatedAt ? 'todo' : findings ? 'act' : 'ok',
+  const rail = constructRail(t, data, constructId);
+  const stage = (id: string) => rail.nodes.find((n) => n.id === id)!;
+  const tone = (id: string): StepTone => stage(id).state;
+  const prereqOf = (x: Case) => x.steps.find((st) => st.id === 'PREREQ');
+  const prereqCases = participating.concat(generators).filter((x) => x.steps.length);
+  const prereqOk = prereqCases.filter((x) => ['OK', 'DONE'].includes(prereqOf(x)?.state ?? '')).length;
+
+  const steps: { key: string; n: number; title: string; ref?: string; sub: string; tone: StepTone; detail?: ReactNode }[] = [
+    { key: 'anm', n: 1, title: t('co.s.anmeldung'), sub: `${c.validatedAt ? t('co.s.anmeldung.ok') : t('co.s.anmeldung.in')} · ${t('co.s.anmeldung.d', { rows: cases.length + 1, src: 'MK7 Teilnehmer', hh: households.length, part: participating.length })}`, tone: tone('ANMELDUNG') },
+    { key: 'pru', n: 2, title: t('stage.PRUEFUNG'), sub: !c.validatedAt ? t('co.s.pruefung.not') : findings ? t('co.s.pruefung.open', { n: findings }) : t('co.s.pruefung.ok'), tone: tone('PRUEFUNG'),
       detail: findings ? <IssueList cases={cases.filter((x) => x.issues.length)} /> : undefined },
-    { key: 'vsz', title: t('co.s.vsz'), ref: 'PDF 1–4.7', sub: t('co.s.vsz.d', { done: c.vszConfirmed, total: c.vszTotal }), tone: c.vszConfirmed === c.vszTotal ? 'ok' : 'wait',
+    { key: 'vsz', n: 3, title: t('co.s.vsz'), ref: t('vsz.ref'), sub: c.validatedAt ? t('co.s.vsz.d', { done: c.vszConfirmed, total: c.vszTotal }) : t('co.s.vsz.notread'), tone: tone('VSZ'),
       detail: <VszDetail items={vsz} onConfirm={async (ev) => { await confirmVsz(constructId, ev); await refresh(); toast(t('toast.vsz')); }} /> },
-    { key: 'mema', title: t('co.s.mema'), ref: '§6.1', sub: t('co.s.mema.d', { n: relsOf('HOUSEHOLD_MEMA').length }), tone: memaTone(relsOf('HOUSEHOLD_MEMA').length, participating.length), detail: <RelList rels={relsOf('HOUSEHOLD_MEMA')} /> },
-    { key: 'mama', title: t('co.s.mama'), ref: '§6.2', sub: t('co.s.mama.d', { n: relsOf('MAMA').length }), tone: memaTone(relsOf('MAMA').length, participating.length), detail: <RelList rels={relsOf('MAMA')} /> },
-    { key: 'ein', title: t('co.s.einspeise'), ref: '§6.3', sub: t('co.s.einspeise.d', { n: relsOf('EINSPEISE_MEMA').length }), tone: generators.length === 0 ? 'ok' : generators.every((g) => g.status === 'DONE') ? 'ok' : relsOf('EINSPEISE_MEMA').length ? 'wait' : generators.some((g) => NEEDS_ATTENTION.includes(g.status)) ? 'act' : 'todo', detail: <RelList rels={relsOf('EINSPEISE_MEMA')} /> },
-    { key: 'ruh', title: t('co.s.ruhend'), sub: t('co.s.ruhend.d', { done, total: participating.length }), tone: participating.length && done === participating.length ? 'ok' : done ? 'wait' : 'todo' },
-    { key: 'ueb', title: t('co.s.uebergabe'), ref: '§5', sub: t('co.s.uebergabe.d', { n: outbox.length }), tone: outbox.length ? (done === participating.length ? 'ok' : 'wait') : 'todo',
+    { key: 'pre', n: 4, title: t('co.s.prereq'), ref: 'FR-09 · FR-11', sub: c.validatedAt ? t('co.s.prereq.d', { ok: prereqOk, total: prereqCases.length }) : t('co.s.prereq.pending'), tone: tone('PREREQ'),
+      detail: c.validatedAt ? <PrereqList cases={prereqCases} /> : undefined },
+    { key: 'sw', n: 5, title: t('co.s.switch'), ref: '§6.1–6.3', sub: t('co.s.switch.d', { done, total: participating.length, mema: relsOf('HOUSEHOLD_MEMA').length, mama: relsOf('MAMA').length, ein: relsOf('EINSPEISE_MEMA').length }), tone: tone('UMSTELLUNG'),
+      detail: (
+        <div style={{ display: 'grid', gap: 14 }}>
+          <div><h4 className="sub-h">{t('co.s.mema')} <span className="ref">{t('co.s.mema.d', { n: relsOf('HOUSEHOLD_MEMA').length })}</span></h4><RelList rels={relsOf('HOUSEHOLD_MEMA')} /></div>
+          <div><h4 className="sub-h">{t('co.s.mama')} <span className="ref">{t('co.s.mama.d', { n: relsOf('MAMA').length })}</span></h4><RelList rels={relsOf('MAMA')} /></div>
+          <div><h4 className="sub-h">{t('co.s.einspeise')} <span className="ref">{t('co.s.einspeise.d', { n: relsOf('EINSPEISE_MEMA').length })}</span></h4><RelList rels={relsOf('EINSPEISE_MEMA')} /></div>
+        </div>
+      ) },
+    { key: 'ueb', n: 6, title: t('co.s.uebergabe'), ref: '§5', sub: t('co.s.uebergabe.d', { n: outbox.length }), tone: tone('UEBERGABE'),
       detail: <Handover events={outbox} rels={rels} constructId={constructId} /> },
   ];
 
@@ -67,6 +79,7 @@ export function ConstructPage({ constructId }: { constructId: string }) {
 
       <div className="co-layout">
         <section className="card timeline" aria-label={t('co.timeline')}>
+          <div className="plist-group" style={{ padding: '12px 20px 4px' }}><span>{t('co.timeline')}</span><a href="#/ablauf">{t('stages.title')} →</a></div>
           {steps.map(({ key, ...s }, i) => <TimelineStep key={key} i={i} {...s} linkOk={s.tone === 'ok' && steps[i + 1]?.tone === 'ok'} />)}
         </section>
         <section className="card plist" aria-label={t('co.participants')}>
@@ -84,17 +97,18 @@ export function ConstructPage({ constructId }: { constructId: string }) {
   );
 }
 
-function TimelineStep({ i, title, ref, sub, tone, detail, linkOk }: { i: number; title: string; ref?: string; sub: string; tone: StepTone; detail?: ReactNode; linkOk: boolean }) {
+function TimelineStep({ i, n, title, ref, sub, tone, detail, linkOk }: { i: number; n: number; title: string; ref?: string; sub: string; tone: StepTone; detail?: ReactNode; linkOk: boolean }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(tone === 'act' || tone === 'wait');
-  const icon = tone === 'ok' ? <Check size={14} strokeWidth={3} /> : tone === 'act' ? <GitFork size={13} /> : tone === 'wait' ? <Clock size={13} /> : null;
   return (
     <div className={`tl-step ${tone} ${linkOk ? 'link-ok' : ''}`} style={{ ['--i' as string]: i }}>
-      <div><div className="tl-icon">{icon}</div></div>
+      <div><div className="tl-icon"><StateIcon state={tone} size={28} /></div></div>
       <div className="tl-body">
         <div className="tl-head" onClick={() => detail && setOpen(!open)} role={detail ? 'button' : undefined} aria-expanded={detail ? open : undefined}>
           <div>
-            <h3>{title}{ref && <span className="ref">{ref}</span>}</h3>
+            <h3><span className="stage-no">{n}</span>{title}{ref && <span className="ref">{ref}</span>}</h3>
             <div className="tl-sub">{sub}</div>
+            <div className="tl-what">{t(`stage.${n}.what`)}</div>
           </div>
           {detail && <ChevronDown size={18} className={`chev ${open ? 'open' : ''}`} />}
         </div>
@@ -116,6 +130,25 @@ export function ParticipantRow({ c, i, onOpen }: { c: Case; i: number; onOpen: (
         <small>{NEEDS_ATTENTION.includes(c.status) ? head.title : t(`role.${c.role}`)}</small>
       </div>
       <StatusChip c={c} />
+    </div>
+  );
+}
+
+function PrereqList({ cases }: { cases: Case[] }) {
+  const { t } = useI18n();
+  const { openCase } = useApp();
+  return (
+    <div className="rel-list">
+      {cases.map((x) => {
+        const st = x.steps.find((s) => s.id === 'PREREQ')?.state ?? 'SKIP';
+        const ui = stepUi('PREREQ', st);
+        return (
+          <button key={x.caseId} className="rel-row" style={{ gridTemplateColumns: 'minmax(0,1fr) auto', textAlign: 'left' }} onClick={() => openCase(x.caseId)}>
+            <span><span className="mono">{x.maloId}</span> · {t(`role.${x.role}`)}{['WAIT', 'FAIL'].includes(st) ? ` · ${caseHeadline(t, x).title}` : ''}</span>
+            <StateChip state={ui} />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -151,21 +184,29 @@ function RelList({ rels }: { rels: Relationship[] }) {
   );
 }
 
-function VszDetail({ items, onConfirm }: { items: { ID: string; step: string; label: string; status: string; confirmedBy: string | null; pdfPage: string; note: string | null }[]; onConfirm: (evidence: string) => Promise<void> }) {
+const VSZ_UI: Record<string, UiState> = { DONE: 'ok', CHECKED: 'ok', CONFIRMED: 'ok', PARTIAL: 'partial', UNKNOWN: 'todo', MISSING: 'err' };
+
+function VszDetail({ items, onConfirm }: { items: { ID: string; itemCode: string; step: string; label: string; status: string; confirmedBy: string | null; pdfPage: string; note: string | null; evidence: string | null }[]; onConfirm: (evidence: string) => Promise<void> }) {
   const { t } = useI18n();
   const { toast } = useApp();
   const [evidence, setEvidence] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
-  const open = items.some((i) => i.status !== 'CONFIRMED');
+  const open = items.some((i) => ['UNKNOWN', 'MISSING'].includes(i.status));
+  const by = (who: string | null) => (!who ? '' : who === 'Pipeline (Simulation)' ? t('vsz.by.pipeline') : who === 'Datenprüfung' ? t('vsz.by.data') : who === 'DSO-DP (Simulation)' ? t('vsz.by.dsodp') : who);
   return (
     <>
+      <p className="sim-note">{t('vsz.simnote')}</p>
       <div className="checklist">
         {items.map((v) => (
           <div key={v.ID} className="check-item">
             <span className="step">{v.step}</span>
-            <div>{v.label}<small>PDF S. {v.pdfPage}{v.note ? ` · ${v.note}` : ''}{v.confirmedBy ? ` · ${v.confirmedBy}` : ''}</small></div>
-            {v.status === 'CONFIRMED' ? <span className="chip ok"><Check size={12} strokeWidth={3} /></span> : <span className="chip wait">?</span>}
+            <div>
+              <b className="ci-title">{t(`vsz.${v.itemCode}`) === `vsz.${v.itemCode}` ? v.label : t(`vsz.${v.itemCode}`)}</b>
+              {v.evidence && v.status !== 'UNKNOWN' ? <span className="ci-result">{v.evidence}</span> : <span className="ci-result muted">{v.status === 'UNKNOWN' && !v.confirmedBy ? t('vsz.notrun') : v.evidence}</span>}
+              <small>{t('vsz.page', { p: v.pdfPage })}{v.confirmedBy ? ` · ${t('vsz.via', { who: by(v.confirmedBy) })}` : ''}</small>
+            </div>
+            <StateChip state={VSZ_UI[v.status] ?? 'todo'} label={t(`vsz.s.${v.status}`)} />
           </div>
         ))}
       </div>

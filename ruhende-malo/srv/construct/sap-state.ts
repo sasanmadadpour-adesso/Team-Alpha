@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import cds from '@sap/cds';
-import { VSZ_ITEMS } from './vsz.js';
 
 /**
  * Simulated SAP IS-U / market-communication state (iMSys per MeLo, supplier Abmeldung per MaLo,
@@ -21,8 +20,8 @@ export const SAP_VALUES: Record<SapAttribute, string[]> = {
 const COLUMN: Record<SapAttribute, string> = { imsys: 'imsysStatus', abmeldung: 'deregistrationStatus', mcm: 'mcmStatus' };
 
 export interface SapFixture {
+  knownConstructs: string[];
   defaults: Partial<Record<SapAttribute, string>>;
-  vszConfirmedFor: string[];
   malo: Record<string, Partial<Record<SapAttribute, string>>>;
   melo: Record<string, Partial<Record<SapAttribute, string>>>;
 }
@@ -31,23 +30,34 @@ export async function loadSapFixture(): Promise<SapFixture> {
   return JSON.parse(await readFile(SAP_FIXTURE_PATH, 'utf8')) as SapFixture;
 }
 
-/** Applies the fixture to the given constructs (workbook import / reset). */
-export async function applySapFixture(tx: cds.Service, constructIds: string[], fixture: SapFixture) {
-  const rows = await tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'role', 'maloId', 'meloId', 'constructId').where({ constructId: { in: constructIds } })) as { sourceId: string; role: string; maloId: string; meloId: string }[];
+/**
+ * Pipeline read (stages 3 and 4): queries the simulated SAP state for one construct at run time.
+ * Only fills values that are still UNKNOWN — status input from the API and manual confirmations are never overwritten.
+ * Constructs the simulated SAP does not know stay UNKNOWN (and are stopped at the vSZ gate / prerequisites).
+ */
+export async function readSapState(tx: cds.Service, constructId: string, actor: string) {
+  const fixture = await loadSapFixture();
+  if (!fixture.knownConstructs.includes(constructId)) return { known: false, updated: 0, vsz: 0 };
+  const rows = await tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'maloId', 'meloId', 'imsysStatus', 'deregistrationStatus', 'mcmStatus').where({ constructId })) as { sourceId: string; maloId: string; meloId: string; imsysStatus: string; deregistrationStatus: string; mcmStatus: string }[];
+  let updated = 0;
   for (const r of rows) {
     const set: Record<string, string> = {};
     for (const attr of Object.keys(COLUMN) as SapAttribute[]) {
+      const current = (r as unknown as Record<string, string>)[COLUMN[attr]];
       const value = fixture.melo[r.meloId]?.[attr] ?? fixture.malo[r.maloId]?.[attr] ?? fixture.defaults[attr];
-      if (value) set[COLUMN[attr]] = value;
+      if (current === 'UNKNOWN' && value && value !== 'UNKNOWN') set[COLUMN[attr]] = value;
     }
-    if (Object.keys(set).length) await tx.run(UPDATE(ns('ParticipantSourceRows')).set(set).where({ sourceId: r.sourceId }));
+    if (Object.keys(set).length) { await tx.run(UPDATE(ns('ParticipantSourceRows')).set(set).where({ sourceId: r.sourceId })); updated++; }
   }
-  const now = new Date().toISOString();
-  const vsz = constructIds.filter((c) => fixture.vszConfirmedFor.includes(c));
-  if (vsz.length) {
-    await tx.run(UPDATE(ns('VszChecklistItems')).set({ status: 'CONFIRMED', confirmedBy: SAP_SOURCE, confirmedAt: now, evidence: 'Read from simulated SAP state (data/fixtures/sap-simulated-state.json)' }).where({ constructId: { in: vsz } }));
+  const vsz = 0; // the vSZ steps are executed by runVszSetup (stage 3), not read here
+  if (updated || vsz) {
+    await tx.run(INSERT.into(ns('AuditEvents')).entries({
+      operation: 'SAP_READ', actor, eventTime: new Date().toISOString(),
+      afterValue: JSON.stringify({ constructId, participantsUpdated: updated, vszItemsConfirmed: vsz }),
+      reason: `Status read from simulated SAP: ${vsz} vSZ step(s), ${updated} participant(s)`, simulated: true,
+    }));
   }
-  return { constructs: constructIds.length, vszConfirmed: vsz.length, items: VSZ_ITEMS.length };
+  return { known: true, updated, vsz };
 }
 
 /** API input from other systems: update one simulated SAP status (e.g. the supplier's Abmeldung arrived). */

@@ -1,7 +1,9 @@
 import cds from '@sap/cds';
 import { ROLE, validateConstructs, type Finding, type Resolution, type RuleRow } from './rules.js';
 import { buildSwitchPlan, completeSteps, type SwitchItem, type SwitchPlan } from './switch-plan.js';
-import { VSZ_ITEMS, vszComplete, vszMissing } from './vsz.js';
+import { VSZ_ITEMS, vszComplete, vszMissing, vszPassed } from './vsz.js';
+import { readSapState } from './sap-state.js';
+import { runVszSetup } from './vsz-setup.js';
 
 /**
  * Orchestration of the construct process (S2–S7). Domain decisions live in rules.ts / switch-plan.ts;
@@ -41,7 +43,8 @@ export const currentFindings = (ctx: Context): Finding[] => validateConstructs(c
 
 /* ------------------------------------------------------------------ S2 Prüfung der Daten */
 
-export async function validateAll(tx: cds.Service, actor: string) {
+/** Re-validates all constructs (cross-construct rules need the full picture). Only the given constructs are marked as processed. */
+export async function validateAll(tx: cds.Service, actor: string, processed: string[] = []) {
   const ctx = await loadContext(tx);
   const findings = currentFindings(ctx);
   const now = new Date().toISOString();
@@ -63,7 +66,7 @@ export async function validateAll(tx: cds.Service, actor: string) {
     await tx.run(UPDATE(ns('ValidationIssues')).set({ status: 'RESOLVED', resolution: 'AUTO_CLEARED', resolvedBy: 'SYSTEM', resolvedAt: now, reason: 'Finding no longer present after re-validation.' }).where({ ID: i.ID }));
     cleared++;
   }
-  await tx.run(UPDATE(ns('Constructs')).set({ validatedAt: now }));
+  if (processed.length) await tx.run(UPDATE(ns('Constructs')).set({ validatedAt: now }).where({ constructId: { in: processed } }));
   await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'VALIDATE', actor, eventTime: now, afterValue: JSON.stringify({ findings: findings.length, opened, cleared }), reason: 'Prüfung der Daten', simulated: true }));
   await refreshConstructs(tx);
   return { findings: findings.length, opened, cleared };
@@ -252,7 +255,10 @@ export async function executeSwitch(tx: cds.Service, constructId: string, option
 
 export async function processConstruct(tx: cds.Service, constructId: string, actor: string, runId: string) {
   await requireConstruct(tx, constructId);
-  await validateAll(tx, actor);
+  // Stages 3 + 4: query the (simulated) SAP state now, at run time — nothing is pre-confirmed at import.
+  await readSapState(tx, constructId, actor);
+  await runVszSetup(tx, constructId, actor);
+  await validateAll(tx, actor, [constructId]);
   const preview = await previewSwitch(tx, constructId);
   if (preview.status === 'BLOCKED') {
     await executeSwitch(tx, constructId, { actor, mode: 'AUTO', runId }); // records BLOCKED requests for traceability
@@ -325,7 +331,7 @@ export async function refreshConstructs(tx: cds.Service) {
     const dormant = eligible.filter((r) => ctx.states.get(r.maloId) === 'RUHEND').length;
     const issues = open.filter((i) => i.constructIds.split(',').includes(c.constructId));
     const checklist = ctx.checklist.filter((x) => x.constructId === c.constructId);
-    const vszDone = checklist.filter((x) => x.status === 'CONFIRMED').length;
+    const vszDone = checklist.filter((x) => vszPassed(x.status)).length;
     const stage = eligible.length > 0 && dormant === eligible.length ? 'SWITCHED'
       : dormant > 0 ? 'SWITCHED_PARTIAL'
         : !c.validatedAt ? 'REGISTERED'

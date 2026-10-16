@@ -82,7 +82,7 @@ A web application with a fixed topbar, German / English switch (market terms sta
 
 | Screen | Purpose |
 | --- | --- |
-| **Übersicht / Overview** | KPIs, one card per construct with the 5-stage rail of the solution map (Anmeldung → Prüfung → Aufbau vSZ → Umstellung → Übergabe) and a progress ring, recent activity in plain language. **Prozess starten** runs the automatic process. |
+| **Übersicht / Overview** | KPIs, one card per construct with the 6-stage rail (Anmeldung → Prüfung & Korrektur → Aufbau vSZ → Voraussetzungen → MeMa/MaMa → ruhend → Übergabe) with counters, a progress ring, and *Braucht Sie* (open cases). **Prozess starten** runs the automatic process; **Ablauf erklärt** documents every stage. |
 | **Konstrukt** | The process exactly in PDF order: Anmeldung → Prüfung der Daten → Aufbau vSZ (checklist 1–4.7, confirm with evidence) → MeMa §6.1 → MaMa §6.2 → Einspeise-MeMa §6.3 → Ruhendstellung → Übergabe (§5 CSV). Participants sorted by *needs attention / done / other*. |
 | **Klärfälle / Cases** | One card per open finding, grouped by what to do: decide, fix data, wait for status. |
 | **Case drawer** | Opens from anywhere: what's going on (plain language), the MaLo's progress through the PDF steps, the actions (side-by-side comparison for conflicts, status input, live-validated correction, manual override with reason), master data, MeMa/MaMa, Zeitscheiben, lifecycle actions (Wiederaktivierung, Herauslösung, Korrektur, Rücknahme), history. |
@@ -133,7 +133,7 @@ The internal read-only OData V4 view is available at `/odata/v4/malo`.
 | `srv/process-api.*` | REST contract and transport |
 | `srv/adapters/sap-isu-not-configured.ts` | SAP boundary, fails closed |
 
-See `docs/ASSUMPTIONS.md` for every assumption and gap, `docs/DEMO.md` for the presenter script, and `docs/MVP_PLAN.md` for the design.
+See `docs/PROCESS_STAGES.md` for exactly what happens in each of the six stages, `docs/ASSUMPTIONS.md` for every assumption and gap, `docs/DEMO.md` for the presenter script, and `docs/MVP_PLAN.md` for the design.
 
 ## Demo reset
 
