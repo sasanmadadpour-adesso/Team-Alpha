@@ -19,7 +19,9 @@ describe('TC21 workbook import',()=>{
     expect(target('B-FRA-01')).toBe('51781215544'); expect(target('B-CGN-01')).toBe('51781215999'); expect(target('B-MUL-01')).toBe('50539603639');
   });
   it('allows multiple MeLos for a MaLo but flags cross-building assignment for review',()=>{
-    const duplicate=rows.filter(r=>r.maloId==='50539603888'); expect(duplicate).toHaveLength(2); expect(new Set(duplicate.map(r=>r.meloId))).toHaveLength(2); expect(duplicate.every(r=>r.maloConflict)).toBe(true); expect(new Set(duplicate.map(r=>r.buildingId))).toEqual(new Set(['B-FRA-01','B-CGN-01']));
+    const frankfurt=rows.filter(r=>r.maloId==='50539603888'); expect(frankfurt).toHaveLength(1); expect(frankfurt[0].buildingId).toBe('B-FRA-01');
+    const corrected=rows.filter(r=>r.maloId==='50539603891'); expect(corrected).toHaveLength(1); expect(corrected[0].buildingId).toBe('B-CGN-01');
+    expect(rows.every(r=>!r.maloConflict)).toBe(true);
     const oneBuilding=rows.filter(r=>r.buildingId==='B-MUL-01'&&r.role===ROLES.household); expect(oneBuilding.every(r=>!r.maloConflict)).toBe(true);
   });
   it('preserves IDs as strings and validates B-MUL-01',()=>{

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import XLSX from 'xlsx';
 
-export const WORKBOOK_PATH = path.resolve('data/source/new-data-source.xlsx');
+export const WORKBOOK_PATH = path.resolve('data/source/new-data-source-corrected.xlsx');
 export const SOURCE_SHEET = 'MK7 Participants';
 const LEGACY_SOURCE_SHEET = 'MK7 Teilnehmer';
 export const ROLES = { reststrom: 'Marktlokation Reststrom', household: 'Haushaltsverbrauch', generation: new Set(['Solaranlage', 'Windkraftanlage']) } as const;

@@ -4,7 +4,7 @@ import path from 'node:path';
 import XLSX from 'xlsx';
 import { excelDateToIso, parseParticipantWorkbook, type ParticipantRow } from './workbook.js';
 
-export const FULL_WORKBOOK_PATH = path.resolve('data/source/new-data-source.xlsx');
+export const FULL_WORKBOOK_PATH = path.resolve('data/source/new-data-source-corrected.xlsx');
 export const FULL_SHEETS = ['Producer Onboarding','MK7 Participants','Hourly Consumption','Hourly Generation','Energy Pricing','Field Descriptions','Financial Rules'] as const;
 type Cell = string | number | boolean | Date | null | undefined;
 type Raw = Record<string, Cell>;
