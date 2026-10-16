@@ -33,7 +33,8 @@ const CATALOGUE: Ep[] = [
   { id: 'producerOnboarding', method: 'POST', path: '/producer-onboardings', group: 'registration', need: 'WRITE', title: 'api.e.producerOnboarding', body: () => ({
     first_name:'Anna',last_name:'Schmidt',email:'anna.schmidt@example.de',salutation:'Frau',is_business:true,is_reverse_charge:false,
     deliv_address_street:'Rathausmarkt',deliv_address_house_number:'1',deliv_address_zipcode:'20095',deliv_address_city:'Hamburg',subscription_reason:'E01',
-    construct_type:'FEED_IN',production_type:'Solar',plant_capacity_kw:6,plant_specifics:{latitude:53.55,longitude:10},market_location_identifier:'DE0073325707820000000000000090001',tranche:null,
+    construct_type:'FEED_IN',production_type:'Solar',plant_capacity_kw:6,plant_specifics:{latitude:53.55,longitude:10},
+    market_location_identifier:'DE0073325707820000000000000090001',market_location_malo:'51781123945',tranche:null,
     preferred_delivery_start:'2026-10-01T00:00:00Z',saas_customer_id:null,saas_contract_id:null,product_name:null,consumer_saas_contract_id:null,control_resource:null,technical_resources:null,
     contract_start_utc:'2026-10-01T00:00:00Z',contract_end_utc:'2027-10-01T00:00:00Z',building_id:'B-HAM-01'
   }) },
