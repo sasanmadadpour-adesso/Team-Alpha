@@ -217,9 +217,11 @@ class LiveConstructSync {
     return this.store.auditRows();
   }
 
-  async detail(source, malo) {
+  async detail(source, malo, sourceId) {
     const base = source === 'pending' ? this.options.pendingUrl : this.options.registeredUrl;
-    const cached = this.store.items(source).find(item => item.primaryMaLo === malo);
+    const cached = this.store.items(source).find(item =>
+      sourceId ? item.ID === sourceId : item.primaryMaLo === malo
+    );
     // Action-style collection endpoints such as maloOverview() do not expose a
     // per-key URL. Their current snapshot is already the authoritative detail.
     if (source === 'registered' && /\(\)\/?$/.test(base)) return cached;

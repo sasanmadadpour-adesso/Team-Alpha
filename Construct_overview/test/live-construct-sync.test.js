@@ -84,6 +84,19 @@ test('detail refresh preserves the cached ID used by UI navigation', async t => 
   assert.equal(detail.city, 'New');
 });
 
+test('detail refresh preserves the selected duplicate source ID', async t => {
+  const store = new LiveSyncStore(':memory:');
+  t.after(() => store.close());
+  store.replace('registered', [
+    normalizeItem({ ID: 'duplicate-a', primaryMaLo: '999', buildingID: 'B-A' }, 'registered'),
+    normalizeItem({ ID: 'duplicate-b', primaryMaLo: '999', buildingID: 'B-B' }, 'registered')
+  ]);
+  const sync = new LiveConstructSync({ store, registeredUrl: 'https://host/api/v1/maloOverview()' });
+  const detail = await sync.detail('registered', '999', 'duplicate-b');
+  assert.equal(detail.ID, 'duplicate-b');
+  assert.equal(detail.buildingID, 'B-B');
+});
+
 test('maps hosted Ruhende maloOverview rows into the Overview contract', () => {
   const household = registeredParticipant({ sourceId: 'MK7 Participants:12', buildingId: 'B-1', role: 'Haushaltsverbrauch', maloId: '111', meloId: 'DE-1', participates: true, city: 'Köln' });
   const producer = registeredParticipant({ sourceId: 'MK7 Participants:13', buildingId: 'B-1', role: 'Solaranlage', maloId: '222', generationFeedInMaloId: '333', meloId: 'DE-2', city: 'Köln' });

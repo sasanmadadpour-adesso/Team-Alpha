@@ -244,7 +244,7 @@ module.exports = cds.service.impl(function () {
          if (entity === 'Constructs' && requestedKey && liveSync.registeredIsAuthoritative()) {
            const cached = registeredConstructs.find(row => row.ID === requestedKey || row.primaryMaLo === requestedKey);
            if (cached) {
-             const detail = externalConstruct(await liveSync.detail('registered', cached.primaryMaLo));
+              const detail = externalConstruct(await liveSync.detail('registered', cached.primaryMaLo, cached.ID));
              registeredConstructs = [{ ...detail, ...await externalEnergy(detail) }];
            }
          }
