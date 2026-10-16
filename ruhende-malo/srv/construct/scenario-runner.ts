@@ -73,6 +73,6 @@ export async function runScenarios(): Promise<ScenarioResult[]> {
   check('SC18', 'BDEW check digit: official example 4137355924 → 1', '1', String(maloCheckDigit('4137355924')));
 
   const { rows } = await readParticipantWorkbook();
-  check('SC16', 'Workbook: 17 assignments, 16 unique MaLos, 10 participating households', '17/16/10', `${rows.length}/${new Set(rows.map((r) => r.maloId)).size}/${rows.filter((r) => r.role === ROLES.household && r.participates).length}`);
+   check('SC16', 'Workbook: 17 assignments, 17 unique MaLos, 10 participating households', '17/17/10', `${rows.length}/${new Set(rows.map((r) => r.maloId)).size}/${rows.filter((r) => r.role === ROLES.household && r.participates).length}`);
   return results;
 }

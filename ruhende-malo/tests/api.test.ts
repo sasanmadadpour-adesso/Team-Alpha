@@ -364,6 +364,22 @@ describe('End-to-end: every user action works and leaves consistent data', () =>
     expect((await get<Json>('Constructs/B-E2E-02')).stichtag).toBe('2026-12-15');
   });
 
+  it('producer onboarding creates a new construct with separate MeLo and MaLo identifiers', async () => {
+    const payload = {
+      first_name: 'Anna', last_name: 'Schmidt', email: 'anna.schmidt@example.de', salutation: 'Frau', is_business: true, is_reverse_charge: false,
+      deliv_address_street: 'Rathausmarkt', deliv_address_house_number: '1', deliv_address_zipcode: '20095', deliv_address_city: 'Hamburg', subscription_reason: 'E01',
+      construct_type: 'FEED_IN', production_type: 'Solar', plant_capacity_kw: 6, plant_specifics: { latitude: 53.55, longitude: 10 },
+      market_location_identifier: 'DE0073325707820000000000000090001', market_location_malo: '51781123945', tranche: null,
+      preferred_delivery_start: '2026-10-01T00:00:00Z', saas_customer_id: null, saas_contract_id: null, product_name: null,
+      consumer_saas_contract_id: null, control_resource: null, technical_resources: null,
+      contract_start_utc: '2026-10-01T00:00:00Z', contract_end_utc: '2027-10-01T00:00:00Z', building_id: 'B-HAM-01',
+    };
+    const res = await fetch(`${BASE}/producer-onboardings`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Idempotency-Key': 'producer-api-test-001' }, body: JSON.stringify(payload) });
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ building_id: 'B-HAM-01', market_location_identifier: payload.market_location_identifier, market_location_malo: payload.market_location_malo, simulation: true });
+    expect(await get<Json>('Constructs/B-HAM-01')).toMatchObject({ constructId: 'B-HAM-01', registrationSource: 'producer-onboardings' });
+  });
+
   it('reset restores the exact baseline: all NEW, no relationships, no handovers, audit shows only the registration', async () => {
     expect((await post('resetDemo', { confirm: true })).status).toBe(200);
     expect((await get('Constructs')).length).toBe(3);

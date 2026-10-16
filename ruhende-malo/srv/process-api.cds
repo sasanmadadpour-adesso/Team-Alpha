@@ -130,6 +130,37 @@ service ProcessApi {
   action revokeApiKey(id: UUID) returns Boolean;
   /** One case per participant: the single, live status every client shows. */
   function cases() returns many CaseView;
+  /** Complete MaLo explorer read model: one row for every imported source row, including Reststrom and generation rows. */
+  function maloOverview() returns many MaloOverview;
+  type MaloOverview {
+    sourceId : String;
+    sourceRowNumber : Integer;
+    buildingId : String;
+    maloId : String;
+    meloId : String;
+    role : String;
+    participationRaw : String;
+    participates : Boolean;
+    excluded : Boolean;
+    exclusionReason : String;
+    city : String;
+    streetAddress : String;
+    operator : String;
+    reststromMaloId : String;
+    generationFeedInMaloId : String;
+    supplyStartUtc : Date;
+    contractFromUtc : Date;
+    contractToUtc : Date;
+    businessState : String;
+    caseStatus : String;
+    caseCode : String;
+    caseMessage : String;
+    processStatus : String;
+    latestOperation : String;
+    relationshipCount : Integer;
+    openRelationshipCount : Integer;
+    conflict : Boolean;
+  }
   /** S1 Anmeldung Konstrukt (JSON). Re-registering a building replaces its source rows and process state. */
   action registerConstruct(construct: Registration, actor: String) returns RegistrationResult;
   /** S1 Anmeldung via workbook upload (sheet "MK7 Teilnehmer", base64). Replaces all constructs. */

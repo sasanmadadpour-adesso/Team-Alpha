@@ -2,6 +2,7 @@ import cds from '@sap/cds';
 import { ROLES, type ParticipantRow } from '../../scripts/workbook.js';
 import { VSZ_ITEMS } from './vsz.js';
 import { refreshConstructs } from './service.js';
+import { continueProcessing } from './cases.js';
 
 /** Step S1 — Anmeldung Konstrukt. One code path for Excel import and JSON registration. */
 const ns = (name: string) => `mk7.controlcenter.${name}`;
@@ -16,6 +17,22 @@ export interface RegistrationInput {
 }
 export interface RegistrationSource { file: string; checksum?: string; actor: string }
 export interface RegistrationResult { constructIds: string[]; rows: number; households: number; participating: number }
+
+/** The stable producer-onboarding contract has no MeLo field. Keep that gap
+ * explicit: the resulting generation row is intentionally incomplete and the
+ * normal validation pipeline will stop it with a review/blocking finding. */
+export interface ProducerPipelineInput {
+  buildingId: string;
+  meloId: string;
+  generationFeedInMaloId: string;
+  productionType: string;
+  preferredDeliveryStart?: string;
+  city?: string;
+  operator?: string;
+  streetAddress?: string;
+}
+
+const producerRole = (productionType: string) => /wind/i.test(productionType) ? 'Windkraftanlage' : 'Solaranlage';
 
 /** Maps a JSON registration to normalized participant rows (same shape as workbook rows). */
 export function rowsFromRegistration(input: RegistrationInput): ParticipantRow[] {
@@ -120,4 +137,46 @@ export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[]
   await refreshConstructs(tx);
   const households = rows.filter((r) => r.role === ROLES.household);
   return { constructIds, rows: rows.length, households: households.length, participating: households.filter((r) => r.participates).length };
+}
+
+/**
+ * Continue the producer onboarding through the same construct pipeline as
+ * registerConstruct. This is deliberately separate from the HTTP contract:
+ * producer records remain owned by /producer-onboardings, while process state
+ * is owned by the canonical construct registration tables.
+ *
+ * Existing buildings are never re-registered (which would replace workbook
+ * rows); they simply continue through the shared engine. A new building gets a
+ * generation construct whose missing MeLo is validated by the normal rules.
+ */
+export async function registerProducerPipeline(tx: cds.Service, input: ProducerPipelineInput, actor: string) {
+  const sourceId = `PRODUCER_API:${input.buildingId}:${input.meloId}`;
+  const existingRow = await tx.run(SELECT.one.from(ns('ParticipantSourceRows')).columns('sourceId').where({ sourceId })) as { sourceId: string } | undefined;
+  if (!existingRow) {
+    const row: ParticipantRow = {
+      sourceId,
+      sourceFile: 'producer-onboardings', sourceSheet: 'producer-onboardings', sourceRowNumber: 1,
+      buildingId: input.buildingId, role: producerRole(input.productionType), participationRaw: 'Ja', participates: true,
+      meloId: input.meloId, maloId: input.generationFeedInMaloId, generationFeedInMaloId: input.generationFeedInMaloId,
+      supplyStartUtc: input.preferredDeliveryStart?.slice(0, 10), city: input.city, operator: input.operator,
+      streetAddress: input.streetAddress, maloConflict: false, unverifiedSourceAttributes: '{}',
+      sourceData: JSON.stringify({ source: 'producer-onboardings', meloId: input.meloId, generationFeedInMaloId: input.generationFeedInMaloId }),
+    };
+    const construct = await tx.run(SELECT.one.from(ns('Constructs')).columns('constructId').where({ constructId: input.buildingId })) as { constructId: string } | undefined;
+    if (!construct) {
+      // A new producer building must enter through the canonical registration
+      // path so Buildings, Constructs, checklist, audit and process state are
+      // created together. Previously only the participant row was inserted,
+      // causing continueProcessing() to fail with CONSTRUCT_NOT_FOUND.
+      await registerConstructs(tx, [row], { file: 'producer-onboardings', actor }, { stichtag: row.supplyStartUtc });
+    } else {
+      // Do not replace an existing workbook/API construct just to append a
+      // producer. Its generation row joins the existing canonical process.
+      await tx.run(INSERT.into(ns('ParticipantSourceRows')).entries({ ...row, constructId: input.buildingId, excluded: false, imsysStatus: 'UNKNOWN', deregistrationStatus: 'UNKNOWN', mcmStatus: 'UNKNOWN' }));
+      await tx.run(UPSERT.into(ns('MarketLocations')).entries({ maloId: row.maloId, primaryRole: row.role, participates: true, businessState: 'ACTIVE', assignmentCount: 1, conflictingAssignment: false, assignmentSummary: `${row.buildingId}:${row.meloId}` }));
+      await refreshConstructs(tx);
+    }
+  }
+  const results = await continueProcessing(tx, [input.buildingId], actor);
+  return results[0];
 }

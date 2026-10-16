@@ -33,7 +33,8 @@ const CATALOGUE: Ep[] = [
   { id: 'producerOnboarding', method: 'POST', path: '/producer-onboardings', group: 'registration', need: 'WRITE', title: 'api.e.producerOnboarding', body: () => ({
     first_name:'Anna',last_name:'Schmidt',email:'anna.schmidt@example.de',salutation:'Frau',is_business:true,is_reverse_charge:false,
     deliv_address_street:'Rathausmarkt',deliv_address_house_number:'1',deliv_address_zipcode:'20095',deliv_address_city:'Hamburg',subscription_reason:'E01',
-    construct_type:'FEED_IN',production_type:'Solar',plant_capacity_kw:6,plant_specifics:{latitude:53.55,longitude:10},market_location_identifier:'DE0073325707820000000000000090001',tranche:null,
+    construct_type:'FEED_IN',production_type:'Solar',plant_capacity_kw:6,plant_specifics:{latitude:53.55,longitude:10},
+    market_location_identifier:'DE0073325707820000000000000090001',market_location_malo:'51781123945',tranche:null,
     preferred_delivery_start:'2026-10-01T00:00:00Z',saas_customer_id:null,saas_contract_id:null,product_name:null,consumer_saas_contract_id:null,control_resource:null,technical_resources:null,
     contract_start_utc:'2026-10-01T00:00:00Z',contract_end_utc:'2027-10-01T00:00:00Z',building_id:'B-HAM-01'
   }) },
@@ -42,6 +43,7 @@ const CATALOGUE: Ep[] = [
     { role: 'Marktlokation Reststrom', maloId: DEMO.reststrom, meloId: DEMO.meloR },
     { role: 'Haushaltsverbrauch', maloId: DEMO.household, meloId: DEMO.meloH, participates: true }] } }) },
   { id: 'cases', method: 'GET', path: '/cases()', group: 'process', need: 'READ', title: 'api.e.cases' },
+  { id: 'maloOverview', method: 'GET', path: '/maloOverview()', group: 'process', need: 'READ', title: 'api.e.maloOverview' },
   { id: 'processAll', method: 'POST', path: '/processAll', group: 'process', need: 'WRITE', title: 'api.e.processAll', body: () => ({}) },
   { id: 'process', method: 'POST', path: '/Constructs/{construct}/process', group: 'process', need: 'WRITE', title: 'api.e.process', body: () => ({}) },
   { id: 'previewSwitch', method: 'POST', path: '/Constructs/{construct}/previewSwitch', group: 'process', need: 'ANY', title: 'api.e.preview', body: () => ({}) },
@@ -118,7 +120,7 @@ export function ApiPage() {
   useEffect(() => { if (route.endsWith('/access')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
 
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); toast(t('api.copied')); } catch { toast(text); } };
-  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.id === 'producerOnboarding' ? ' \\\n  -H "Idempotency-Key: registration-demo-001"' : ''}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
+  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.id === 'producerOnboarding' ? ' \\\n  -H "Idempotency-Key: registration-demo-$(date +%s)"' : ''}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
 
   const send = async () => {
     if (ep.method === 'POST') { try { JSON.parse(body || '{}'); } catch { setBodyErr(true); return; } }

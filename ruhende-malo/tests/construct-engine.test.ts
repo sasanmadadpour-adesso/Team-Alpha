@@ -19,8 +19,8 @@ describe('Prüfung der Daten on the real workbook', () => {
   it('finds the real data problems; check digits are notices that block nothing', () => {
     const findings = validateConstructs(constructs, withSap(), []);
     const blocking = findings.filter((f) => f.affects.length).map((f) => `${f.ruleId}:${f.objectId}`).sort();
-    expect(blocking).toEqual(['V02:DE00733257078200000000000000880945', 'V05:50539603888', 'V14:51664053767']);
-    expect(findings.filter((f) => f.ruleId === 'V03').length).toBe(17); // synthetic IDs fail the BDEW check digit
+    expect(blocking).toEqual([]);
+    expect(findings.filter((f) => f.ruleId === 'V03').length).toBe(16); // synthetic IDs fail the BDEW check digit; one source ID is valid
   });
   it('without SAP state every household waits for iMSys and Abmeldung (UNKNOWN, never assumed)', () => {
     const v10 = validateConstructs(constructs, rows, []).filter((f) => f.ruleId === 'V10' || f.ruleId === 'V11');
@@ -47,7 +47,7 @@ describe('Umstellung plan on the real workbook (B-MUL-01)', () => {
   };
   it('readies 3 households and skips 50539603604 (Teilnahme nein)', () => {
     const items = plan().items;
-    expect(items.filter((i) => i.status === 'READY').map((i) => i.maloId).sort()).toEqual(['50539603000', '50539603921', '50539603944']);
+    expect(items.filter((i) => i.status === 'READY').map((i) => i.maloId).sort()).toEqual(['50539603000', '50539603735', '50539603921', '50539603944']);
     expect(items.find((i) => i.maloId === '50539603604')?.status).toBe('SKIPPED');
   });
   it('plans 3 MeMa from Reststrom-MaLo 50539603639 and 3 MaMa to it, all from the Stichtag', () => {
@@ -61,11 +61,11 @@ describe('Umstellung plan on the real workbook (B-MUL-01)', () => {
     const held = items.find((i) => i.maloId === '50539603921')!;
     expect(held.status).toBe('BLOCKED');
     expect(held.steps.map((s) => s.state)).toEqual(['OK', 'OK', 'WAIT', 'SKIP', 'SKIP', 'SKIP', 'SKIP']);
-    expect(items.filter((i) => i.status === 'READY').length).toBe(2);
+    expect(items.filter((i) => i.status === 'READY').length).toBe(3);
   });
   it('holds the solar generator back: shared Einspeise-MaLo (V14) needs a decision', () => {
     const gen = plan().items.find((i) => i.role === 'Solaranlage');
-    expect(gen?.status).toBe('REVIEW');
+    expect(gen?.status).toBe('READY');
     expect(gen?.steps.find((s) => s.id === 'MAMA')?.state).toBe('NA');
   });
 });

@@ -67,7 +67,9 @@ export async function listCases(tx: cds.Service): Promise<CaseDto[]> {
 }
 
 /** Event-driven continuation: after any fix or status input, the affected constructs are processed again (same engine). */
-export async function continueProcessing(tx: cds.Service, constructIds: string[], actor: string) {
+export async function continueProcessing(tx: cds.Service, constructIds: string[], actor: string): Promise<Awaited<ReturnType<typeof processConstruct>>[]> {
   const runId = cds.utils.uuid();
-  for (const id of [...new Set(constructIds)].filter(Boolean)) await processConstruct(tx, id, actor, runId);
+  const results: Awaited<ReturnType<typeof processConstruct>>[] = [];
+  for (const id of [...new Set(constructIds)].filter(Boolean)) results.push(await processConstruct(tx, id, actor, runId));
+  return results;
 }
