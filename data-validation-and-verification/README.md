@@ -76,9 +76,23 @@ Immediate JSON response to the onboarding application
 
 Requirements: Node.js 20+ and npm. No database, Docker, or `.env` file needed.
 
+This project lives entirely inside the `data-validation-and-verification`
+folder. Enter that folder before running any npm command.
+
+**Windows (PowerShell):**
+
 ```powershell
+Set-Location ".\data-validation-and-verification"
 npm.cmd install
 npm.cmd run dev
+```
+
+**macOS/Linux:**
+
+```bash
+cd data-validation-and-verification
+npm install
+npm run dev
 ```
 
 The API listens on `http://localhost:3000`.
@@ -89,6 +103,19 @@ For a production-style run:
 npm.cmd run build
 npm.cmd start
 ```
+
+### Running from the repository root
+
+If you prefer not to change directories, npm's `--prefix` option works as
+a convenience:
+
+```powershell
+npm.cmd --prefix ".\data-validation-and-verification" install
+npm.cmd --prefix ".\data-validation-and-verification" run dev
+```
+
+Entering the folder directly (shown above) is the primary documented
+workflow; `--prefix` is only an alternative for scripts or CI.
 
 ## 5. Calling the Main Endpoint
 
@@ -108,8 +135,9 @@ Invoke-RestMethod `
 ```
 
 The payload shape is based on the `Producer Onboarding` sheet in
-`Dataset_English.xlsx`. See `examples/producer-onboarding.json` for a
-complete example. JSON numbers use decimal points (`6`, not `"6,0"`).
+[`Dataset_English.xlsx`](../Dataset_English.xlsx). See
+`examples/producer-onboarding.json` for a complete example. JSON numbers
+use decimal points (`6`, not `"6,0"`).
 
 A `market_location_identifier` is required for this demo — SAP lookup is
 only implemented by identifier, not by `tranche`. Submitting only a
@@ -297,5 +325,7 @@ Persisting this evidence is intentionally out of scope for this demo.
 - Processing is synchronous; there is no retry queue or background worker.
 - SAP lookup is identifier-only; `tranche`-based lookup is not implemented.
 - This covers producer onboarding only, not metering, billing, or settlement.
-- Both XLSX reference files (`Dataset_English.xlsx`, `Datensatz_Deutsch.xlsx`)
-  are used only as reference data and are never modified.
+- Both XLSX reference files
+  ([`Dataset_English.xlsx`](../Dataset_English.xlsx),
+  [`Datensatz_Deutsch.xlsx`](../Datensatz_Deutsch.xlsx)) live at the
+  repository root, are used only as reference data, and are never modified.
