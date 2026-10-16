@@ -29,6 +29,15 @@ const apiLog = (event: string, fields: Record<string, unknown>) => {
   }));
 };
 
+/** Resolve the caller address as seen through Cloudflare/NAS reverse proxies.
+ * Express derives req.ip/req.ips from X-Forwarded-For because trust proxy is
+ * enabled below. Cloudflare's connecting address is preferred when present. */
+const clientAddress = (req: express.Request) => {
+  const cf = req.headers['cf-connecting-ip'];
+  const cloudflareIp = (Array.isArray(cf) ? cf[0] : cf)?.trim();
+  return (cloudflareIp || req.ip || req.socket.remoteAddress || 'unknown').slice(0, 100);
+};
+
 async function principalOf(header: string | undefined): Promise<Principal | undefined> {
   const token = /^Bearer\s+(\S+)$/i.exec(header ?? '')?.[1];
   if (!token) return undefined;
@@ -71,6 +80,8 @@ cds.on('bootstrap', (app: express.Express) => {
   app.use('/api/v1', express.json({ limit: '25mb' }), async (req, res, next) => {
     const started = Date.now();
     const correlationId=String(req.headers['x-correlation-id']??cds.utils.uuid()); res.setHeader('x-correlation-id',correlationId);
+    const clientIp = clientAddress(req);
+    const proxyChain = req.ips.slice(0, 10);
     let principal: Principal | undefined;
     // Register this before any auth/validation return so rejected requests are
     // visible in NAS logs as well.
@@ -84,6 +95,8 @@ cds.on('bootstrap', (app: express.Express) => {
         actor: principal?.actor ?? 'anonymous',
         via: principal?.via ?? '-',
         role: principal?.role ?? 'NONE',
+        client_ip: clientIp,
+        proxy_chain: proxyChain,
       };
       apiLog('api_response', fields);
       if (req.method !== 'GET' && req.path !== '/login') {
@@ -92,7 +105,7 @@ cds.on('bootstrap', (app: express.Express) => {
         });
       }
     });
-    apiLog('api_request', { correlation_id: correlationId, method: req.method, path: req.originalUrl.split('?')[0].slice(0, 200) });
+    apiLog('api_request', { correlation_id: correlationId, method: req.method, path: req.originalUrl.split('?')[0].slice(0, 200), client_ip: clientIp, proxy_chain: proxyChain });
     delete req.headers['x-ruhend-actor']; delete req.headers['x-ruhend-role']; delete req.headers['x-ruhend-via'];
     try { principal = await principalOf(req.headers.authorization); } catch { principal = undefined; }
     if (principal) { req.headers['x-ruhend-actor'] = principal.actor; req.headers['x-ruhend-role'] = principal.role; req.headers['x-ruhend-via'] = principal.via; }

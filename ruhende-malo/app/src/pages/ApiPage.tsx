@@ -43,6 +43,7 @@ const CATALOGUE: Ep[] = [
     { role: 'Marktlokation Reststrom', maloId: DEMO.reststrom, meloId: DEMO.meloR },
     { role: 'Haushaltsverbrauch', maloId: DEMO.household, meloId: DEMO.meloH, participates: true }] } }) },
   { id: 'cases', method: 'GET', path: '/cases()', group: 'process', need: 'READ', title: 'api.e.cases' },
+  { id: 'maloOverview', method: 'GET', path: '/maloOverview()', group: 'process', need: 'READ', title: 'api.e.maloOverview' },
   { id: 'processAll', method: 'POST', path: '/processAll', group: 'process', need: 'WRITE', title: 'api.e.processAll', body: () => ({}) },
   { id: 'process', method: 'POST', path: '/Constructs/{construct}/process', group: 'process', need: 'WRITE', title: 'api.e.process', body: () => ({}) },
   { id: 'previewSwitch', method: 'POST', path: '/Constructs/{construct}/previewSwitch', group: 'process', need: 'ANY', title: 'api.e.preview', body: () => ({}) },

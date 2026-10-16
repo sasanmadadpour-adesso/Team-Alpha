@@ -46,6 +46,7 @@ With a classic reverse proxy instead (Nginx Proxy Manager, Traefik): proxy `http
 - Reading the data needs no sign-in (it is simulation data). Every write needs a signed-in maintainer or an API key.
 - The login is a demo gate, not real authentication. Put Cloudflare Access in front if the URL is shared widely.
 - Security headers (CSP, `X-Frame-Options`, `nosniff`) are sent for the page. The app trusts the proxy's `X-Forwarded-For` for the client address.
+- Every `/api/v1` request and response is written as one JSON line to the container log with `client_ip`, `proxy_chain`, method, path, status, actor, role, duration and correlation ID. With Cloudflare, `CF-Connecting-IP` is used; with a NAS reverse proxy, preserve/forward `X-Forwarded-For`. Request bodies, query values, authorization headers and tokens are deliberately not logged.
 
 ## Environment variables
 
