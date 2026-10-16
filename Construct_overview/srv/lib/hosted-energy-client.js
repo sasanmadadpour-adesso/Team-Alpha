@@ -68,6 +68,18 @@ function trendRows(points, { malo, range, granularity, source = 'HOSTED_PORTAL' 
   }));
 }
 
+function energyTotals(rows) {
+  const sum = field => round(rows.reduce((total, row) => total + Number(row[field] || 0), 0));
+  return {
+    totalConsumptionKwh: sum('consumptionKwh'),
+    totalGenerationKwh: sum('generationKwh'),
+    localEnergyKwh: sum('localEnergyKwh'),
+    residualGridKwh: sum('residualGridKwh'),
+    exportKwh: sum('exportKwh'),
+    latestMeasurementTime: rows.length ? rows.at(-1).bucketEnd : null
+  };
+}
+
 function portalRows(payload, malo, range) {
   const trend = payload?.trends?.member;
   if (!trend || !Array.isArray(trend.points)) throw Object.assign(new Error('Hosted portal returned no member trend'), { status: 502 });
@@ -176,4 +188,4 @@ async function hostedEnergy({ malo, building, range = '7d', roleCode, fetchImpl 
   }
 }
 
-module.exports = { RANGES, aggregateHostedRows, configuredUrls, hostedEnergy, portalRows };
+module.exports = { RANGES, aggregateHostedRows, configuredUrls, energyTotals, hostedEnergy, portalRows };

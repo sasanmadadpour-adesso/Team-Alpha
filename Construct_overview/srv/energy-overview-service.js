@@ -8,6 +8,7 @@ const { apply } = require('./lib/query');
 const { localize, summarize } = require('./lib/data-quality');
 const { stepLabel } = require('./lib/switchover');
 const { getLiveConstructSync } = require('./lib/live-construct-sync');
+const { energyTotals, hostedEnergy } = require('./lib/hosted-energy-client');
 const fs = require('node:fs');
 const path = require('node:path');
 const envPath = path.resolve(__dirname, '../.env');
@@ -18,6 +19,23 @@ if (fs.existsSync(envPath)) for (const line of fs.readFileSync(envPath, 'utf8').
 const WHITE_LABEL_ONLY = String(process.env.WHITE_LABEL_ONLY || '').toLowerCase() === 'true';
 
 const issueIndex = new WeakMap();
+const externalEnergyCache = new Map();
+const EXTERNAL_ENERGY_CACHE_MS = 5 * 60_000;
+
+async function externalEnergy(row) {
+  const key = `${row.ID}:${row.primaryMaLo}:${row.buildingID || row.buildingId || ''}`;
+  const cached = externalEnergyCache.get(key);
+  if (cached?.expiresAt > Date.now()) return cached.value;
+  const detailMalo = row.roleCode === 'GENERATION' ? (row.exportMaLo || row.primaryMaLo) : row.primaryMaLo;
+  const request = hostedEnergy({
+    malo: detailMalo,
+    building: row.buildingID || row.buildingId,
+    range: '1y',
+    roleCode: row.roleCode
+  }).then(result => energyTotals(result.value)).catch(() => ({}));
+  externalEnergyCache.set(key, { value: request, expiresAt: Date.now() + EXTERNAL_ENERGY_CACHE_MS });
+  return request;
+}
 function issuesByConstruct(data) {
   if (!issueIndex.has(data)) {
     const index = new Map();
@@ -223,10 +241,13 @@ module.exports = cds.service.impl(function () {
        const nav = requestedNavigation(req);
          let registeredConstructs = liveSync.registeredIsAuthoritative() ? liveSync.registered().map(externalConstruct) : data.constructs;
         const requestedKey = parentKey(req);
-        if (entity === 'Constructs' && requestedKey && liveSync.registeredIsAuthoritative()) {
-          const cached = registeredConstructs.find(row => row.ID === requestedKey || row.primaryMaLo === requestedKey);
-          if (cached) registeredConstructs = [await liveSync.detail('registered', cached.primaryMaLo)];
-        }
+         if (entity === 'Constructs' && requestedKey && liveSync.registeredIsAuthoritative()) {
+           const cached = registeredConstructs.find(row => row.ID === requestedKey || row.primaryMaLo === requestedKey);
+           if (cached) {
+             const detail = externalConstruct(await liveSync.detail('registered', cached.primaryMaLo));
+             registeredConstructs = [{ ...detail, ...await externalEnergy(detail) }];
+           }
+         }
           const registeredSyncState = liveSync.statuses().find(status => status.ID === 'registered')?.stale ? 'STALE' : 'CURRENT';
           const externalTree = externalTreeNodes(registeredConstructs, registeredSyncState);
          const registeredMaLos = new Set(registeredConstructs.map(row => row.primaryMaLo));

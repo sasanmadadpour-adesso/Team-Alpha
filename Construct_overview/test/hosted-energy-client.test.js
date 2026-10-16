@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { aggregateHostedRows, hostedEnergy, portalRows } = require('../srv/lib/hosted-energy-client');
+const { aggregateHostedRows, energyTotals, hostedEnergy, portalRows } = require('../srv/lib/hosted-energy-client');
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, status, text: async () => JSON.stringify(body) };
@@ -42,6 +42,17 @@ test('maps a residual-supply MaLo to whole-building hosted energy flow', () => {
   assert.equal(rows[0].consumptionKwh, 5);
   assert.equal(rows[0].generationKwh, 2);
   assert.equal(rows[0].residualGridKwh, 3);
+});
+
+test('sums hosted trend buckets for object-page KPI totals', () => {
+  const totals = energyTotals([
+    { bucketEnd: '2026-10-15T00:00:00.000Z', consumptionKwh: 2, generationKwh: 1, localEnergyKwh: 0.5, residualGridKwh: 1.5, exportKwh: 0.5 },
+    { bucketEnd: '2026-10-16T00:00:00.000Z', consumptionKwh: 3, generationKwh: 4, localEnergyKwh: 2, residualGridKwh: 1, exportKwh: 2 }
+  ]);
+  assert.deepEqual(totals, {
+    totalConsumptionKwh: 5, totalGenerationKwh: 5, localEnergyKwh: 2.5,
+    residualGridKwh: 2.5, exportKwh: 2.5, latestMeasurementTime: '2026-10-16T00:00:00.000Z'
+  });
 });
 
 test('falls back to hosted OData if the portal rejects the integration key', async () => {
