@@ -5,9 +5,10 @@
 })(this, function () {
   "use strict";
 
-  const NODE_ICONS = { BUILDING: "sap-icon://building", HOUSEHOLD: "sap-icon://home", PRODUCER: "sap-icon://solar-panel", COUNTER: "sap-icon://gauge" };
+  const NODE_ICONS = { BUILDING: "sap-icon://building", HOUSEHOLD: "sap-icon://home", PRODUCER: "sap-icon://solar-panel", COUNTER: "sap-icon://gauge", PENDING: "sap-icon://pending" };
 
   return {
+    address: (street, city) => [street, city].filter(Boolean).join(", "),
     isHousehold: nodeType => nodeType === "HOUSEHOLD",
     hasLink: detailHash => Boolean(detailHash),
     nodeIcon: nodeType => NODE_ICONS[nodeType] || "sap-icon://connected",

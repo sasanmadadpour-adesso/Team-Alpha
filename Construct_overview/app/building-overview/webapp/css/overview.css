@@ -13,6 +13,8 @@
 .vnbOv-tile label { color: #5b6b73; font-size: .8rem; }
 
 .vnbOv-card { margin: .5rem 1rem 1rem; border: 1px solid #d5dadd; border-radius: .75rem; background: #fff; box-shadow: 0 .125rem .35rem rgb(0 0 0 / 6%); }
+.vnbOv-tabs .sapMITBContent { padding: 0; background: transparent; border-bottom: 0; }
+.vnbOv-pendingTable { border-radius: 0 0 .75rem .75rem; overflow: hidden; }
 .vnbOv-toolbar { border-bottom: 1px solid #eef2f4; }
 
 /* Fewer lines: no vertical separators, only light horizontal hairlines. */

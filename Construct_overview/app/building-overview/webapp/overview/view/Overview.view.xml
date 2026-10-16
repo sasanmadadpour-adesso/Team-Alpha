@@ -59,10 +59,13 @@
     </f:header>
 
     <f:content>
+      <VBox>
+        <MessageStrip text="{ui>/combinedWarning}" type="Warning" showIcon="true" visible="{= !!${ui>/combinedWarning} }" class="sapUiSmallMargin"/>
       <VBox class="vnbOv-card">
         <OverflowToolbar class="vnbOv-toolbar">
-          <Title text="{ui>/tableTitle}" level="H3"/>
+          <Title text="{i18n>allConstructsTitle}" level="H3"/>
           <ToolbarSpacer/>
+          <Button icon="sap-icon://refresh" text="{i18n>refreshPending}" press="onRefreshLiveData" enabled="{= !${ui>/syncBusy} }" type="Transparent"/>
           <Button icon="sap-icon://expand-all" text="{i18n>treeExpandAll}" press="onExpandAll" type="Transparent"/>
           <Button icon="sap-icon://collapse-all" text="{i18n>treeCollapseAll}" press="onCollapseAll" type="Transparent"/>
         </OverflowToolbar>
@@ -105,7 +108,13 @@
               <table:template>
                 <Text text="{tree>roleLabel}"/>
               </table:template>
-            </table:Column>
+             </table:Column>
+              <table:Column width="11rem" sortProperty="lifecycleStatus">
+                <Label text="{i18n>constructStatus}"/>
+               <table:template>
+                 <ObjectStatus text="{= ${tree>lifecycleStatus} === 'UMGESTELLT' ? ${i18n>statusConverted} : ${i18n>statusPending} }" state="{= ${tree>lifecycleStatus} === 'UMGESTELLT' ? 'Success' : 'Warning' }" icon="{= ${tree>lifecycleStatus} === 'UMGESTELLT' ? 'sap-icon://accept' : 'sap-icon://pending' }"/>
+               </table:template>
+             </table:Column>
              <table:Column width="10rem" sortProperty="city">
                <Label text="{i18n>CITY}"/>
               <table:template>
@@ -155,6 +164,7 @@
             </table:Column>
           </table:columns>
         </table:TreeTable>
+      </VBox>
       </VBox>
     </f:content>
   </f:DynamicPage>

@@ -69,6 +69,28 @@ test('the overview component hosts a single tree table with building roots and m
   assert.equal(JSON.parse(fs.readFileSync(path.join(overviewRoot, 'manifest.json'), 'utf8'))['sap.ui5'].dependencies.libs['sap.f'] !== undefined, true);
 });
 
+test('the overview has one combined live tree rather than separate lifecycle tabs', () => {
+  const view = fs.readFileSync(path.join(appRoot, 'overview', 'view', 'Overview.view.xml'), 'utf8');
+  const controller = fs.readFileSync(path.join(appRoot, 'overview', 'controller', 'Overview.controller.js'), 'utf8');
+  assert.doesNotMatch(view, /<IconTabBar/);
+  assert.doesNotMatch(view, /pendingTable|allConstructsTable/);
+  assert.match(view, /<table:TreeTable/);
+  assert.match(view, /lifecycleStatus/);
+  assert.match(view, /allConstructsTitle/);
+  assert.match(controller, /ConstructTreeNodes/);
+  assert.match(controller, /syncConstructs/);
+  assert.match(controller, /30000/);
+});
+
+test('the service exposes reconciliation fields on the combined tree', () => {
+  const view = fs.readFileSync(path.join(appRoot, 'overview', 'view', 'Overview.view.xml'), 'utf8');
+  const service = fs.readFileSync(path.join(__dirname, '..', 'srv', 'energy-overview-service.cds'), 'utf8');
+  assert.match(view, /lifecycleStatus/);
+  assert.match(service, /entity ConstructTreeNodes/);
+  assert.match(service, /lifecycleStatus : String/);
+  assert.match(service, /sourceSystem : String/);
+});
+
 test('the overview header mirrors the list report: dynamic page, search with find/filter modes, match navigation and tiles', () => {
   const view = fs.readFileSync(path.join(appRoot, 'overview', 'view', 'Overview.view.xml'), 'utf8');
   assert.match(view, /<f:DynamicPage/);

@@ -9,3 +9,6 @@ graphify-out/cost.json
 # Runtime dependencies and local tooling
 node_modules/
 .venv/
+
+# Local live synchronization cache
+Construct_overview/db/live-sync.sqlite*

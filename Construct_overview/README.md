@@ -32,6 +32,42 @@ The source workbook defaults to `../Dataset_English.xlsx`. To use another workbo
 WORKBOOK_PATH=/absolute/path/to/Dataset_English.xlsx npm start
 ```
 
+## Live construct synchronization
+
+The overview can mirror pending registrations from **Anmelden** and authoritative registered constructs from **Umstellung**. It performs an initial synchronization at startup and polls both APIs every 30 seconds. Pending items are reconciled by primary MaLo and disappear after the same primary MaLo is returned by Umstellung. Cached data remains visible with a warning if either API is unavailable; removed pending rows are retained in `ConstructSyncAudit`.
+
+Default external contract:
+
+```text
+GET http://localhost:4010/api/constructs/pending
+GET http://localhost:4010/api/constructs/pending/{encodedMaLo}
+GET http://localhost:4020/api/constructs
+GET http://localhost:4020/api/constructs/{encodedMaLo}
+```
+
+Snapshot responses may be a plain JSON array or `{ "value": [...] }`. Each row must contain a primary MaLo under `primaryMaLo`, `maLo`, `malo`, `marketLocationId`, `marketLocationIdentifier`, or `importMaLo`. The external API key is sent as both `x-api-key` and a Bearer token.
+
+Configuration:
+
+| Environment variable | Default | Purpose |
+|---|---|---|
+| `PENDING_API_URL` | `http://localhost:4010/api/constructs/pending` | Anmeldung snapshot URL |
+| `REGISTERED_API_URL` | `http://localhost:4020/api/constructs` | Umstellung snapshot URL |
+| `EXTERNAL_API_KEY` | empty | Credential sent to external APIs |
+| `SYNC_API_KEY` | empty | Credential required by incoming webhooks |
+| `SYNC_INTERVAL_MS` | `30000` | Polling interval |
+| `SYNC_TIMEOUT_MS` | `10000` | Per-request timeout |
+| `SYNC_DB_PATH` | `db/live-sync.sqlite` | Persistent local cache and audit database |
+
+Webhook recovery endpoints accept a full array / value envelope or an individual `{ "event": "UPSERT|DELETE", "data": {...} }` event:
+
+```text
+POST /api/webhooks/pending
+POST /api/webhooks/registered
+```
+
+The OData service exposes `PendingConstructs`, `ConstructSyncStatus`, `ConstructSyncAudit`, and the `syncConstructs` action. The UI Pending tab refreshes every 30 seconds and also provides a manual refresh button.
+
 The workbook is checked before each request. A changed file is validated and loaded as one new snapshot, so all raw entities and calculated projections use the same workbook version. If a modified workbook is invalid, the previous valid snapshot remains active and CAP reports the validation error.
 
 ## API areas
