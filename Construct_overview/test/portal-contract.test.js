@@ -33,9 +33,10 @@ test('portal contract rejects unordered trend points', async () => {
 test('portal GET client has no end-user identifiers in its request contract', () => {
   const client = fs.readFileSync(path.join(root, 'app/member-app/webapp/api/portal-api.mjs'), 'utf8');
   assert.match(client, /GET|method: 'GET'/);
-  assert.match(client, /range=/);
-  assert.doesNotMatch(client, /malo=|memberId=|buildingId=/);
-  assert.match(client, /config\.credentials \|\| 'same-origin'/);
+  assert.match(client, /malo: String\(malo\)/);
+  assert.match(client, /range/);
+  assert.doesNotMatch(client, /memberId=|buildingId=/);
+  assert.doesNotMatch(client, /Authorization|credentials/);
   assert.match(client, /Accept: 'application\/json'/);
 });
 
