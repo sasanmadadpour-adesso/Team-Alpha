@@ -15,8 +15,17 @@ let server: ChildProcess;
 let dir: string;
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+let token = '';
+const login = async (user: string) => ((await (await fetch(`${BASE}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user }) })).json()) as { token: string }).token;
+const send = async (path: string, payload: object, bearer?: string) => {
+  const res = await fetch(`${BASE}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) }, body: JSON.stringify(payload) });
+  const text = await res.text();
+  let body: Json;
+  try { body = JSON.parse(text) as Json; } catch { body = { value: text }; }
+  return { status: res.status, body };
+};
 const post = async (path: string, payload: object = {}) => {
-  const res = await fetch(`${BASE}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const res = await fetch(`${BASE}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
   const text = await res.text();
   let body: Json;
   try { body = JSON.parse(text) as Json; } catch { body = { value: text }; }
@@ -35,6 +44,7 @@ beforeAll(async () => {
     const timer = setTimeout(() => reject(new Error('CAP server did not start')), 30000);
     server.stdout?.on('data', (chunk: Buffer) => { if (chunk.toString().includes('server listening')) { clearTimeout(timer); resolve(); } });
   });
+  token = await login('m.weber');
   expect((await post('resetDemo', { confirm: true })).status).toBe(200);
 }, 40000);
 afterAll(() => { server?.kill(); if (dir) rmSync(dir, { recursive: true, force: true }); });
@@ -361,5 +371,60 @@ describe('End-to-end: every user action works and leaves consistent data', () =>
     expect((await get('Relationships')).length).toBe(0);
     expect((await get('Outbox')).length).toBe(0);
     expect((await get('AuditEvents')).map((e) => e.operation)).toEqual(['REGISTER_CONSTRUCT', 'REGISTER_CONSTRUCT', 'REGISTER_CONSTRUCT']);
+  });
+});
+
+describe('Access layer: roles, sessions, API keys, audit actor', () => {
+  it('rejects writes without a token and lets reads through', async () => {
+    const r = await send('processAll', {});
+    expect(r.status).toBe(401);
+    expect(r.body.error.code).toBe('AUTH_REQUIRED');
+    expect((await get('Constructs')).length).toBe(3);
+  });
+
+  it('a viewer (read-only API key) may preview but not change anything', async () => {
+    const viewer = (await send('createApiKey', { name: 'Read-only', role: 'VIEWER' }, token)).body.token as string;
+    expect((await send('processAll', {}, viewer)).body.error.code).toBe('FORBIDDEN');
+    expect((await send('Constructs/B-MUL-01/previewSwitch', {}, viewer)).status).toBe(200);
+    expect((await send('resetDemo', { confirm: true }, viewer)).status).toBe(403);
+  });
+
+  it('rejects a forged or tampered session token', async () => {
+    const good = await login('m.weber');
+    expect((await send('processAll', {}, `${good.slice(0, -2)}xx`)).status).toBe(401);
+    expect((await send('processAll', {}, 's1.m.weber.9999999999999.AAAA')).status).toBe(401);
+  });
+
+  it('an API key works once created, is stored hashed, and the audit actor is the key — never a client-supplied name', async () => {
+    const created = await send('createApiKey', { name: 'ERP-Test', role: 'PIPELINE' }, token);
+    expect(created.status).toBe(200);
+    const secret = created.body.token as string;
+    expect(secret.startsWith('rk_')).toBe(true);
+    expect(JSON.stringify(await get('ApiKeys'))).not.toContain(secret);
+    expect((await get<{ ID: string; name: string }[]>('ApiKeys')).find((k) => k.name === 'ERP-Test')).toMatchObject({ revokedAt: null });
+    const run = await send('processAll', { actor: 'FORGED' }, secret);
+    expect(run.status).toBe(200);
+    const actors = new Set((await get('AuditEvents')).map((e) => e.actor));
+    expect(actors.has('Key: ERP-Test')).toBe(true);
+    expect(actors.has('FORGED')).toBe(false);
+    expect((await get('ApiCalls')).some((c) => c.actor === 'Key: ERP-Test' && c.path.endsWith('/processAll') && c.status === 200)).toBe(true);
+    expect((await send('resetDemo', { confirm: true }, secret)).status).toBe(403); // a pipeline key cannot reset the demo
+  });
+
+  it('a revoked key stops working at once', async () => {
+    const created = await send('createApiKey', { name: 'Temp', role: 'MAINTAINER' }, token);
+    expect((await send('processAll', {}, created.body.token)).status).toBe(200);
+    expect((await send('revokeApiKey', { id: created.body.ID }, token)).body).toBe(true);
+    expect((await send('processAll', {}, created.body.token)).status).toBe(401);
+    expect((await send('revokeApiKey', { id: created.body.ID }, token)).body.error.code).toBe('KEY_NOT_FOUND');
+  });
+
+  it('validates key creation input and the persona list', async () => {
+    expect((await send('createApiKey', { name: '  ' }, token)).body.error.code).toBe('KEY_NAME_REQUIRED');
+    expect((await send('createApiKey', { name: 'x', role: 'ROOT' }, token)).body.error.code).toBe('KEY_ROLE_INVALID');
+    expect((await send('login', { user: 'nobody' })).body.error.code).toBe('USER_UNKNOWN');
+    expect((await get<{ id: string }[]>('personas()')).map((p) => p.id)).toEqual(['m.weber']);
+    const me = await (await fetch(`${BASE}/me()`, { headers: { Authorization: `Bearer ${token}` } })).json();
+    expect(me).toMatchObject({ authenticated: true, name: 'M. Weber', role: 'MAINTAINER' });
   });
 });

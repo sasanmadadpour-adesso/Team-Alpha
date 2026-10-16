@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowLeft, ChevronDown, Download, Play, Sun, Wind, Home } from 'lucide-react';
+import { Gate, useAuth } from '../auth';
 import { confirmVsz, processConstruct, type Case, type Relationship } from '../api';
 import { evidenceText, fmtDate, useI18n } from '../i18n';
 import { NEEDS_ATTENTION, StateChip, StateIcon, StatusChip, caseHeadline, constructRail, errorText, findingsText, stepUi, useApp, type UiState, type WorkItem } from '../ui';
@@ -10,6 +11,7 @@ type StepTone = UiState;
 export function ConstructPage({ constructId }: { constructId: string }) {
   const { data, refresh, toast, openCase, go } = useApp();
   const { t, lang } = useI18n();
+  const auth = useAuth();
   const [busy, setBusy] = useState(false);
   const c = data.constructs.find((x) => x.constructId === constructId);
   if (!c) return <div className="banner err">{t('err.CONSTRUCT_NOT_FOUND', { construct: constructId })}</div>;
@@ -75,7 +77,7 @@ export function ConstructPage({ constructId }: { constructId: string }) {
             <span>{c.streetAddress}</span>
           </div>
         </div>
-        <button className="btn secondary" onClick={cont} disabled={busy}>{busy ? <span className="spin" /> : <Play size={15} />}{t('co.continue')}</button>
+        <button className="btn secondary" onClick={cont} disabled={busy || !auth.write} title={auth.write ? undefined : t('auth.readonly')}>{busy ? <span className="spin" /> : <Play size={15} />}{t('co.continue')}</button>
       </div>
 
       <div className="co-layout">
@@ -212,7 +214,7 @@ function VszDetail({ items, onConfirm }: { items: { ID: string; itemCode: string
         ))}
       </div>
       {open && (
-        <div className="inline-form">
+        <Gate><div className="inline-form">
           <label className={`field ${err ? 'invalid' : ''}`} style={{ flex: 1, minWidth: 240 }}>{t('co.s.vsz.evidence')}
             <input value={evidence} onChange={(e) => { setEvidence(e.target.value); setErr(false); }} placeholder={t('co.s.vsz.evidence.ph')} />
             {err && <span className="err-text">{t('common.reason.required')}</span>}
@@ -223,7 +225,7 @@ function VszDetail({ items, onConfirm }: { items: { ID: string; itemCode: string
             try { await onConfirm(evidence.trim()); setEvidence(''); } catch (e) { toast(errorText(t, e), 'err'); }
             setBusy(false);
           }}>{busy ? <span className="spin" /> : null}{t('co.s.vsz.confirm')}</button>
-        </div>
+        </div></Gate>
       )}
     </>
   );

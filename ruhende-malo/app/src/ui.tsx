@@ -31,12 +31,17 @@ export const navigate = (path: string) => { if (location.hash !== `#${path}`) lo
 
 /* ---------------- Brand mark: active circle + ruhend crescent ---------------- */
 export function BrandMark() {
+  return <span className="logo"><img className="brand-mark" src="/logo.svg" alt="" width={36} height={36} /><span className="logo-ripple" aria-hidden="true" /></span>;
+}
+
+/** SIMULATION tag with the full explanation on hover and focus: the warning stays on every screen, but small. */
+export function SimTag() {
+  const { t } = useI18n();
   return (
-    <svg className="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
-      <rect width="28" height="28" rx="8" fill="#0a5fc2" />
-      <circle cx="11" cy="14" r="6" fill="#fff" />
-      <path d="M17.5 8.2a6 6 0 1 1 0 11.6 6 6 0 0 0 0-11.6z" fill="#9cc4f3" />
-    </svg>
+    <span className="sim-tag" tabIndex={0} role="note" aria-label={t('top.sim.title')}>
+      <i />{t('top.sim.tag')}
+      <span className="sim-pop" role="tooltip"><b>{t('top.sim.title')}</b>{t('top.sim.body')}</span>
+    </span>
   );
 }
 

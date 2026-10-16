@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, GitFork } from 'lucide-react';
-import type { AuditEvent, Snapshot } from '../api';
+import type { ApiCall, AuditEvent, Snapshot } from '../api';
 import { fmtDateTime, relTime, useI18n } from '../i18n';
 import { useApp } from '../ui';
 
@@ -25,6 +25,14 @@ const HUMAN_REASON = new Set(['RESOLVE_ISSUE', 'CONFIRM_VSZ', 'REACTIVATE', 'REM
 export const humanReason = (e: AuditEvent) => (HUMAN_REASON.has(e.operation) ? e.reason ?? '' : '');
 
 const tone = (op: string) => (['SET_DORMANT', 'MAINTAIN_EINSPEISE_MEMA', 'CONFIRM_VSZ'].includes(op) ? 'ok' : ['RESOLVE_ISSUE', 'SAP_STATE_UPDATE', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION'].includes(op) ? 'act' : '');
+
+export type FeedItem = { id: string; at: string; kind: 'event'; event: AuditEvent } | { id: string; at: string; kind: 'call'; call: ApiCall };
+export const buildFeed = (data: Snapshot): FeedItem[] => {
+  const events: FeedItem[] = data.events.filter((e) => e.operation !== 'VALIDATE').map((event) => ({ id: event.ID, at: event.eventTime, kind: 'event' as const, event }));
+  const calls: FeedItem[] = data.calls.map((call) => ({ id: call.ID, at: call.at, kind: 'call' as const, call }));
+  return [...events, ...calls].sort((a, b) => b.at.localeCompare(a.at));
+};
+
 
 /** Compact history list, used on the construct page. */
 export function HistoryList({ events, limit = 8 }: { events: AuditEvent[]; limit?: number }) {
@@ -60,10 +68,17 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
   const [operation, setOperation] = useState('');
   const [query, setQuery] = useState('');
   const [showChecks, setShowChecks] = useState(false);
+  const [source, setSource] = useState<'all' | 'actions' | 'api'>('all');
   const actor = (a: string) => (t(`actor.${a}`) === `actor.${a}` ? a : t(`actor.${a}`));
 
   const operations = useMemo(() => [...new Set(data.events.map((e) => e.operation))].sort(), [data.events]);
-  const rows = data.events.filter((e) => {
+  const rows = buildFeed(data).filter((it) => {
+    if (it.kind === 'call') {
+      if (source === 'actions' || operation || construct) return false;
+      return !query || `${it.call.path} ${it.call.actor}`.toLowerCase().includes(query.toLowerCase());
+    }
+    const e = it.event;
+    if (source === 'api') return false;
     if (!showChecks && e.operation === 'VALIDATE') return false;
     if (operation && e.operation !== operation) return false;
     if (construct && !eventConstructs(e, data).includes(construct)) return false;
@@ -92,6 +107,13 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
             {operations.map((o) => <option key={o} value={o}>{t(`act.${o}`)}</option>)}
           </select>
         </label>
+        <label className="field">{t('log.f.source')}
+          <select value={source} onChange={(e) => setSource(e.target.value as 'all' | 'actions' | 'api')}>
+            <option value="all">{t('log.f.all')}</option>
+            <option value="actions">{t('log.f.actions')}</option>
+            <option value="api">{t('log.f.api')}</option>
+          </select>
+        </label>
         <label className="field grow">{t('log.f.search')}
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="50539603921" />
         </label>
@@ -101,7 +123,20 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
         <table>
           <thead><tr><th>{t('log.c.when')}</th><th>{t('log.c.what')}</th><th>{t('log.c.object')}</th><th>{t('log.c.who')}</th><th>{t('log.c.why')}</th></tr></thead>
           <tbody>
-            {rows.map((e) => {
+            {rows.map((it) => {
+              if (it.kind === 'call') {
+                const c = it.call;
+                return (
+                  <tr key={it.id}>
+                    <td title={relTime(lang, it.at)}>{fmtDateTime(lang, it.at)}</td>
+                    <td><span className="chip info">API</span></td>
+                    <td className="mono">{c.method} {c.path.replace('/api/v1', '')}</td>
+                    <td>{actor(c.actor)}</td>
+                    <td className="why"><span className={c.status < 300 ? 'code-ok' : 'code-err'}>{c.status}</span> · {c.durationMs} ms</td>
+                  </tr>
+                );
+              }
+              const e = it.event;
               const c = e.maloId ? data.cases.find((x) => x.maloId === e.maloId) : undefined;
               return (
                 <tr key={e.ID} onClick={() => c && openCase(c.caseId)} className={c ? 'link' : ''}>

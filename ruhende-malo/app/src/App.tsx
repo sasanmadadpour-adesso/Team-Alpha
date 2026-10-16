@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlaskConical, MoreHorizontal, RotateCcw, Upload } from 'lucide-react';
-import { type Snapshot, importWorkbook, loadSnapshot, resetDemo, runSelfCheck } from './api';
+import { type Snapshot, importWorkbook, loadSnapshot, resetDemo, runSelfCheck, whoAmI } from './api';
+import { AuthContext, SIGNED_OUT, SignIn, makeAuth, type Who } from './auth';
+import { getToken, setToken } from './session';
+import { Topbar } from './topbar';
 import { I18nContext, translate, type Key, type Lang } from './i18n';
-import { AppContext, BrandMark, errorText, navigate, openItems, useRoute, useToasts } from './ui';
+import { AppContext, errorText, navigate, openItems, useRoute, useToasts } from './ui';
 import { ConfirmHost, confirmDialog } from './confirm';
 import { OverviewPage } from './pages/Overview';
 import { ConstructPage } from './pages/Construct';
@@ -22,7 +24,8 @@ export default function App() {
   const [data, setData] = useState<Snapshot>();
   const [error, setError] = useState<string>();
   const [caseId, setCaseId] = useState<string>();
-  const [menu, setMenu] = useState(false);
+  const [who, setWho] = useState<Who | null | undefined>(undefined);   // undefined = checking the stored session, null = signed out
+  const [expired, setExpired] = useState(false);
   const route = useRoute();
   const toasts = useToasts();
   const file = useRef<HTMLInputElement>(null);
@@ -30,6 +33,17 @@ export default function App() {
   const t = useCallback((k: Key | string, p?: Record<string, string | number>) => translate(lang, k, p), [lang]);
   const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  useEffect(() => {
+    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/api') ? t('nav.api') : route.startsWith('/protokoll') ? t('feed.title') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
+    document.title = `${page} · Ruhend — ${t('app.subtitle')} (${t('top.simulation.short')})`;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'));
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', t('app.description'));
+  }, [route, t]);
+  useEffect(() => {
+    if (!getToken()) { setWho(null); return; }
+    whoAmI().then((me) => { if (me.authenticated && me.name) setWho({ name: me.name, role: me.role }); else { setToken(null); setWho(null); } }).catch(() => setWho(null));
+  }, []);
+  useEffect(() => { const out = () => { setWho(null); setExpired(true); setData(undefined); }; window.addEventListener(SIGNED_OUT, out); return () => window.removeEventListener(SIGNED_OUT, out); }, []);
 
   // The backend is the single source of truth. The screen follows it: manual refresh, a quiet poll, and a refresh on return.
   const lastSig = useRef('');
@@ -53,13 +67,13 @@ export default function App() {
   }, []);
   const pause = useCallback((on: boolean) => { pausedBy.current = Math.max(0, pausedBy.current + (on ? 1 : -1)); }, []);
   useEffect(() => {
+    if (!who) return;
     const id = setInterval(() => void poll(), 4000);
     const onVisible = () => { if (document.visibilityState === 'visible') void poll(); };
     window.addEventListener('focus', onVisible); document.addEventListener('visibilitychange', onVisible);
     return () => { clearInterval(id); window.removeEventListener('focus', onVisible); document.removeEventListener('visibilitychange', onVisible); };
-  }, [poll]);
-  useEffect(() => { void refresh(); }, [refresh]);
-  useEffect(() => { if (!menu) return; const close = () => setMenu(false); window.addEventListener('click', close); return () => window.removeEventListener('click', close); }, [menu]);
+  }, [poll, who]);
+  useEffect(() => { if (who) void refresh(); }, [refresh, who]);
 
   const openCount = data ? openItems(data.cases).length : 0;
   const lastCount = useRef(openCount);
@@ -93,41 +107,15 @@ export default function App() {
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
   const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
 
+  const auth = useMemo(() => (who ? makeAuth(who, setWho, () => undefined) : undefined), [who]);
+  if (who === undefined) return <I18nContext.Provider value={i18n}><div className="skeleton" style={{ height: 320, margin: 80 }} /></I18nContext.Provider>;
+  if (!who || !auth) return <I18nContext.Provider value={i18n}><SignIn expired={expired} onSignedIn={(w) => { setExpired(false); setWho(w); }} /></I18nContext.Provider>;
+
   return (
     <I18nContext.Provider value={i18n}>
-      <header className="topbar">
-        <a className="brand" href="#/" aria-label="Ruhend">
-          <BrandMark />
-          <span className="brand-name">Ruhend</span>
-          <span className="brand-sub">{t('app.subtitle')}</span>
-        </a>
-        <nav className="nav" aria-label={t('nav.main')}>
-          <a href="#/" className={section === 'overview' ? 'on' : ''}>{t('nav.overview')}</a>
-          <a href="#/klaerfaelle" className={section === 'cases' ? 'on' : ''}>{t('nav.cases')}{openCount > 0 && <span className={`count ${bump ? 'pop' : ''}`}>{openCount}</span>}</a>
-          <a href="#/protokoll" className={section === 'log' ? 'on' : ''}>{t('nav.log')}</a>
-          <a href="#/api" className={section === 'api' ? 'on' : ''}>{t('nav.api')}</a>
-        </nav>
-        <div className="top-right">
-          <span className="sim" title={t('top.simulation')}><i /><span>{t('top.simulation')}</span></span>
-          <div className="lang" role="group" aria-label={t('lang.label')}>
-            <button className={lang === 'de' ? 'on' : ''} onClick={() => setLang('de')}>DE</button>
-            <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>EN</button>
-          </div>
-          <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
-            <button className="icon-btn" aria-label={t('menu.title')} aria-expanded={menu} onClick={() => setMenu((m) => !m)}><MoreHorizontal size={18} /></button>
-            {menu && (
-              <div className="menu" role="menu">
-                <div className="menu-title">{t('menu.title')}</div>
-                <button role="menuitem" onClick={() => { setMenu(false); void selfCheck(); }}><FlaskConical size={16} />{t('menu.selfcheck')}</button>
-                <button role="menuitem" onClick={() => { setMenu(false); file.current?.click(); }}><Upload size={16} />{t('menu.import')}</button>
-                <hr />
-                <button role="menuitem" onClick={() => { setMenu(false); void reset(); }}><RotateCcw size={16} />{t('menu.reset')}</button>
-              </div>
-            )}
-          </div>
-          <input ref={file} type="file" accept=".xlsx" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-        </div>
-      </header>
+     <AuthContext.Provider value={auth}>
+      <Topbar lang={lang} setLang={setLang} data={data} section={section} openCount={openCount} bump={bump} onSelfCheck={() => void selfCheck()} onImport={() => file.current?.click()} onReset={() => void reset()} />
+      <input ref={file} type="file" accept=".xlsx" hidden onChange={(e) => onFile(e.target.files?.[0])} />
 
       <main className="page">
         {error && !data && <div className="banner err">{error}</div>}
@@ -149,6 +137,7 @@ export default function App() {
       </main>
       {toasts.view}
       <ConfirmHost />
+     </AuthContext.Provider>
     </I18nContext.Provider>
   );
 }

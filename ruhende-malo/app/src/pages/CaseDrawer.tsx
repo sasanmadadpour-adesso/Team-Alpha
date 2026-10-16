@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, X } from 'lucide-react';
+import { Gate } from '../auth';
 import { execute, loadPeriods, preview, resolveIssue, updateSapState, type Case, type CaseIssue, type Operation, type OperationResult, type Period, type Resolution } from '../api';
 import { fmtDate, fmtDateTime, resultText, useI18n, type Key } from '../i18n';
 import { confirmDialog } from '../confirm';
@@ -94,7 +95,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
           {issues.length > 0 && phase.kind !== 'working' && (
             <section className="d-sec">
               <h4>{t('case.actions')}</h4>
-              {issues.map((issue, i) => <IssueActions key={issue.ID} issue={issue} c={c} primary={i === 0} run={run} />)}
+              <Gate>{issues.map((issue, i) => <IssueActions key={issue.ID} issue={issue} c={c} primary={i === 0} run={run} />)}</Gate>
             </section>
           )}
 
@@ -152,7 +153,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
             </section>
           )}
 
-          {c.kind === 'HOUSEHOLD' && ['DONE', 'REACTIVATED'].includes(c.status) && <LifecycleActions c={c} />}
+          {c.kind === 'HOUSEHOLD' && ['DONE', 'REACTIVATED'].includes(c.status) && <Gate><LifecycleActions c={c} /></Gate>}
 
           {history.length > 0 && (
             <section className="d-sec">

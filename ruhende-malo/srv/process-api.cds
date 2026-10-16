@@ -64,6 +64,10 @@ service ProcessApi {
     reststromMaloId: String; effectiveDate: Date; beforeState: String; afterState: String; canExecute: Boolean;
     simulated: Boolean; requestId: UUID; checks: many Check; relationships: many RelationshipDiff;
   }
+  type Persona { id: String; name: String; title: String; role: String; }
+  type Session { token: String; expiresAt: Timestamp; user: Persona; }
+  type Principal { authenticated: Boolean; id: String; name: String; role: String; via: String; }
+  type NewApiKey { ID: UUID; name: String; role: String; prefix: String; token: String; }
   type Health { status: String; mode: String; sapConnection: String; version: String; }
 
   /* ------------------------------------------------------------ resources */
@@ -96,6 +100,9 @@ service ProcessApi {
   @readonly entity ProcessRequests   as projection on db.ProcessRequests;
   @readonly entity ProcessRuns       as projection on db.ProcessRuns;
   @readonly entity AuditEvents       as projection on db.AuditEvents;
+  /** Demo access: API keys (the secret is never returned after creation) and the log of write calls. */
+  @readonly entity ApiKeys           as projection on db.ApiKeys excluding { hash };
+  @readonly entity ApiCalls          as projection on db.ApiCalls;
   /** Handover to downstream processes (UTILMD, INVOIC, EDM) — recorded, NOT sent. */
   @readonly entity Outbox            as projection on db.OutboxEvents;
 
@@ -111,6 +118,14 @@ service ProcessApi {
   }
 
   function health() returns Health;
+  /** Demo sign-in: pick a persona, receive a Bearer token (12 h). Not real authentication. */
+  action login(user: String) returns Session;
+  function personas() returns many Persona;
+  /** The caller as the API sees them (from the Bearer token). */
+  function me() returns Principal;
+  /** Create an API key for another service. The secret is returned once. Role: VIEWER | MAINTAINER | PIPELINE. */
+  action createApiKey(name: String, role: String) returns NewApiKey;
+  action revokeApiKey(id: UUID) returns Boolean;
   /** One case per participant: the single, live status every client shows. */
   function cases() returns many CaseView;
   /** S1 Anmeldung Konstrukt (JSON). Re-registering a building replaces its source rows and process state. */

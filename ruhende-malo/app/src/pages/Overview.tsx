@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Snapshot } from '../api';
 import { ArrowRight, BookOpen, Check, ChevronRight, GitFork, Play, RefreshCw } from 'lucide-react';
+import { useAuth } from '../auth';
 import { processAll, type ProcessResult } from '../api';
 import { fmtDate, relTime, useI18n } from '../i18n';
 import { Rail, Ring, STAGES, ToneIcon, caseHeadline, constructRail, errorText, openItems, useApp } from '../ui';
@@ -11,6 +12,7 @@ const STAGE_MS = [380, 420, 620, 460, 620, 420]; // vSZ and the switch take long
 export function OverviewPage() {
   const { data: live, refresh, toast, go, pause } = useApp();
   const { t, lang } = useI18n();
+  const auth = useAuth();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ProcessResult>();
   // During the playback the page still shows the state from before the run; each card reveals its real result stage by stage.
@@ -53,7 +55,7 @@ export function OverviewPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
         <button className="btn secondary" onClick={() => go('/ablauf')}><BookOpen size={15} />{t('stages.title')}</button>
-        <button className="btn primary" onClick={run} disabled={running}>
+        <button className="btn primary" onClick={run} disabled={running || !auth.write} title={auth.write ? undefined : t('auth.readonly')}>
           {running ? <span className="spin" /> : processed ? <RefreshCw size={16} /> : <Play size={16} />}
           {running ? t('ov.running') : processed ? t('ov.rerun') : t('ov.run')}
         </button>

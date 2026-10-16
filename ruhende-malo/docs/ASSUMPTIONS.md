@@ -66,3 +66,12 @@ Everything in this application is a **local simulation**. There is no SAP connec
 - **Korrektur** moves the dormant start together with the MaMa, the household MeMa and the Einspeise-MeMa of that MaLo. The original request stays in the history; the audit keeps the reason.
 - **Wiederaktivierung** returns the MaLo to ACTIVE. MeMa/MaMa stay open (assumption, not specified in the PDF).
 - A request with status SUCCESS is never overwritten by a later run. "Already switched" is date-independent, so a Korrektur is not flagged as a conflict.
+
+## Demo access, API keys and activity (not real authentication)
+
+- **Sign-in is a demo.** Two fixed personas (M. Weber = Maintainer, A. Klein = Viewer), no password, no identity provider. The session token is an HMAC-signed value valid for 12 hours (`srv/auth.ts`).
+- **Roles are enforced in the backend** (`server.ts`, before any business logic): without a token every write returns 401 `AUTH_REQUIRED`; a role without permission gets 403 `FORBIDDEN`. Viewer: reads and previews. Maintainer: everything. Pipeline (API keys only): all writes except reset, import, self-check and key management.
+- **The actor is never trusted from the client.** A name sent in a request body is ignored; the audit log records the signed-in name or `Key: <name>`.
+- **API keys:** the secret (`rk_…`) is shown once; only its SHA-256 is stored. Revoking takes effect at once. Resetting the demo removes all keys and the call log.
+- **Activity panel:** merges the audit log with `ApiCalls` (every write call: who, path, status, duration). Reads are not logged.
+- The API playground sends real requests; the "Effect in the app" numbers are measured from the real counters before and after the call.

@@ -62,3 +62,7 @@ entity ProcessRequests : cuid, managed { operation : String(40); maloId : String
 entity PrerequisiteChecks : cuid, managed { requestId : UUID; checkCode : String(80); result : String(30); confidence : String(30); notes : String(1000); }
 entity AuditEvents : cuid { requestId : UUID; referenceOperationId : UUID; operation : String(40); maloId : String(40); actor : String(80); effectiveDate : Date; eventTime : Timestamp; beforeValue : LargeString; afterValue : LargeString; reason : String(1000); simulated : Boolean default true; }
 entity ImportRuns : cuid { sourceFile : String(200); sourceChecksum : String(64); startedAt : Timestamp; completedAt : Timestamp; status : String(20); totalRows : Integer; buildingCount : Integer; conflictCount : Integer; message : String(1000); }
+/** Demo access for other services. The secret is shown once; only its SHA-256 is stored. */
+entity ApiKeys : cuid, managed { name : String(80); role : String(20); prefix : String(12); hash : String(64) @assert.unique; createdBy : String(80); lastUsedAt : Timestamp; revokedAt : Timestamp; }
+/** Every write call to /api/v1 (who, what, result). Reads are not logged. */
+entity ApiCalls : cuid { at : Timestamp; actor : String(80); via : String(10); method : String(8); path : String(200); status : Integer; durationMs : Integer; }

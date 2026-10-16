@@ -1,13 +1,15 @@
 /** Typed client for the public REST API (/api/v1). The UI uses exactly the contract other services use. */
+import { SIGNED_OUT, getToken, setToken, type Persona } from './session';
+
 const BASE = '/api/v1';
-export const ACTOR = 'DEMO_USER';
 
 export class ApiError extends Error { constructor(readonly status: number, message: string, readonly code = 'ERROR', readonly params: Record<string, string> = {}) { super(message); } }
 
 async function http<T>(path: string, body?: object): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${BASE}/${path}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
+    const auth: Record<string, string> = getToken() ? { Authorization: `Bearer ${getToken()}` } : {};
+    response = await fetch(`${BASE}/${path}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', ...auth }, body: JSON.stringify(body) } : { headers: auth });
   } catch {
     throw new ApiError(0, 'NETWORK', 'NETWORK');
   }
@@ -18,7 +20,9 @@ async function http<T>(path: string, body?: object): Promise<T> {
     const e = (payload as { error?: { message?: string; code?: string; args?: string[] } } | undefined)?.error;
     let params: Record<string, string> = {};
     try { params = JSON.parse(e?.args?.[0] ?? '{}') as Record<string, string>; } catch { /* no params */ }
-    throw new ApiError(response.status, e?.message ?? `HTTP ${response.status}`, e?.code && /^[A-Z_]+$/.test(e.code) ? e.code : 'ERROR', params);
+    const code = e?.code && /^[A-Z_]+$/.test(e.code) ? e.code : 'ERROR';
+    if (response.status === 401 && getToken()) { setToken(null); window.dispatchEvent(new Event(SIGNED_OUT)); }   // expired or revoked session
+    throw new ApiError(response.status, e?.message ?? `HTTP ${response.status}`, code, params);
   }
   return payload as T;
 }
@@ -50,13 +54,15 @@ export interface Period { ID: string; businessState: string; validFrom: string |
 export interface OperationResult { operation: Operation; status: string; code: string; message: string; beforeState: string | null; afterState: string | null; canExecute: boolean; requestId: string | null }
 export interface ProcessResult { runId: string; success: number; alreadyDone: number; skipped: number; blocked: number; review: number; error: number }
 
+export interface ApiCall { ID: string; at: string; actor: string; via: string; method: string; path: string; status: number; durationMs: number }
+export interface ApiKey { ID: string; name: string; role: string; prefix: string; createdBy: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null }
 export interface Snapshot {
   constructs: Construct[]; cases: Case[]; vsz: VszItem[]; relationships: Relationship[];
-  requests: ProcessRequest[]; events: AuditEvent[]; outbox: OutboxEvent[]; loadedAt: number;
+  requests: ProcessRequest[]; events: AuditEvent[]; outbox: OutboxEvent[]; calls: ApiCall[]; loadedAt: number;
 }
 
 export async function loadSnapshot(): Promise<Snapshot> {
-  const [constructs, cases, vsz, relationships, requests, events, outbox] = await Promise.all([
+  const [constructs, cases, vsz, relationships, requests, events, outbox, calls] = await Promise.all([
     http<Construct[]>('Constructs?$orderby=constructId'),
     http<Case[]>('cases()'),
     http<VszItem[]>('VszChecklist?$orderby=constructId,step'),
@@ -64,18 +70,29 @@ export async function loadSnapshot(): Promise<Snapshot> {
     http<ProcessRequest[]>('ProcessRequests?$orderby=executionTime desc&$top=500'),
     http<AuditEvent[]>('AuditEvents?$orderby=eventTime desc&$top=200'),
     http<OutboxEvent[]>('Outbox?$orderby=createdAt desc'),
+    http<ApiCall[]>('ApiCalls?$orderby=at desc&$top=100'),
   ]);
-  return { constructs, cases, vsz, relationships, requests, events, outbox, loadedAt: Date.now() };
+  return { constructs, cases, vsz, relationships, requests, events, outbox, calls, loadedAt: Date.now() };
 }
 
 export const loadPeriods = (maloId: string) => http<Period[]>(`LifecyclePeriods?$filter=${q(`maloId eq '${maloId}'`)}&$orderby=validFrom`);
-export const processAll = () => http<ProcessResult>('processAll', { actor: ACTOR });
-export const processConstruct = (id: string) => http<unknown>(`Constructs/${id}/process`, { actor: ACTOR });
-export const confirmVsz = (id: string, evidence: string) => http<unknown>(`Constructs/${id}/confirmVsz`, { evidence, actor: ACTOR });
-export const resolveIssue = (id: string, resolution: Resolution, reason: string, value?: string) => http<unknown>(`Issues/${id}/resolve`, { resolution, value, reason, actor: ACTOR });
-export const updateSapState = (attribute: 'imsys' | 'abmeldung' | 'mcm', objectId: string, value: string) => http<unknown>('updateSapState', { attribute, objectId, value, actor: ACTOR });
-export const importWorkbook = (fileName: string, contentBase64: string) => http<{ constructIds: string[]; rows: number }>('importWorkbook', { fileName, contentBase64, actor: ACTOR });
+export const processAll = () => http<ProcessResult>('processAll', {});
+export const processConstruct = (id: string) => http<unknown>(`Constructs/${id}/process`, {});
+export const confirmVsz = (id: string, evidence: string) => http<unknown>(`Constructs/${id}/confirmVsz`, { evidence });
+export const resolveIssue = (id: string, resolution: Resolution, reason: string, value?: string) => http<unknown>(`Issues/${id}/resolve`, { resolution, value, reason });
+export const updateSapState = (attribute: 'imsys' | 'abmeldung' | 'mcm', objectId: string, value: string) => http<unknown>('updateSapState', { attribute, objectId, value });
+export const importWorkbook = (fileName: string, contentBase64: string) => http<{ constructIds: string[]; rows: number }>('importWorkbook', { fileName, contentBase64 });
 export const preview = (command: object) => http<OperationResult>('preview', { command });
-export const execute = (command: object) => http<OperationResult>('execute', { command, actor: ACTOR });
+export const execute = (command: object) => http<OperationResult>('execute', { command });
 export const resetDemo = () => http<string>('resetDemo', { confirm: true });
 export const runSelfCheck = () => http<{ passed: number; failed: number; results: string }>('runSelfCheck', {});
+
+export interface Session { token: string; expiresAt: string; user: Persona }
+export interface Me { authenticated: boolean; name: string | null; role: Persona['role'] | 'NONE'; via: string | null }
+export interface NewApiKey { ID: string; name: string; role: string; prefix: string; token: string }
+export const loadPersonas = () => http<Persona[]>('personas()');
+export const login = (user: string) => http<Session>('login', { user });
+export const whoAmI = () => http<Me>('me()');
+export const loadApiKeys = () => http<ApiKey[]>('ApiKeys?$orderby=createdAt desc');
+export const createApiKey = (name: string, role: string) => http<NewApiKey>('createApiKey', { name, role });
+export const revokeApiKey = (id: string) => http<boolean>('revokeApiKey', { id });

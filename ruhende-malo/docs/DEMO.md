@@ -14,3 +14,10 @@ Before you start: `npm run dev`, open http://localhost:5173, then **⋯ → Demo
 6. **Lifecycle:** open a ruhende MaLo → *Weitere Aktionen* → **Wiederaktivieren** 01.12.2026 → *Prüfen* → *Ausführen* → Zeitscheiben show Aktiv → Ruhend → Aktiv.
 7. **EN:** switch the language. The same screens appear in English, and the market terms stay German.
 8. **Schnittstelle:** `cases()`, `updateSapState`, `processAll` with *Try it*. **⋯ → Prüfszenarien ausführen:** 18/18.
+
+## Access and API playground
+
+1. Sign in as **M. Weber (Maintainer)**. The topbar shows the SIMULATION tag (hover for the full text), the activity icon and the user menu.
+2. Switch to **A. Klein (Viewer)** from the user menu: write buttons are disabled; in the API page a write call returns a real `403`.
+3. Open **API**: run the five-step example "new construct from start to finish". Every step shows the measured effect (cases, MaLos ruhend, MeMa/MaMa, handover events).
+4. Create an API key under *Access*, copy the secret once, call `POST /processAll` with it, then open the activity panel: the call appears as `Key: <name>`.

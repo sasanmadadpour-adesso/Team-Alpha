@@ -79,7 +79,7 @@ describe('language completeness (DE / EN)', () => {
 
   it('translate(), resultText() and evidenceText() give language-specific text', () => {
     expect(translate('de', 'res.INVALID_OPERATION_SEQUENCE.REACTIVATE')).toContain('ruhende MaLo');
-    expect(translate('en', 'res.INVALID_OPERATION_SEQUENCE.REACTIVATE')).toContain('ruhend MaLo');
+    expect(translate('en', 'res.INVALID_OPERATION_SEQUENCE.REACTIVATE')).toContain('dormant MaLo');
     const tde = (k: string, p?: Record<string, string | number>) => translate('de', k, p);
     const ten = (k: string, p?: Record<string, string | number>) => translate('en', k, p);
     expect(resultText(tde, 'INVALID_OPERATION_SEQUENCE', 'REACTIVATE')).not.toBe(resultText(ten, 'INVALID_OPERATION_SEQUENCE', 'REACTIVATE'));

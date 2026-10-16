@@ -12,6 +12,7 @@ import { continueProcessing, listCases } from './construct/cases.js';
 import { SAP_VALUES, updateSapState, type SapAttribute } from './construct/sap-state.js';
 import { executeLifecycle, planLifecycle } from './construct/lifecycle-ops.js';
 import type { LifecyclePlan } from './domain/lifecycle.js';
+import { PERSONAS, ROLES, hashKey, newKeyToken, signSession, type Role } from './auth.js';
 
 /**
  * REST facade (/api/v1). Transport only: input validation, error mapping and DTO shaping.
@@ -24,9 +25,14 @@ const OPERATIONS: Operation[] = ['SET_DORMANT', 'REACTIVATE', 'REMOVE_FROM_CONST
 const RESOLUTIONS: Resolution[] = ['CHOOSE_BUILDING', 'EXCLUDE_PARTICIPANT', 'FIX_VALUE', 'CONFIRM_ASSUMPTION'];
 const MANUAL_CHECK_RULES = ['V02', 'V05', 'V07', 'V10', 'V11', 'V12'];
 
+/** The authenticated actor is set by the access layer (server.ts); a client-supplied name is never trusted. */
 const actorOf = (req: cds.Request) => {
-  const a = (req.data as { actor?: string }).actor?.trim();
+  const a = (req.headers as Record<string, string | undefined> | undefined)?.['x-ruhend-actor']?.trim();
   return a ? a.slice(0, 80) : 'API_CLIENT';
+};
+const principalOf = (req: cds.Request) => {
+  const h = (req.headers ?? {}) as Record<string, string | undefined>;
+  return h['x-ruhend-actor'] ? { authenticated: true, id: h['x-ruhend-actor'], name: h['x-ruhend-actor'], role: h['x-ruhend-role'] ?? 'VIEWER', via: h['x-ruhend-via'] ?? 'SESSION' } : { authenticated: false, id: null, name: null, role: 'NONE', via: null };
 };
 const items = (list: SwitchItem[]) => list.map(({ key, ...rest }) => ({ itemKey: key, ...rest }));
 const switchDto = (plan: SwitchPlan) => ({ ...plan, items: items(plan.items), simulated: true });
@@ -44,6 +50,36 @@ export default class ProcessApi extends cds.ApplicationService {
     };
 
     this.on('cases', guard(async (req) => listCases(cds.tx(req))));
+
+    this.on('personas', () => PERSONAS);
+    this.on('me', (req) => principalOf(req));
+    this.on('login', guard(async (req) => {
+      const persona = PERSONAS.find((p) => p.id === (req.data as { user?: string }).user);
+      if (!persona) throw new ProcessError(400, 'Unknown demo user.', 'USER_UNKNOWN');
+      return { ...signSession(persona.id), user: persona };
+    }));
+    this.on('createApiKey', guard(async (req) => {
+      const d = req.data as { name?: string; role?: string };
+      const name = d.name?.trim();
+      if (!name) throw new ProcessError(400, 'An API key needs a name.', 'KEY_NAME_REQUIRED');
+      const role = (d.role ?? 'PIPELINE') as Role;
+      if (!ROLES.includes(role)) throw new ProcessError(400, `Role must be one of ${ROLES.join(', ')}.`, 'KEY_ROLE_INVALID', { roles: ROLES.join(', ') });
+      const token = newKeyToken();
+      const ID = cds.utils.uuid();
+      const tx = cds.tx(req);
+      await tx.run(INSERT.into('mk7.controlcenter.ApiKeys').entries({ ID, name: name.slice(0, 80), role, prefix: token.slice(0, 11), hash: hashKey(token), createdBy: actorOf(req) }));
+      await tx.run(INSERT.into('mk7.controlcenter.AuditEvents').entries({ operation: 'API_KEY_CREATED', actor: actorOf(req), eventTime: new Date().toISOString(), afterValue: JSON.stringify({ name, role }), reason: null, simulated: true }));
+      return { ID, name, role, prefix: token.slice(0, 11), token };
+    }));
+    this.on('revokeApiKey', guard(async (req) => {
+      const id = (req.data as { id?: string }).id;
+      const tx = cds.tx(req);
+      const key = await tx.run(SELECT.one.from('mk7.controlcenter.ApiKeys').columns('ID', 'name').where({ ID: id, revokedAt: null })) as { ID: string; name: string } | undefined;
+      if (!key) throw new ProcessError(404, 'API key not found or already revoked.', 'KEY_NOT_FOUND');
+      await tx.run(UPDATE('mk7.controlcenter.ApiKeys').set({ revokedAt: new Date().toISOString() }).where({ ID: key.ID }));
+      await tx.run(INSERT.into('mk7.controlcenter.AuditEvents').entries({ operation: 'API_KEY_REVOKED', actor: actorOf(req), eventTime: new Date().toISOString(), afterValue: JSON.stringify({ name: key.name }), reason: null, simulated: true }));
+      return true;
+    }));
 
     this.on('health', () => ({ status: 'OK', mode: 'SIMULATION', sapConnection: 'NOT_CONFIGURED', version: 'v1' }));
 
@@ -202,6 +238,8 @@ export default class ProcessApi extends cds.ApplicationService {
       const tx = cds.tx(req);
       const { rows, checksum } = await readParticipantWorkbook();
       await tx.run(DELETE.from('mk7.controlcenter.AuditEvents'));
+      await tx.run(DELETE.from('mk7.controlcenter.ApiCalls'));
+      await tx.run(DELETE.from('mk7.controlcenter.ApiKeys'));
       await registerConstructs(tx, rows, { file: WORKBOOK_PATH.split('/').at(-1)!, checksum, actor: 'RESET' }, { replaceAll: true });
       return 'Demo reset: workbook baseline re-registered, simulated state and history cleared. The workbook itself is unchanged.';
     }));
