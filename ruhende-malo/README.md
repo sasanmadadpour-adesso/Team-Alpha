@@ -74,7 +74,7 @@ One run processes every participant through all steps; **the pipeline never stop
   - `50539603888`: in two constructs (V05)
   - `50539603876`: Abmeldung of the current supplier pending (V11)
   - `50539603103`: Abmeldung of the current supplier pending (V11)
-  - the wind MeLo with 34 characters (V02)
+  - the original source workbook contains a 34-character wind MeLo; the generated import copy corrects it to 33 characters (V02)
   - one Einspeise-MaLo shared by three generators (V14)
 - `50539603604` is skipped (Teilnahme nein).
 - After the status input "Abmeldung received" (`POST /updateSapState`), the building decision and a manual confirmation, **9 of 9 are ruhend**.

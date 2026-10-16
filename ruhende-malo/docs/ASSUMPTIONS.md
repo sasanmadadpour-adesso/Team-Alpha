@@ -42,7 +42,7 @@ Everything in this application is a **local simulation**. There is no SAP connec
 - **V02:** MaLo-ID = 11 digits with a first digit 1–9 (BDEW §3.2). MeLo-ID = 33 characters: `DE` + 31 alphanumeric characters.
 - **V05** (the same MaLo in several constructs, `50539603888`) is never decided automatically. `CHOOSE_BUILDING` excludes the other assignments; it does not delete them.
 - **V14:** all three generators share the Einspeise-MaLo `51664053767`. This is flagged for review and can be acknowledged (`CONFIRM_ASSUMPTION`) or excluded.
-- **V02:** the wind MeLo in B-CGN-01 has 34 characters (a MeLo ID has 33). It must be fixed or excluded. Until then, that generator's Einspeise-MeMa is blocked.
+- **V02:** the original source workbook contains a 34-character wind MeLo in B-CGN-01. The immutable source remains unchanged; the generated import workbook applies the documented correction to `DE0073325707820000000000000880945` consistently across dependent sheets. This is a demo data correction, not SAP verification.
 - Every resolution requires a reason, writes an audit event and triggers a re-check. Findings that disappear after a re-check are closed as `AUTO_CLEARED`.
 
 ## Lifecycle after the Umstellung (manual mode)

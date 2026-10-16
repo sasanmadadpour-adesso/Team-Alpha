@@ -127,7 +127,7 @@ The pure rule engine validates **all constructs together**, allowing it to detec
 | --- | --- | --- |
 | `50539603888` occurs in Frankfurt and Köln · **V05** | That global MaLo waits in REVIEW. | Choose the correct building with a reason; retain the other row as excluded. |
 | `50539603876`, `50539603103` · **V11** | Household waits for supplier Abmeldung. | Submit `abmeldung=CONFIRMED`, or confirm manually with a reason. |
-| Wind MeLo has 34 characters · **V02** | That generator's relationships are blocked. | Correct to a valid 33-character ID, or exclude the row. |
+| Original wind MeLo had 34 characters · **V02** | The immutable source contains the issue. | The generated import copy corrects it to a valid 33-character ID; correction is demo-only and not SAP-verified. |
 | Feed-in MaLo `51664053767` spans three constructs · **V14** | Generator relationships require review. | Confirm the shared assignment with a reason, or exclude affected participation. |
 | Workbook MaLo check digits · **V03** | Informational notices for synthetic IDs. | No override needed; these notices do not block this demo. |
 
