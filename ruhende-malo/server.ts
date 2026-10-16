@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { accessCodeRequired, accessCodeValid, actionOf, allowed, createLimiter, hashKey, isKeyToken, needFor, verifySession, type Principal, type Role } from './srv/auth.js';
 import { houseMemberPortal, PORTAL_RANGES, PortalError, validateHouseMember, type PortalRange } from './srv/house-member-portal.js';
+import { overviewApiAuthorized, overviewConstructSnapshot, scheduleOverviewSnapshot } from './srv/overview-sync.js';
 
 /**
  * Access layer for /api/v1 (demo, not real authentication): resolves the caller from "Authorization: Bearer <token>"
@@ -87,8 +88,29 @@ cds.on('bootstrap', (app: express.Express) => {
           void cds.db.run(INSERT.into(ns('ApiCalls')).entries({ at: new Date().toISOString(), actor: principal?.actor ?? 'anonymous', via: principal?.via ?? '-', method: req.method, path: req.originalUrl.split('?')[0].slice(0, 200), status: res.statusCode, durationMs: Date.now() - started })).catch(() => undefined);
         });
       }
+      if (!['login', 'createApiKey', 'revokeApiKey', 'runSelfCheck'].includes(action)) {
+        res.on('finish', () => { if (res.statusCode >= 200 && res.statusCode < 300) scheduleOverviewSnapshot(); });
+      }
     }
     next();
+  });
+
+  /** Read-only compatibility feed consumed by Construct_overview (polling plus optional webhook updates). */
+  app.get('/api/constructs', async (req, res) => {
+    if (!overviewApiAuthorized(req.headers)) return reject(res, 401, 'AUTH_REQUIRED', 'A valid Overview API key is required.');
+    try { return res.json({ value: await overviewConstructSnapshot() }); }
+    catch (error) { return reject(res, 500, 'OVERVIEW_FEED_ERROR', error instanceof Error ? error.message : String(error)); }
+  });
+
+  app.get('/api/constructs/:malo', async (req, res) => {
+    if (!overviewApiAuthorized(req.headers)) return reject(res, 401, 'AUTH_REQUIRED', 'A valid Overview API key is required.');
+    try {
+      const malo = decodeURIComponent(req.params.malo).trim();
+      const matches = (await overviewConstructSnapshot()).filter((row) => row.primaryMaLo === malo);
+      if (!matches.length) return reject(res, 404, 'CONSTRUCT_NOT_FOUND', `No construct member exists for MaLo ${malo}.`);
+      if (matches.length > 1) return reject(res, 409, 'MALO_AMBIGUOUS', `MaLo ${malo} belongs to more than one construct.`, { buildingIds: matches.map((row) => row.buildingID) });
+      return res.json(matches[0]);
+    } catch (error) { return reject(res, 500, 'OVERVIEW_FEED_ERROR', error instanceof Error ? error.message : String(error)); }
   });
 
   app.get('/api/v1/house-member-portal',async(req,res)=>{

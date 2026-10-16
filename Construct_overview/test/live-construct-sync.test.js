@@ -1,7 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { LiveSyncStore } = require('../srv/lib/live-sync-store');
-const { LiveConstructSync, normalizeItem, unwrap } = require('../srv/lib/live-construct-sync');
+const { LiveConstructSync, normalizeItem, registeredParticipant, unwrap } = require('../srv/lib/live-construct-sync');
+const { externalTreeNodes } = require('../srv/lib/live-construct-tree');
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, status, json: async () => body };
@@ -81,4 +82,68 @@ test('detail refresh preserves the cached ID used by UI navigation', async t => 
 
   assert.equal(detail.ID, 'stable-id');
   assert.equal(detail.city, 'New');
+});
+
+test('maps the hosted Ruhende Participants resource into the Overview contract', () => {
+  const household = registeredParticipant({ sourceId: 'MK7 Participants:12', buildingId: 'B-1', role: 'Haushaltsverbrauch', maloId: '111', meloId: 'DE-1', participates: true, city: 'Köln' });
+  const producer = registeredParticipant({ sourceId: 'MK7 Participants:13', buildingId: 'B-1', role: 'Solaranlage', maloId: '222', generationFeedInMaloId: '333', meloId: 'DE-2', city: 'Köln' });
+  assert.deepEqual({ primaryMaLo: household.primaryMaLo, nodeType: household.nodeType, buildingID: household.buildingID }, { primaryMaLo: '111', nodeType: 'HOUSEHOLD', buildingID: 'B-1' });
+  assert.equal(producer.primaryMaLo, '333');
+  assert.equal(producer.importMaLo, '222');
+  assert.equal(/[\s'()%]/.test(household.ID), false);
+});
+
+test('falls back to the hosted Participants resource when the compatibility route is unavailable', async t => {
+  const store = new LiveSyncStore(':memory:');
+  t.after(() => store.close());
+  const urls = [];
+  const sync = new LiveConstructSync({
+    store,
+    pendingUrl: 'http://pending',
+    registeredUrl: 'https://host/api/constructs',
+    registeredFallbackUrl: 'https://host/api/v1/Participants',
+    fetch: async url => {
+      urls.push(url);
+      if (url.endsWith('/api/constructs')) return response({}, 404);
+      return response([{ sourceId: 'row 1', buildingId: 'B-1', role: 'Haushaltsverbrauch', maloId: '111', meloId: 'DE-1', participates: true }]);
+    }
+  });
+  const rows = await sync.poll('registered');
+  assert.deepEqual(urls, ['https://host/api/constructs', 'https://host/api/v1/Participants']);
+  assert.equal(rows[0].primaryMaLo, '111');
+});
+
+test('builds the expandable Overview hierarchy from a flat Ruhende-MaLo feed', () => {
+  const rows = [
+    { ID: 'row-1', primaryMaLo: '111', buildingID: 'B-1', nodeType: 'HOUSEHOLD', roleLabel: 'Haushaltsverbrauch', city: 'Berlin' },
+    { ID: 'row-2', primaryMaLo: '222', buildingID: 'B-1', nodeType: 'PRODUCER', roleLabel: 'Solaranlage', city: 'Berlin' },
+    { ID: 'row-3', primaryMaLo: '333', buildingID: 'B-2', nodeType: 'COUNTER', roleLabel: 'Marktlokation Reststrom', city: 'Bonn' }
+  ];
+
+  const tree = externalTreeNodes(rows, 'CURRENT');
+
+  assert.equal(tree.filter(row => row.nodeType === 'BUILDING').length, 2);
+  assert.equal(tree.find(row => row.ID === 'row-1').parentID, 'external-building-B-1');
+  assert.equal(tree.find(row => row.ID === 'row-2').parentID, 'external-building-B-1');
+  assert.equal(tree.find(row => row.ID === 'row-3').parentID, 'external-building-B-2');
+  assert.equal(tree.every(row => row.syncState === 'CURRENT'), true);
+});
+
+test('external member links use URL-safe source IDs', () => {
+  const [member] = externalTreeNodes([{ ID: 'ruhende-111-cm93LTE', primaryMaLo: '111', buildingID: '' }]);
+  assert.equal(member.detailHash, "#/Constructs('ruhende-111-cm93LTE')");
+  assert.equal(/\s/.test(member.detailHash), false);
+});
+
+test('retains registered members that share a primary MaLo across buildings', t => {
+  const store = new LiveSyncStore(':memory:');
+  t.after(() => store.close());
+  store.replace('registered', [
+    normalizeItem({ ID: 'row-a', primaryMaLo: '999', buildingID: 'B-A' }, 'registered'),
+    normalizeItem({ ID: 'row-b', primaryMaLo: '999', buildingID: 'B-B' }, 'registered')
+  ]);
+
+  assert.deepEqual(store.items('registered').map(row => row.ID).sort(), ['row-a', 'row-b']);
+  assert.equal(store.remove('registered', '999'), true);
+  assert.deepEqual(store.items('registered'), []);
 });

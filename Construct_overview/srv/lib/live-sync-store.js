@@ -6,6 +6,10 @@ function defaultDatabasePath() {
   return path.resolve(__dirname, '..', '..', 'db', 'live-sync.sqlite');
 }
 
+function itemKey(source, item) {
+  return source === 'registered' ? `${item.primaryMaLo}\u001f${item.ID || item.primaryMaLo}` : item.primaryMaLo;
+}
+
 class LiveSyncStore {
   constructor(file = process.env.SYNC_DB_PATH || defaultDatabasePath()) {
     if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -46,16 +50,16 @@ class LiveSyncStore {
 
   replace(source, items, { auditRemoved = false, reason = 'SNAPSHOT_REMOVED' } = {}) {
     const now = new Date().toISOString();
-    const previous = new Map(this.items(source).map(item => [item.primaryMaLo, item]));
-    const next = new Map(items.map(item => [item.primaryMaLo, item]));
+    const previous = new Map(this.items(source).map(item => [itemKey(source, item), item]));
+    const next = new Map(items.map(item => [itemKey(source, item), item]));
     this.db.exec('BEGIN');
     try {
       this.db.prepare('DELETE FROM sync_items WHERE source = ?').run(source);
       const insert = this.db.prepare('INSERT INTO sync_items (source, malo, payload, updated_at) VALUES (?, ?, ?, ?)');
-      for (const [malo, item] of next) insert.run(source, malo, JSON.stringify(item), now);
+      for (const [key, item] of next) insert.run(source, key, JSON.stringify(item), now);
       if (auditRemoved) {
-        for (const [malo, item] of previous) {
-          if (!next.has(malo)) this.audit(source, malo, 'REMOVED', reason, item, now);
+        for (const [key, item] of previous) {
+          if (!next.has(key)) this.audit(source, item.primaryMaLo, 'REMOVED', reason, item, now);
         }
       }
       this.db.exec('COMMIT');
@@ -70,15 +74,19 @@ class LiveSyncStore {
     this.db.prepare(`
       INSERT INTO sync_items (source, malo, payload, updated_at) VALUES (?, ?, ?, ?)
       ON CONFLICT(source, malo) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at
-    `).run(source, item.primaryMaLo, JSON.stringify(item), now);
+    `).run(source, itemKey(source, item), JSON.stringify(item), now);
   }
 
   remove(source, malo, reason = 'WEBHOOK_DELETE') {
-    const row = this.db.prepare('SELECT payload FROM sync_items WHERE source = ? AND malo = ?').get(source, malo);
-    if (!row) return false;
-    const item = JSON.parse(row.payload);
-    this.db.prepare('DELETE FROM sync_items WHERE source = ? AND malo = ?').run(source, malo);
-    this.audit(source, malo, 'REMOVED', reason, item);
+    const rows = this.db.prepare('SELECT malo, payload FROM sync_items WHERE source = ?').all(source)
+      .filter(row => JSON.parse(row.payload).primaryMaLo === malo);
+    if (!rows.length) return false;
+    const remove = this.db.prepare('DELETE FROM sync_items WHERE source = ? AND malo = ?');
+    for (const row of rows) {
+      const item = JSON.parse(row.payload);
+      remove.run(source, row.malo);
+      this.audit(source, malo, 'REMOVED', reason, item);
+    }
     return true;
   }
 

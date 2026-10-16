@@ -15,7 +15,17 @@ async function waitForServer() {
 }
 
 test('serves VNB compatibility entities and navigation over OData', async t => {
-  const server = spawn(process.execPath, ['node_modules/@sap/cds/bin/serve.js'], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
+  const server = spawn(process.execPath, ['node_modules/@sap/cds/bin/serve.js'], {
+    env: {
+      ...process.env,
+      PORT: String(port),
+      SYNC_DB_PATH: ':memory:',
+      REGISTERED_API_URL: 'http://127.0.0.1:1/api/constructs',
+      REGISTERED_FALLBACK_API_URL: '',
+      PENDING_API_URL: 'http://127.0.0.1:1/api/constructs/pending'
+    },
+    stdio: 'ignore'
+  });
   t.after(() => server.kill());
   await waitForServer();
   const constructs = await (await fetch(`${base}/Constructs`)).json();

@@ -183,7 +183,9 @@ test('contains annotation metadata for the building overview KPIs', () => {
    const trend = readAppFile('ext/EnergyTrend.js');
    assert.match(trend, /attachModelContextChange/);
    assert.match(trend, /detachModelContextChange/);
-   assert.match(trend, /latestMeasurementTime/);
+    assert.match(trend, /latestMeasurementTime/);
+    assert.match(trend, /\/api\/live-energy/);
+    assert.match(trend, /URLSearchParams/);
    assert.doesNotMatch(trend, /this\.\$\(\s*["']\./);
    assert.match(trend, /getElementById/);
    assert.match(trend, /ResizeObserver/);

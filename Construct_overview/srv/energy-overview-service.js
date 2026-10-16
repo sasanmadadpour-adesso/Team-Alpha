@@ -1,4 +1,5 @@
 const cds = require('@sap/cds');
+const { externalTreeNodes } = require('./lib/live-construct-tree');
 const { createWorkbookRepository } = require('./lib/workbook-loader');
 const { calculate } = require('./lib/energy-calculator');
 const { project } = require('./lib/vnb-projector');
@@ -32,6 +33,41 @@ function parentKey(req) {
   const parent = ref.find(item => item && typeof item === 'object' && item.where);
   const value = parent?.where?.find(item => item?.val !== undefined);
   return value?.val;
+}
+
+function externalConstruct(row) {
+  const isHousehold = row.roleCode === 'HOUSEHOLD';
+  const buildingID = row.buildingID || row.buildingId || null;
+  return {
+    ...row,
+    address: row.address || row.streetAddress || null,
+    participationMark: row.participationMark || (row.participationCode === 'YES' ? '✓' : row.participationCode === 'NO' ? '–' : null),
+    directionLabel: row.directionLabel || row.directionCode || null,
+    buildingID,
+    buildingLink: buildingID ? `#/Buildings('${encodeURIComponent(buildingID)}')` : null,
+    hasBuildingLink: Boolean(buildingID),
+    hasNoBuildingLink: !buildingID,
+    hasDualMaLo: Boolean(row.importMaLo && row.exportMaLo && row.importMaLo !== row.exportMaLo),
+    switchoverStep: row.switchoverStep ?? null,
+    switchoverTotalSteps: row.switchoverTotalSteps ?? 8,
+    switchoverComplete: row.switchoverComplete ?? row.businessState === 'RUHEND',
+    counterKpiHidden: row.counterKpiHidden ?? row.nodeType === 'COUNTER',
+    switchoverHidden: row.switchoverHidden ?? !isHousehold,
+    totalConsumptionKwh: row.totalConsumptionKwh ?? null,
+    totalGenerationKwh: row.totalGenerationKwh ?? null,
+    localEnergyKwh: row.localEnergyKwh ?? null,
+    residualGridKwh: row.residualGridKwh ?? null,
+    exportKwh: row.exportKwh ?? null,
+    paymentBalanceEur: row.paymentBalanceEur ?? null,
+    ownerFirstName: row.ownerFirstName ?? null,
+    ownerLastName: row.ownerLastName ?? null,
+    ownerName: row.ownerName ?? null,
+    meteringSystem: row.meteringSystem ?? null,
+    meteringOperator: row.meteringOperator ?? null,
+    mk7Operator: row.mk7Operator ?? null,
+    sourceRow: row.sourceRow ?? null,
+    latestMeasurementTime: row.latestMeasurementTime ?? null
+  };
 }
 
 function trendFilters(req) {
@@ -173,40 +209,14 @@ module.exports = cds.service.impl(function () {
         liveSync.seedRegistered(data.constructs);
         const property = { Constructs: 'constructs', MaLoConnections: 'connections', ConstructHourlyValues: 'hourly', Payments: 'payments', DataQualityIssues: 'issues', Buildings: 'buildings', BuildingConsumers: 'consumers', BuildingProducers: 'producers', BuildingHourlyEnergy: 'buildingHourlyEnergy', ConstructTreeNodes: 'treeNodes' }[entity];
        const nav = requestedNavigation(req);
-        let registeredConstructs = liveSync.registeredIsAuthoritative() ? liveSync.registered() : data.constructs;
+         let registeredConstructs = liveSync.registeredIsAuthoritative() ? liveSync.registered().map(externalConstruct) : data.constructs;
         const requestedKey = parentKey(req);
         if (entity === 'Constructs' && requestedKey && liveSync.registeredIsAuthoritative()) {
           const cached = registeredConstructs.find(row => row.ID === requestedKey || row.primaryMaLo === requestedKey);
           if (cached) registeredConstructs = [await liveSync.detail('registered', cached.primaryMaLo)];
         }
-         const externalTree = registeredConstructs.map(row => ({
-          ID: row.ID || `external-${row.primaryMaLo}`,
-          parentID: null,
-          nodeType: row.nodeType || 'CONSTRUCT',
-          displayName: row.displayName || row.primaryMaLo,
-          malo: row.primaryMaLo,
-          meLo: row.meLo,
-          roleLabel: row.roleLabel || row.roleCode,
-          city: row.city,
-          streetAddress: row.streetAddress,
-          participationMark: row.participationMark,
-          participationCriticality: row.participationCriticality,
-          totalConsumptionKwh: row.totalConsumptionKwh,
-          totalGenerationKwh: row.totalGenerationKwh,
-          localEnergyKwh: row.localEnergyKwh,
-          residualGridKwh: row.residualGridKwh,
-          exportKwh: row.exportKwh,
-          hasDataWarning: row.hasDataWarning,
-          warningCriticality: row.warningCriticality,
-          detailHash: `#/Constructs('${encodeURIComponent(row.ID || `external-${row.primaryMaLo}`)}')`,
-          ownerFirstName: row.ownerFirstName,
-          ownerLastName: row.ownerLastName,
-           ownerName: row.ownerName,
-           lifecycleStatus: 'UMGESTELLT',
-           lifecycleCriticality: 3,
-           sourceSystem: 'UMSTELLUNG',
-           syncState: liveSync.statuses().find(status => status.ID === 'registered')?.stale ? 'STALE' : 'CURRENT'
-         }));
+          const registeredSyncState = liveSync.statuses().find(status => status.ID === 'registered')?.stale ? 'STALE' : 'CURRENT';
+          const externalTree = externalTreeNodes(registeredConstructs, registeredSyncState);
          const registeredMaLos = new Set(registeredConstructs.map(row => row.primaryMaLo));
          const registeredTree = (liveSync.registeredIsAuthoritative() ? externalTree : data.treeNodes).map(row => ({
            ...row,

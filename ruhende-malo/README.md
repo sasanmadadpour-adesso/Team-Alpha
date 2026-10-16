@@ -25,6 +25,14 @@ npm run dev
 
 CAP runs on `http://localhost:4004` and Vite on `http://localhost:5173` by default. Vite proxies `/api` and `/odata` to CAP. The local SQLite file `db.sqlite` is stored in the project root and excluded from Git.
 
+When running together with `Construct_overview`, run this CAP backend on port `4020`; the Overview occupies port `4004`.
+
+```bash
+npm run dev:overview
+```
+
+This opt-in mode keeps the Ruhende-MaLo UI on `5173` and points its `/api` and `/odata` development proxies to port `4020`. The existing `npm run dev` behavior remains unchanged for standalone use.
+
 The development script uses `cds serve` (not `cds watch`) so simulated process
 history remains persistent while presenting. `npm run dev` first runs a
 project-scoped cleanup that stops stale CAP/Vite processes belonging to this
@@ -123,6 +131,26 @@ curl "http://localhost:4004/api/v1/Constructs/B-MUL-01/relationshipList()"
 ```
 
 The internal read-only OData V4 view is available at `/odata/v4/malo`.
+
+### Construct Overview live synchronization
+
+This app exposes a separate read-only compatibility feed for `Construct_overview`. Existing `/api/v1` behavior is unchanged:
+
+```http
+GET /api/constructs
+GET /api/constructs/{encodedPrimaryMaLo}
+```
+
+The snapshot contains every construct member (households, producers, and Reststrom rows) in the flat contract already consumed by the Overview. The Overview polls the snapshot every 30 seconds and reconstructs building roots for its expandable tree. The detail endpoint resolves one member by primary MaLo and returns `409 MALO_AMBIGUOUS` rather than selecting a construct when an unresolved duplicate exists.
+
+For immediate updates, configure `OVERVIEW_WEBHOOK_URL=http://localhost:4004/api/webhooks/registered`. Every successful business write schedules a best-effort full snapshot push. A failed push is logged and never rolls back or blocks the Ruhende-MaLo operation; periodic Overview polling remains the recovery path.
+
+| Variable | Purpose |
+|---|---|
+| `OVERVIEW_API_KEY` | Optional key required by the read-only feed; use the same value as the Overview's `EXTERNAL_API_KEY` |
+| `OVERVIEW_WEBHOOK_URL` | Optional Overview registered-snapshot webhook |
+| `OVERVIEW_WEBHOOK_API_KEY` | Optional key sent to the webhook; must equal the Overview `SYNC_API_KEY` |
+| `OVERVIEW_SYNC_TIMEOUT_MS` | Webhook timeout, default `10000` |
 
 ### Registration MVP integration
 

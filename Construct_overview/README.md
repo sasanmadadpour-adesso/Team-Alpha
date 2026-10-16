@@ -45,6 +45,8 @@ GET http://localhost:4020/api/constructs
 GET http://localhost:4020/api/constructs/{encodedMaLo}
 ```
 
+The merged `ruhende-malo` app implements these Umstellung-compatible endpoints directly. Run it on port `4020`; it returns all household, producer, and Reststrom construct members. The Overview converts the flat snapshot back into one expandable root per building. If the feed is protected, set Ruhende-MaLo `OVERVIEW_API_KEY` and Overview `EXTERNAL_API_KEY` to the same value. For immediate updates in addition to polling, configure the Ruhende-MaLo app with `OVERVIEW_WEBHOOK_URL=http://localhost:4004/api/webhooks/registered`, and set `OVERVIEW_WEBHOOK_API_KEY` equal to the Overview's `SYNC_API_KEY`.
+
 Snapshot responses may be a plain JSON array or `{ "value": [...] }`. Each row must contain a primary MaLo under `primaryMaLo`, `maLo`, `malo`, `marketLocationId`, `marketLocationIdentifier`, or `importMaLo`. The external API key is sent as both `x-api-key` and a Bearer token.
 
 Configuration:
@@ -53,6 +55,9 @@ Configuration:
 |---|---|---|
 | `PENDING_API_URL` | `http://localhost:4010/api/constructs/pending` | Anmeldung snapshot URL |
 | `REGISTERED_API_URL` | `http://localhost:4020/api/constructs` | Umstellung snapshot URL |
+| `REGISTERED_FALLBACK_API_URL` | empty | Optional existing Ruhende `/api/v1/Participants` resource used when the compatibility route is unavailable |
+| `HOUSE_MEMBER_PORTAL_API_URL` | derived from `REGISTERED_API_URL` | Hosted per-MaLo energy portal endpoint |
+| `RUHENDE_DATA_API_URL` | derived from `REGISTERED_API_URL` | Read-only hourly data fallback when the supplied key is not a hosted portal principal |
 | `EXTERNAL_API_KEY` | empty | Credential sent to external APIs |
 | `SYNC_API_KEY` | empty | Credential required by incoming webhooks |
 | `SYNC_INTERVAL_MS` | `30000` | Polling interval |

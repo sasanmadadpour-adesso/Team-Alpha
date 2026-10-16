@@ -4,6 +4,7 @@ const { LiveSyncStore } = require('./live-sync-store');
 const DEFAULTS = {
   pendingUrl: 'http://localhost:4010/api/constructs/pending',
   registeredUrl: 'http://localhost:4020/api/constructs',
+  registeredFallbackUrl: '',
   intervalMs: 30000,
   timeoutMs: 10000
 };
@@ -15,10 +16,54 @@ function firstValue(object, names) {
 }
 
 function primaryMaLo(item) {
-  return String(firstValue(item, ['primaryMaLo', 'primaryMalo', 'maLo', 'malo', 'MaLo', 'marketLocationId', 'marketLocationIdentifier', 'importMaLo']) || '').trim();
+  const producer = ['Solaranlage', 'Windkraftanlage'].includes(item?.role);
+  return String((producer && item?.generationFeedInMaloId) || firstValue(item, ['primaryMaLo', 'primaryMalo', 'maLo', 'malo', 'MaLo', 'maloId', 'marketLocationId', 'marketLocationIdentifier', 'importMaLo']) || '').trim();
+}
+
+function safeRegisteredID(item, malo) {
+  const supplied = item.ID || item.id;
+  if (supplied && !/[\s'()%]/.test(String(supplied))) return String(supplied);
+  const source = String(item.sourceId || supplied || malo);
+  return `ruhende-${malo}-${Buffer.from(source, 'utf8').toString('base64url')}`;
+}
+
+function registeredParticipant(item) {
+  if (!item?.sourceId && !item?.buildingId && !item?.maloId) return item;
+  const malo = primaryMaLo(item);
+  const household = item.role === 'Haushaltsverbrauch';
+  const counter = item.role === 'Marktlokation Reststrom';
+  const participates = household ? Boolean(item.participates && !item.excluded) : true;
+  return {
+    ...item,
+    ID: safeRegisteredID(item, malo),
+    primaryMaLo: malo,
+    importMaLo: item.maloId || null,
+    exportMaLo: item.generationFeedInMaloId || null,
+    meLo: item.meloId || null,
+    displayName: `${item.role || 'Konstrukt'} · ${item.city || item.buildingId || malo}`,
+    roleCode: household ? 'HOUSEHOLD' : counter ? 'RESIDUAL_SUPPLY' : 'GENERATION',
+    roleLabel: item.role || null,
+    directionCode: counter || household ? 'CONSUMPTION' : 'GENERATION',
+    nodeType: household ? 'HOUSEHOLD' : counter ? 'COUNTER' : 'PRODUCER',
+    buildingID: item.buildingId || item.constructId || null,
+    participationCode: household ? (participates ? 'YES' : 'NO') : null,
+    participationLabel: household ? (participates ? 'Ja / Yes' : 'Nein / No') : null,
+    participationCriticality: household ? (participates ? 2 : 1) : 3,
+    isEligible: household && participates,
+    hasDataWarning: Boolean(item.maloConflict),
+    warningCode: item.maloConflict ? 'AMBIGUOUS_MALO_ASSIGNMENT' : null,
+    warningText: item.maloConflict ? 'MaLo is assigned to more than one construct.' : null,
+    warningCriticality: item.maloConflict ? 1 : 3,
+    supplyStart: item.supplyStartUtc || null,
+    contractStart: item.contractFromUtc || null,
+    contractEnd: item.contractToUtc || null,
+    sourceSystem: 'RUHENDE_MALO',
+    simulation: true
+  };
 }
 
 function normalizeItem(item, source) {
+  if (source === 'registered') item = registeredParticipant(item);
   const malo = primaryMaLo(item);
   if (!malo) throw new Error(`${source} item is missing its primary MaLo`);
   const meLo = firstValue(item, ['meLo', 'melo', 'MeLo', 'meteringLocationId']);
@@ -51,6 +96,7 @@ class LiveConstructSync {
     this.options = {
       pendingUrl: process.env.PENDING_API_URL || DEFAULTS.pendingUrl,
       registeredUrl: process.env.REGISTERED_API_URL || DEFAULTS.registeredUrl,
+      registeredFallbackUrl: process.env.REGISTERED_FALLBACK_API_URL || DEFAULTS.registeredFallbackUrl,
       intervalMs: Number(process.env.SYNC_INTERVAL_MS || DEFAULTS.intervalMs),
       timeoutMs: Number(process.env.SYNC_TIMEOUT_MS || DEFAULTS.timeoutMs),
       apiKey: process.env.EXTERNAL_API_KEY || '',
@@ -88,7 +134,14 @@ class LiveConstructSync {
     const now = new Date().toISOString();
     this.store.setStatus(source, { lastAttemptAt: now, stale: true });
     try {
-      const items = unwrap(await this.request(url)).map(item => normalizeItem(item, source));
+      let body;
+      try {
+        body = await this.request(url);
+      } catch (error) {
+        if (source !== 'registered' || !this.options.registeredFallbackUrl) throw error;
+        body = await this.request(this.options.registeredFallbackUrl);
+      }
+      const items = unwrap(body).map(item => normalizeItem(item, source));
       this.store.replace(source, items, { auditRemoved: source === 'pending' });
       this.store.setStatus(source, { lastAttemptAt: now, lastSuccessAt: new Date().toISOString(), stale: false, error: null, itemCount: items.length });
       return items;
@@ -203,4 +256,4 @@ function getLiveConstructSync(options) {
   return singleton;
 }
 
-module.exports = { LiveConstructSync, getLiveConstructSync, normalizeItem, primaryMaLo, unwrap, DEFAULTS };
+module.exports = { LiveConstructSync, getLiveConstructSync, normalizeItem, primaryMaLo, registeredParticipant, unwrap, DEFAULTS };
