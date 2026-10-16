@@ -1,0 +1,404 @@
+{
+  "communities": {
+    "0": [
+      "construct_overview_app_building_overview_webapp_manifest_buildingslist_id",
+      "construct_overview_app_building_overview_webapp_manifest_buildingslist_name",
+      "construct_overview_app_building_overview_webapp_manifest_buildingslist_options",
+      "construct_overview_app_building_overview_webapp_manifest_buildingslist_type",
+      "construct_overview_app_building_overview_webapp_manifest_buildingsobjectpage_id",
+      "construct_overview_app_building_overview_webapp_manifest_buildingsobjectpage_name",
+      "construct_overview_app_building_overview_webapp_manifest_buildingsobjectpage_options",
+      "construct_overview_app_building_overview_webapp_manifest_buildingsobjectpage_type",
+      "construct_overview_app_building_overview_webapp_manifest_constructslist_id",
+      "construct_overview_app_building_overview_webapp_manifest_constructslist_name",
+      "construct_overview_app_building_overview_webapp_manifest_constructslist_options",
+      "construct_overview_app_building_overview_webapp_manifest_constructslist_type",
+      "construct_overview_app_building_overview_webapp_manifest_constructsobjectpage_id",
+      "construct_overview_app_building_overview_webapp_manifest_constructsobjectpage_name",
+      "construct_overview_app_building_overview_webapp_manifest_constructsobjectpage_options",
+      "construct_overview_app_building_overview_webapp_manifest_constructsobjectpage_type",
+      "construct_overview_app_building_overview_webapp_manifest_options_settings",
+      "construct_overview_app_building_overview_webapp_manifest_routing_config",
+      "construct_overview_app_building_overview_webapp_manifest_routing_routes",
+      "construct_overview_app_building_overview_webapp_manifest_routing_targets",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5_routing",
+      "construct_overview_app_building_overview_webapp_manifest_settings_content",
+      "construct_overview_app_building_overview_webapp_manifest_settings_contextpath",
+      "construct_overview_app_building_overview_webapp_manifest_settings_editableheadercontent",
+      "construct_overview_app_building_overview_webapp_manifest_settings_initialload",
+      "construct_overview_app_building_overview_webapp_manifest_settings_livemode",
+      "construct_overview_app_building_overview_webapp_manifest_settings_navigation",
+      "construct_overview_app_building_overview_webapp_manifest_settings_variantmanagement",
+      "construct_overview_app_building_overview_webapp_manifest_settings_views",
+      "construct_overview_app_building_overview_webapp_manifest_targets_buildingslist",
+      "construct_overview_app_building_overview_webapp_manifest_targets_buildingsobjectpage",
+      "construct_overview_app_building_overview_webapp_manifest_targets_constructslist",
+      "construct_overview_app_building_overview_webapp_manifest_targets_constructsobjectpage"
+    ],
+    "1": [
+      "construct_overview_scripts_validate_workbook",
+      "construct_overview_scripts_validate_workbook_calculate",
+      "construct_overview_scripts_validate_workbook_createworkbookrepository",
+      "construct_overview_scripts_validate_workbook_result",
+      "construct_overview_scripts_validate_workbook_snapshot",
+      "construct_overview_srv_energy_overview_service",
+      "construct_overview_srv_energy_overview_service_calculate",
+      "construct_overview_srv_energy_overview_service_cds",
+      "construct_overview_srv_energy_overview_service_createworkbookrepository",
+      "construct_overview_srv_energy_overview_service_filterrows",
+      "construct_overview_srv_energy_overview_service_parentkey",
+      "construct_overview_srv_energy_overview_service_project",
+      "construct_overview_srv_energy_overview_service_requestednavigation",
+      "construct_overview_srv_energy_overview_service_trendfilters",
+      "construct_overview_srv_energy_overview_service_trends",
+      "construct_overview_srv_lib_energy_calculator",
+      "construct_overview_srv_lib_energy_calculator_calculate",
+      "construct_overview_srv_lib_energy_calculator_round",
+      "construct_overview_srv_lib_energy_calculator_sum",
+      "construct_overview_srv_lib_workbook_loader_createworkbookrepository",
+      "construct_overview_test_energy_calculator_test",
+      "construct_overview_test_energy_calculator_test_assert",
+      "construct_overview_test_energy_calculator_test_calculate",
+      "construct_overview_test_energy_calculator_test_createworkbookrepository",
+      "construct_overview_test_energy_calculator_test_test"
+    ],
+    "2": [
+      "construct_overview_scripts_add_energy_progress",
+      "construct_overview_scripts_add_energy_progress_fs",
+      "construct_overview_scripts_add_energy_progress_path",
+      "construct_overview_scripts_add_energy_progress_root",
+      "construct_overview_scripts_add_energy_progress_updateworkbook",
+      "construct_overview_scripts_add_energy_progress_workbooks",
+      "construct_overview_scripts_add_energy_progress_xlsx",
+      "construct_overview_test_app_test",
+      "construct_overview_test_app_test_approot",
+      "construct_overview_test_app_test_assert",
+      "construct_overview_test_app_test_fs",
+      "construct_overview_test_app_test_path",
+      "construct_overview_test_app_test_readappfile",
+      "construct_overview_test_app_test_test",
+      "construct_overview_test_energy_progress_test",
+      "construct_overview_test_energy_progress_test_assert",
+      "construct_overview_test_energy_progress_test_fs",
+      "construct_overview_test_energy_progress_test_path",
+      "construct_overview_test_energy_progress_test_root",
+      "construct_overview_test_energy_progress_test_test",
+      "construct_overview_test_energy_progress_test_xlsx",
+      "ref_node_fs",
+      "ref_node_path",
+      "ref_xlsx"
+    ],
+    "3": [
+      "construct_overview_package",
+      "construct_overview_package_cds",
+      "construct_overview_package_cds_requires",
+      "construct_overview_package_dependencies",
+      "construct_overview_package_dependencies_sap_cds",
+      "construct_overview_package_dependencies_xlsx",
+      "construct_overview_package_description",
+      "construct_overview_package_devdependencies",
+      "construct_overview_package_devdependencies_sap_cds_dk",
+      "construct_overview_package_name",
+      "construct_overview_package_private",
+      "construct_overview_package_requires_db",
+      "construct_overview_package_scripts",
+      "construct_overview_package_scripts_add_energy_progress",
+      "construct_overview_package_scripts_generate_year_data",
+      "construct_overview_package_scripts_start",
+      "construct_overview_package_scripts_test",
+      "construct_overview_package_scripts_test_app",
+      "construct_overview_package_scripts_validate_workbook",
+      "construct_overview_package_scripts_watch",
+      "construct_overview_package_version",
+      "ref_sap_cds",
+      "ref_sap_cds_dk"
+    ],
+    "4": [
+      "opencode",
+      "opencode_adesso_ai_hub_models",
+      "opencode_adesso_ai_hub_name",
+      "opencode_adesso_ai_hub_npm",
+      "opencode_adesso_ai_hub_options",
+      "opencode_agent",
+      "opencode_agent_build",
+      "opencode_agent_plan",
+      "opencode_build_model",
+      "opencode_models_claude_opus_5",
+      "opencode_models_claude_sonnet_5",
+      "opencode_models_deepseek_v4_flash_sovereign",
+      "opencode_models_gpt_5_6_luna",
+      "opencode_models_gpt_5_6_sol",
+      "opencode_models_qwen3_coder_480b",
+      "opencode_models_qwen_3_6_35b_sovereign",
+      "opencode_options_baseurl",
+      "opencode_plan_model",
+      "opencode_provider",
+      "opencode_provider_adesso_ai_hub",
+      "opencode_schema"
+    ],
+    "5": [
+      "construct_overview_test_odata_test",
+      "construct_overview_test_odata_test_assert",
+      "construct_overview_test_odata_test_rangefilter",
+      "construct_overview_test_odata_test_spawn",
+      "construct_overview_test_odata_test_test",
+      "construct_overview_test_odata_test_waitforserver",
+      "construct_overview_test_vnb_projector_test",
+      "construct_overview_test_vnb_projector_test_assert",
+      "construct_overview_test_vnb_projector_test_createworkbookrepository",
+      "construct_overview_test_vnb_projector_test_project",
+      "construct_overview_test_vnb_projector_test_test",
+      "construct_overview_test_workbook_loader_test",
+      "construct_overview_test_workbook_loader_test_assert",
+      "construct_overview_test_workbook_loader_test_createworkbookrepository_timestamp",
+      "construct_overview_test_workbook_loader_test_test",
+      "ref_node_assert",
+      "ref_node_child_process",
+      "ref_node_test"
+    ],
+    "6": [
+      "construct_overview_app_building_overview_webapp_manifest_dependencies_libs",
+      "construct_overview_app_building_overview_webapp_manifest_dependencies_minui5version",
+      "construct_overview_app_building_overview_webapp_manifest_i18n_settings",
+      "construct_overview_app_building_overview_webapp_manifest_i18n_type",
+      "construct_overview_app_building_overview_webapp_manifest_libs_sap_f",
+      "construct_overview_app_building_overview_webapp_manifest_libs_sap_fe_templates",
+      "construct_overview_app_building_overview_webapp_manifest_libs_sap_m",
+      "construct_overview_app_building_overview_webapp_manifest_libs_sap_ui_core",
+      "construct_overview_app_building_overview_webapp_manifest_libs_sap_ui_layout",
+      "construct_overview_app_building_overview_webapp_manifest_models_i18n",
+      "construct_overview_app_building_overview_webapp_manifest_resources_css",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5_dependencies",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5_flexenabled",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5_models",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui5_resources",
+      "construct_overview_app_building_overview_webapp_manifest_settings_bundlename"
+    ],
+    "7": [
+      "construct_overview_scripts_generate_year_data",
+      "construct_overview_scripts_generate_year_data_configs",
+      "construct_overview_scripts_generate_year_data_dayofyear",
+      "construct_overview_scripts_generate_year_data_end",
+      "construct_overview_scripts_generate_year_data_hourlytemplates",
+      "construct_overview_scripts_generate_year_data_hourof",
+      "construct_overview_scripts_generate_year_data_number",
+      "construct_overview_scripts_generate_year_data_path",
+      "construct_overview_scripts_generate_year_data_root",
+      "construct_overview_scripts_generate_year_data_round",
+      "construct_overview_scripts_generate_year_data_stablephase",
+      "construct_overview_scripts_generate_year_data_start",
+      "construct_overview_scripts_generate_year_data_templates",
+      "construct_overview_scripts_generate_year_data_update",
+      "construct_overview_scripts_generate_year_data_validate",
+      "construct_overview_scripts_generate_year_data_xlsx"
+    ],
+    "8": [
+      "construct_overview_app_building_overview_webapp_manifest_applicationversion_version",
+      "construct_overview_app_building_overview_webapp_manifest_datasources_mainservice",
+      "construct_overview_app_building_overview_webapp_manifest_mainservice_settings",
+      "construct_overview_app_building_overview_webapp_manifest_mainservice_type",
+      "construct_overview_app_building_overview_webapp_manifest_mainservice_uri",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_applicationversion",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_datasources",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_description",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_i18n",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_id",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_title",
+      "construct_overview_app_building_overview_webapp_manifest_sap_app_type",
+      "construct_overview_app_building_overview_webapp_manifest_settings_annotations",
+      "construct_overview_app_building_overview_webapp_manifest_settings_odataversion"
+    ],
+    "9": [
+      "construct_overview_srv_lib_workbook_loader",
+      "construct_overview_srv_lib_workbook_loader_boolean",
+      "construct_overview_srv_lib_workbook_loader_default_workbook",
+      "construct_overview_srv_lib_workbook_loader_fs",
+      "construct_overview_srv_lib_workbook_loader_mapworkbook",
+      "construct_overview_srv_lib_workbook_loader_number",
+      "construct_overview_srv_lib_workbook_loader_path",
+      "construct_overview_srv_lib_workbook_loader_required_columns",
+      "construct_overview_srv_lib_workbook_loader_required_sheets",
+      "construct_overview_srv_lib_workbook_loader_rows",
+      "construct_overview_srv_lib_workbook_loader_text",
+      "construct_overview_srv_lib_workbook_loader_timestamp",
+      "construct_overview_srv_lib_workbook_loader_validate",
+      "construct_overview_srv_lib_workbook_loader_value",
+      "construct_overview_srv_lib_workbook_loader_xlsx"
+    ],
+    "10": [
+      "construct_overview_srv_lib_vnb_projector",
+      "construct_overview_srv_lib_vnb_projector_average",
+      "construct_overview_srv_lib_vnb_projector_averagegrouped",
+      "construct_overview_srv_lib_vnb_projector_calculate",
+      "construct_overview_srv_lib_vnb_projector_direction",
+      "construct_overview_srv_lib_vnb_projector_key",
+      "construct_overview_srv_lib_vnb_projector_latest24",
+      "construct_overview_srv_lib_vnb_projector_latesttimestamp",
+      "construct_overview_srv_lib_vnb_projector_project",
+      "construct_overview_srv_lib_vnb_projector_round",
+      "construct_overview_srv_lib_vnb_projector_rowsinwindow",
+      "construct_overview_srv_lib_vnb_projector_sum",
+      "construct_overview_srv_lib_vnb_projector_syntheticdata",
+      "construct_overview_srv_lib_vnb_projector_syntheticscenarios"
+    ],
+    "11": [
+      "construct_overview_app_building_overview_webapp_manifest",
+      "construct_overview_app_building_overview_webapp_manifest_devicetypes_desktop",
+      "construct_overview_app_building_overview_webapp_manifest_devicetypes_phone",
+      "construct_overview_app_building_overview_webapp_manifest_devicetypes_tablet",
+      "construct_overview_app_building_overview_webapp_manifest_icons_icon",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui_devicetypes",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui_icons",
+      "construct_overview_app_building_overview_webapp_manifest_sap_ui_technology",
+      "construct_overview_app_building_overview_webapp_manifest_version",
+      "ref_minui5version"
+    ],
+    "12": [
+      "construct_overview_srv_lib_energy_trends",
+      "construct_overview_srv_lib_energy_trends_bucketstart",
+      "construct_overview_srv_lib_energy_trends_granularity",
+      "construct_overview_srv_lib_energy_trends_parsedate",
+      "construct_overview_srv_lib_energy_trends_round",
+      "construct_overview_srv_lib_energy_trends_trends",
+      "construct_overview_test_energy_trends_test",
+      "construct_overview_test_energy_trends_test_assert",
+      "construct_overview_test_energy_trends_test_createworkbookrepository",
+      "construct_overview_test_energy_trends_test_test",
+      "construct_overview_test_energy_trends_test_trends_granularity"
+    ],
+    "13": [
+      "construct_overview_app_building_overview_webapp_ext_energytrend",
+      "construct_overview_app_building_overview_webapp_ext_energytrend_escape",
+      "construct_overview_app_building_overview_webapp_ext_energytrend_path"
+    ],
+    "14": [
+      "construct_overview_app_building_overview_webapp_component"
+    ],
+    "15": [
+      "construct_overview_app_building_overview_webapp_ext_listactions"
+    ]
+  },
+  "cohesion": {
+    "0": 0.06628787878787878,
+    "1": 0.09666666666666666,
+    "2": 0.09420289855072464,
+    "3": 0.08695652173913043,
+    "4": 0.09523809523809523,
+    "5": 0.12418300653594772,
+    "6": 0.11764705882352941,
+    "7": 0.18333333333333332,
+    "8": 0.13333333333333333,
+    "9": 0.22857142857142856,
+    "10": 0.23076923076923078,
+    "11": 0.18181818181818182,
+    "12": 0.2727272727272727,
+    "13": 0.6666666666666666,
+    "14": 1.0,
+    "15": 1.0
+  },
+  "gods": [
+    {
+      "id": "construct_overview_app_building_overview_webapp_manifest_options_settings",
+      "label": "settings",
+      "degree": 12
+    },
+    {
+      "id": "construct_overview_srv_lib_vnb_projector_project",
+      "label": "project()",
+      "degree": 12
+    },
+    {
+      "id": "construct_overview_app_building_overview_webapp_manifest_sap_app",
+      "label": "sap.app",
+      "degree": 8
+    },
+    {
+      "id": "construct_overview_package_scripts",
+      "label": "scripts",
+      "degree": 8
+    },
+    {
+      "id": "construct_overview_srv_lib_workbook_loader_mapworkbook",
+      "label": "mapWorkbook()",
+      "degree": 8
+    },
+    {
+      "id": "opencode_adesso_ai_hub_models",
+      "label": "models",
+      "degree": 8
+    },
+    {
+      "id": "construct_overview_scripts_generate_year_data_update",
+      "label": "update()",
+      "degree": 7
+    },
+    {
+      "id": "construct_overview_srv_lib_workbook_loader_createworkbookrepository",
+      "label": "createWorkbookRepository()",
+      "degree": 7
+    },
+    {
+      "id": "construct_overview_app_building_overview_webapp_manifest_sap_ui5",
+      "label": "sap.ui5",
+      "degree": 6
+    },
+    {
+      "id": "construct_overview_app_building_overview_webapp_manifest_dependencies_libs",
+      "label": "libs",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "project()",
+      "target": "calculate()",
+      "source_files": [
+        "Construct_overview/srv/lib/vnb-projector.js",
+        "Construct_overview/srv/lib/energy-calculator.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `xlsx` connect `Community 2` to `Community 9`, `Community 3`, `Community 7`?",
+      "why": "High betweenness centrality (0.099) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `minUI5Version`, `@sap/cds-dk` to the rest of the system?",
+      "why": "2 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06628787878787878 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `sap.ui5` connect `Community 6` to `Community 0`, `Community 11`?",
+      "why": "High betweenness centrality (0.062) - this node is a cross-community bridge."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09666666666666666 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 2` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09420289855072464 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 3` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

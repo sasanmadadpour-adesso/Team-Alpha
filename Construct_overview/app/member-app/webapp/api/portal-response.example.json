@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-10-16T12:00:00.000Z",
+  "range": "7d",
+  "brand": {
+    "name": "adesso",
+    "portalName": { "de": "Hausportal", "en": "Home portal" },
+    "logoUrl": "https://example.org/adesso-logo.svg",
+    "primaryColor": "#0050aa",
+    "accentColor": "#c8d400"
+  },
+  "member": {
+    "malo": "50539603888",
+    "melo": "DE0001815707800000101300000139372",
+    "address": { "street": "Vilbeler Landstraße 21", "postalCode": "60388", "city": "Frankfurt am Main" },
+    "switchoverStatus": "COMPLETED",
+    "energy": { "consumptionKwh": 1234.56, "localEnergyKwh": 456.78, "gridImportKwh": 777.78 }
+  },
+  "building": {
+    "displayId": "B-FRA-01",
+    "address": { "street": "Vilbeler Landstraße 21", "postalCode": "60388", "city": "Frankfurt am Main" },
+    "productionTypes": ["SOLAR"],
+    "installedCapacityKw": 24.5,
+    "memberCount": 3,
+    "energy": { "consumptionKwh": 4567.89, "generationKwh": 3210.98, "localEnergyKwh": 2100.12, "gridImportKwh": 2467.77, "gridExportKwh": 1110.86, "selfSufficiencyPercent": 45.98 }
+  },
+  "trends": {
+    "member": { "granularity": "hour", "unit": "kWh", "points": [{ "timestamp": "2026-10-09T00:00:00.000Z", "intervalCount": 1, "consumptionKwh": 0.72, "localEnergyKwh": 0.31, "gridImportKwh": 0.41 }] },
+    "building": { "granularity": "hour", "unit": "kWh", "points": [{ "timestamp": "2026-10-09T00:00:00.000Z", "intervalCount": 1, "consumptionKwh": 2.54, "generationKwh": 1.93, "localEnergyKwh": 1.41, "gridImportKwh": 1.13, "gridExportKwh": 0.52 }] }
+  }
+}

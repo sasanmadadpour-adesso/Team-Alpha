@@ -1,0 +1,6 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m" xmlns:vnb="vnb.constructs.ext">
+  <VBox class="sapUiSmallMarginBottom" width="100%">
+    <MessageStrip text="{warningText}" type="Warning" showIcon="true" visible="{hasDataWarning}" class="sapUiSmallMarginBottom" />
+    <vnb:LocationTopology />
+  </VBox>
+</core:FragmentDefinition>

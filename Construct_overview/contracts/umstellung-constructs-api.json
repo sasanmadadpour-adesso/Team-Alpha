@@ -1,0 +1,103 @@
+{
+  "contractVersion": "1.0",
+  "name": "Umstellung Constructs API",
+  "description": "Contract used by the VNB overview to query authoritative converted constructs from the Umstellung application.",
+  "baseUrlEnvironmentVariable": "REGISTERED_API_URL",
+  "defaultBaseUrl": "http://localhost:4020/api/constructs",
+  "authentication": {
+    "environmentVariable": "EXTERNAL_API_KEY",
+    "optional": true,
+    "headers": {
+      "x-api-key": "${EXTERNAL_API_KEY}",
+      "Authorization": "Bearer ${EXTERNAL_API_KEY}"
+    }
+  },
+  "snapshotRequest": {
+    "method": "GET",
+    "url": "${REGISTERED_API_URL:-http://localhost:4020/api/constructs}",
+    "headers": {
+      "Accept": "application/json"
+    },
+    "body": null,
+    "pollIntervalMilliseconds": 30000
+  },
+  "detailRequest": {
+    "method": "GET",
+    "urlTemplate": "${REGISTERED_API_URL:-http://localhost:4020/api/constructs}/{encodedPrimaryMaLo}",
+    "pathParameters": {
+      "encodedPrimaryMaLo": {
+        "type": "string",
+        "description": "URL-encoded primary MaLo of the construct"
+      }
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "body": null
+  },
+  "snapshotResponse": {
+    "acceptedFormats": [
+      "plain-array",
+      "value-envelope"
+    ],
+    "valueEnvelopeExample": {
+      "value": [
+        {
+          "ID": "construct-1001",
+          "primaryMaLo": "12345678901",
+          "importMaLo": "12345678901",
+          "exportMaLo": null,
+          "meLo": "DE0001234567890000000000000000001",
+          "displayName": "Haushalt Musterstraße 12",
+          "roleCode": "HOUSEHOLD",
+          "roleLabel": "Haushalt",
+          "directionCode": "CONSUMPTION",
+          "city": "Berlin",
+          "streetAddress": "Musterstraße 12",
+          "buildingID": "BLD-BER-01",
+          "ownerFirstName": "Max",
+          "ownerLastName": "Mustermann",
+          "ownerName": "Mustermann, Max",
+          "participationCriticality": 3,
+          "totalConsumptionKwh": 2388.684,
+          "totalGenerationKwh": 0,
+          "localEnergyKwh": 1846.166,
+          "residualGridKwh": 542.518,
+          "exportKwh": 0,
+          "hasDataWarning": false,
+          "warningCriticality": 3
+        }
+      ]
+    }
+  },
+  "constructFields": {
+    "required": [
+      "primaryMaLo"
+    ],
+    "recommended": [
+      "ID",
+      "meLo",
+      "displayName",
+      "roleCode",
+      "roleLabel",
+      "directionCode",
+      "city",
+      "streetAddress",
+      "buildingID"
+    ],
+    "primaryMaLoAliasesAccepted": [
+      "primaryMaLo",
+      "primaryMalo",
+      "maLo",
+      "malo",
+      "MaLo",
+      "marketLocationId",
+      "marketLocationIdentifier",
+      "importMaLo"
+    ]
+  },
+  "reconciliation": {
+    "matchField": "primaryMaLo",
+    "rule": "When a primary MaLo returned by Umstellung matches an Anmeldung entry, the Anmeldung entry is removed from the not-converted list and only the Umstellung construct remains."
+  }
+}

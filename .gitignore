@@ -1,0 +1,18 @@
+# Local editor and office lock files
+.~lock.*#
+.DS_Store
+
+# Generated Graphify state that should not be shared
+graphify-out/cache/
+graphify-out/converted/
+graphify-out/cost.json
+
+# Runtime dependencies and local tooling
+node_modules/
+.venv/
+.env
+**/.env
+!**/.env.example
+
+# Local live synchronization cache
+Construct_overview/db/live-sync.sqlite*
