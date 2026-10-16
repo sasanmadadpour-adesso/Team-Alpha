@@ -62,6 +62,52 @@ entity ProcessRequests : cuid, managed { operation : String(40); maloId : String
 entity PrerequisiteChecks : cuid, managed { requestId : UUID; checkCode : String(80); result : String(30); confidence : String(30); notes : String(1000); }
 entity AuditEvents : cuid { requestId : UUID; referenceOperationId : UUID; operation : String(40); maloId : String(40); actor : String(80); effectiveDate : Date; eventTime : Timestamp; beforeValue : LargeString; afterValue : LargeString; reason : String(1000); simulated : Boolean default true; }
 entity ImportRuns : cuid { sourceFile : String(200); sourceChecksum : String(64); startedAt : Timestamp; completedAt : Timestamp; status : String(20); totalRows : Integer; buildingCount : Integer; conflictCount : Integer; message : String(1000); }
+/** Sheet-level lineage for complete workbook imports. */
+entity ImportedSheets : cuid {
+  importChecksum : String(64); sourceFile : String(200); sheetName : String(100);
+  rowCount : Integer; importedAt : Timestamp; status : String(20); message : String(1000);
+}
+
+/** Complete, immutable-style source records from new-data-source.xlsx. */
+entity ProducerOnboarding {
+  key sourceId : String(120); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  firstName : String(120); lastName : String(120); email : String(255); salutation : String(40);
+  isBusiness : Boolean; isReverseCharge : Boolean; deliveryStreet : String(200); deliveryHouseNumber : String(40);
+  deliveryZipcode : String(20); deliveryCity : String(120); subscriptionReason : String(80); productionType : String(80);
+  plantCapacityKw : Decimal(15,6); latitude : Decimal(12,8); longitude : Decimal(12,8); marketLocationId : String(40);
+  tranche : String(120); preferredDeliveryStart : Date; saasCustomerId : String(120); saasContractId : String(120);
+  productName : String(160); consumerSaasContractId : String(120); controlResource : String(200); technicalResources : String(500);
+  contractStartUtc : Date; contractEndUtc : Date; buildingId : String(40); sourceData : LargeString;
+}
+
+entity HourlyConsumption {
+  key sourceId : String(160); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  startTime : Timestamp; endTime : Timestamp; buildingId : String(40); meloId : String(80); maloId : String(40);
+  participationRaw : String(30); participates : Boolean; consumptionKwh : Decimal(18,9); energyUnit : String(20); aggregationType : String(40);
+}
+
+entity HourlyGeneration {
+  key sourceId : String(160); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  startTime : Timestamp; endTime : Timestamp; buildingId : String(40); maloId : String(40); productionType : String(80);
+  plantCapacityKw : Decimal(15,6); generationKwh : Decimal(18,9); energyUnit : String(20); aggregationType : String(40);
+}
+
+entity EnergyPrices {
+  key sourceId : String(160); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  startTime : Timestamp; endTime : Timestamp; aggregationType : String(40); marketPriceEurKwh : Decimal(18,9);
+  retailPriceEurKwh : Decimal(18,9); plantPurchasePriceEurKwh : Decimal(18,9); exportRemunerationEurKwh : Decimal(18,9);
+  tenantElectricitySubsidyEurKwh : Decimal(18,9); meteringFeeEurPerMeter24h : Decimal(18,9);
+  residualSupplier : String(160); networkOperator : String(160); meteringOperator : String(160);
+}
+
+entity SourceFieldDescriptions {
+  key sourceId : String(120); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  fieldName : String(160); requirement : String(80); description : String(1000);
+}
+entity FinancialRules {
+  key sourceId : String(120); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
+  section : String(160); item : String(300); payer : String(200); recipient : String(200); rateSource : String(500); calculationOrRule : LargeString;
+}
 /** Demo access for other services. The secret is shown once; only its SHA-256 is stored. */
 entity ApiKeys : cuid, managed { name : String(80); role : String(20); prefix : String(12); hash : String(64) @assert.unique; createdBy : String(80); lastUsedAt : Timestamp; revokedAt : Timestamp; }
 /** Every write call to /api/v1 (who, what, result). Reads are not logged. */

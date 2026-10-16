@@ -8,6 +8,8 @@ Local SAP CAP prototype of the MVP boxes from the solution map *Marktrolle VNB*:
 
 The application uses local CAP and SQLite. It does not execute real SAP calls or modify a real SAP system.
 
+`npm run import:data` imports all seven sheets of `data/source/new-data-source.xlsx` into SQLite (131,478 source records), then derives the MK7 process model from `MK7 Participants`. Large hourly tables are inserted in chunks. Re-import replaces workbook source tables and the simulation baseline without modifying the workbook. The read-only data service is available at `/odata/v4/data`; producer names, email addresses, and raw source JSON are excluded from its public projection.
+
 ## Requirements
 
 - Node.js 22 or newer

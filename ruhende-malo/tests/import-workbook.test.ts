@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { excelDateToIso, readParticipantWorkbook, ROLES, type ParticipantRow } from '../scripts/workbook.js';
+import { readFullWorkbook, type FullWorkbookData } from '../scripts/full-workbook.js';
 
 let rows:ParticipantRow[];
 beforeAll(async()=>{ rows=(await readParticipantWorkbook()).rows; });
@@ -24,5 +25,23 @@ describe('TC21 workbook import',()=>{
   it('preserves IDs as strings and validates B-MUL-01',()=>{
     expect(rows.every(r=>typeof r.maloId==='string'&&typeof r.meloId==='string')).toBe(true);
     const household=rows.filter(r=>r.buildingId==='B-MUL-01'&&r.role===ROLES.household); expect(household).toHaveLength(4); expect(household.filter(r=>r.participates)).toHaveLength(3); expect(household.filter(r=>!r.participates).map(r=>r.maloId)).toEqual(['50539603604']);
+  });
+});
+
+describe('complete source workbook',()=>{
+  let data:FullWorkbookData;
+  beforeAll(async()=>{data=await readFullWorkbook();},15_000);
+  it('parses all seven sheets with exact row totals',()=>{
+    expect(data.producerOnboarding).toHaveLength(3);
+    expect(data.participants).toHaveLength(17);
+    expect(data.hourlyConsumption).toHaveLength(96360);
+    expect(data.hourlyGeneration).toHaveLength(26280);
+    expect(data.energyPrices).toHaveLength(8760);
+    expect(data.fieldDescriptions).toHaveLength(39);
+    expect(data.financialRules).toHaveLength(19);
+  });
+  it('preserves source identifiers and normalizes timestamps',()=>{
+    expect(data.hourlyConsumption[0]).toMatchObject({maloId:'50539603888',startTime:'2025-10-16T00:00:00.000Z'});
+    expect(data.producerOnboarding[0]).toMatchObject({marketLocationId:'51664053761',preferredDeliveryStart:'2026-10-01'});
   });
 });

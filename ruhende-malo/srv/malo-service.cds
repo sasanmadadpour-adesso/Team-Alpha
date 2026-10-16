@@ -16,6 +16,7 @@ service MaloService {
   @readonly entity AuditEvents as projection on db.AuditEvents;
   @readonly entity OutboxEvents as projection on db.OutboxEvents;
   @readonly entity ImportRuns as projection on db.ImportRuns;
+  @readonly entity ImportedSheets as projection on db.ImportedSheets;
 
   type HealthResponse { status: String; mode: String; sapConnection: String; }
   function health() returns HealthResponse;
