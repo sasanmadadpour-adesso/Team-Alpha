@@ -18,9 +18,7 @@ test('full mock SAP match is verified', async () => {
 test('all city virtual-model examples are verified', async () => {
   const examples = [
     ['DE0073325707820000000000000088943', 'Solar', 6],
-    ['DE0073325707820000000000000090001', 'Solar', 6],
     ['DE0073325707820000000000000880945', 'Wind', 7],
-    ['DE0073325707820000000000000090002', 'Wind', 6],
     ['DE0001815707800000101300000139428', 'Solar', 5.5],
   ] as const;
 
@@ -44,7 +42,7 @@ test('all city virtual-model examples are verified', async () => {
   }
 });
 
-test('legacy Hamburg feed-in JSON remains verified without a client MaLo', async () => {
+test('legacy feed-in JSON remains verified without a client MaLo', async () => {
   const parsed = producerOnboardingSchema.parse({
     first_name: 'Anna',
     last_name: 'Schmidt',
@@ -52,16 +50,16 @@ test('legacy Hamburg feed-in JSON remains verified without a client MaLo', async
     salutation: 'Frau',
     is_business: true,
     is_reverse_charge: false,
-    deliv_address_street: 'Rathausmarkt',
-    deliv_address_house_number: '1',
-    deliv_address_zipcode: '20095',
-    deliv_address_city: 'Hamburg',
+    deliv_address_street: 'Vilbeler Landstrasse',
+    deliv_address_house_number: '21',
+    deliv_address_zipcode: '60388',
+    deliv_address_city: 'Frankfurt am Main',
     subscription_reason: 'E01',
     construct_type: 'FEED_IN',
     production_type: 'Solar',
     plant_capacity_kw: 6,
-    plant_specifics: { latitude: 53.55, longitude: 10 },
-    market_location_identifier: 'DE0073325707820000000000000090001',
+    plant_specifics: { latitude: 50.11, longitude: 8.68 },
+    market_location_identifier: 'DE0073325707820000000000000088943',
     tranche: null,
     preferred_delivery_start: '2026-10-01T00:00:00Z',
     saas_customer_id: null,
@@ -72,7 +70,7 @@ test('legacy Hamburg feed-in JSON remains verified without a client MaLo', async
     technical_resources: null,
     contract_start_utc: '2026-10-01T00:00:00Z',
     contract_end_utc: '2027-10-01T00:00:00Z',
-    building_id: 'B-HAM-01',
+    building_id: 'B-FRA-01',
   });
   const result = await verifyProducer(parsed, validate(parsed));
   assert.equal(result.status, 'VERIFIED');
@@ -83,10 +81,10 @@ test('legacy Hamburg feed-in JSON remains verified without a client MaLo', async
 test('city apartment MeLo examples are verified against their building MaLo', async () => {
   const apartmentIdentifiers = [
     'DE0001815707800000101300000139372',
-    'DE0001815707800000101300000139373',
     'DE0001815707800000101300000139374',
-    'DE0001815707800000101300000139375',
     'DE0001815707800000101300000139376',
+    'DE0001815707800000101300000139377',
+    'DE0001815707800000101300000139379',
   ];
 
   for (const identifier of apartmentIdentifiers) {

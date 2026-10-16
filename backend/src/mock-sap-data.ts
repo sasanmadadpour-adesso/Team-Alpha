@@ -21,16 +21,6 @@ export const mockSapLocations: SapLocation[] = [
     valid_to: null,
   },
   {
-    identifier: 'DE0073325707820000000000000090001', identifier_type: 'MELO', network_operator: 'VNB-DEMO', status: 'ACTIVE',
-    address: { street: 'Rathausmarkt', house_number: '1', postal_code: '20095', city: 'Hamburg' }, market_location_malo: '51781124010',
-    plant: { production_type: 'Solar', capacity_kw: 6 }, building_id: 'B-HAM-01', valid_from: '2026-01-01T00:00:00Z', valid_to: null,
-  },
-  {
-    identifier: 'DE0073325707820000000000000090002', identifier_type: 'MELO', network_operator: 'VNB-DEMO', status: 'ACTIVE',
-    address: { street: 'Friedensplatz', house_number: '1', postal_code: '44135', city: 'Dortmund' }, market_location_malo: '51781124002',
-    plant: { production_type: 'Wind', capacity_kw: 6 }, building_id: 'B-DTM-01', valid_from: '2026-01-01T00:00:00Z', valid_to: null,
-  },
-  {
     identifier: 'DE0073325707820000000000000880945',
     identifier_type: 'MELO',
     network_operator: 'VNB-DEMO',
@@ -67,14 +57,13 @@ export const mockSapLocations: SapLocation[] = [
   ...[
     ['DE0001815707800000101300000139372', 'B-FRA-01', '51781123293', 'Vilbeler Landstrasse', '21', '60388', 'Frankfurt am Main'],
     ['DE0001815707800000101300000131094', 'B-FRA-01', '51781123293', 'Vilbeler Landstrasse', '21', '60388', 'Frankfurt am Main'],
-    ['DE0001815707800000101300000139373', 'B-HAM-01', '51781124010', 'Rathausmarkt', '1', '20095', 'Hamburg'],
-    ['DE0001815707800000101300000131095', 'B-HAM-01', '51781124010', 'Rathausmarkt', '1', '20095', 'Hamburg'],
+    ['DE0001815707800000101300000139377', 'B-FRA-01', '51781123293', 'Vilbeler Landstrasse', '21', '60388', 'Frankfurt am Main'],
     ['DE0001815707800000101300000139374', 'B-CGN-01', '51781215544', 'Milanweg', '10', '50859', 'Köln'],
     ['DE0001815707800000101300000131096', 'B-CGN-01', '51781215544', 'Milanweg', '10', '50859', 'Köln'],
-    ['DE0001815707800000101300000139375', 'B-DTM-01', '51781124002', 'Friedensplatz', '1', '44135', 'Dortmund'],
-    ['DE0001815707800000101300000131097', 'B-DTM-01', '51781124002', 'Friedensplatz', '1', '44135', 'Dortmund'],
+    ['DE0001815707800000101300000139379', 'B-CGN-01', '51781215544', 'Milanweg', '10', '50859', 'Köln'],
     ['DE0001815707800000101300000139376', 'B-MUL-01', '51781124001', 'Franz-Fischer-Strasse', '24', '45470', 'Mülheim an der Ruhr'],
     ['DE0001815707800000101300000131098', 'B-MUL-01', '51781124001', 'Franz-Fischer-Strasse', '24', '45470', 'Mülheim an der Ruhr'],
+    ['DE0001815707800000101300000139381', 'B-MUL-01', '51781124001', 'Franz-Fischer-Strasse', '24', '45470', 'Mülheim an der Ruhr'],
   ].map(([identifier, building_id, market_location_malo, street, house_number, postal_code, city]) => ({
     identifier, identifier_type: 'MELO', network_operator: 'VNB-DEMO', status: 'ACTIVE',
     address: { street, house_number, postal_code, city },
@@ -83,9 +72,7 @@ export const mockSapLocations: SapLocation[] = [
   } as SapLocation)),
   ...[
     ['DE0073325707820000000000000088944', 'B-FRA-01', '51781123294', 'Vilbeler Landstrasse', '21', '60388', 'Frankfurt am Main', 'Solar', 6],
-    ['DE0073325707820000000000000090003', 'B-HAM-01', '51781124011', 'Rathausmarkt', '1', '20095', 'Hamburg', 'Solar', 6],
     ['DE0073325707820000000000000880946', 'B-CGN-01', '51781215545', 'Milanweg', '10', '50859', 'Köln', 'Wind', 7],
-    ['DE0073325707820000000000000090004', 'B-DTM-01', '51781124003', 'Friedensplatz', '1', '44135', 'Dortmund', 'Wind', 6],
     ['DE0001815707800000101300000139429', 'B-MUL-01', '51781124004', 'Franz-Fischer-Strasse', '24', '45470', 'Mülheim an der Ruhr', 'Solar', 5.5],
   ].map(([identifier, building_id, market_location_malo, street, house_number, postal_code, city, production_type, capacity_kw]) => ({
     identifier, identifier_type: 'MELO', network_operator: 'VNB-DEMO', status: 'ACTIVE',

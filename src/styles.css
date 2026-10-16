@@ -82,3 +82,26 @@
 .type-card.unavailable{cursor:not-allowed;opacity:.7;background:#f5f8fa}.type-card.unavailable:hover{border-color:#dce8ee;box-shadow:none;transform:none}.coming-soon{display:block;margin-top:6px;color:#a06a1c;font-size:10px;font-style:normal;font-weight:700}.type-card-status{margin-left:auto;color:#8799a3;font-size:10px;font-weight:700;white-space:nowrap}
 .login-switch{border:0;background:transparent;color:#2675aa;cursor:pointer;font:inherit;font-size:12px;margin:18px auto 0;text-decoration:underline}
 .unit-add-actions{display:flex;gap:10px;flex-wrap:wrap}
+.sidely-warning{color:#b45309!important}.sidely-success{color:#15803d!important}
+
+/* Accessibility: slightly larger default and supporting text for easier reading. */
+:root{font-size:15px}
+body{line-height:1.45}
+.sidebar button{font-size:14px}
+.side-label{font-size:11px}
+.help-card{font-size:12px}.help-card span{font-size:11px}
+.row-action{font-size:11px}
+.wizard-step{font-size:11px}
+.scope-note{font-size:12px}
+.login-error{font-size:12px}.login-hint{font-size:11px}
+.history-select{font-size:12px}
+.contract-state{font-size:10px!important}
+.subsection-heading h3{font-size:14px}.subsection-heading p{font-size:11px}
+.approval-preview b{font-size:12px}.approval-preview small{font-size:11px}
+.approval-record-head b,.unit-approval b{font-size:12px}.approval-record-head small,.unit-approval small{font-size:10px}
+.type-card b{font-size:15px}.type-card small{font-size:12px}
+.type-label{font-size:10px}.type-card-status{font-size:11px}
+.form-error{font-size:12px}
+.form-help b{font-size:12px}.form-help small{font-size:11px}
+.hub-tooltip b{font-size:12px}.hub-tooltip span{font-size:11px}.hub-tooltip small{font-size:9px}
+.globe-caption{font-size:10px}.hub-legend{font-size:11px}

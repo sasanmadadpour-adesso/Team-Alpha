@@ -90,7 +90,7 @@ export function validate(input: ProducerInput): LocalCheck[] {
     emailIsValid ? 'Email format is valid.' : 'Email format is invalid.',
     input.email,
   );
-  if (input.construct_type === 'BUILDING' && input.units) {
+  if (input.units) {
     for (const [index, unit] of input.units.entries()) {
       const prefix = `units.${index}`;
       const generating = unit.kind === 'generator';

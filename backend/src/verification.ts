@@ -213,6 +213,43 @@ export async function verifyProducer(
   }
 
   const checks = compare(normalized, sapLocation);
+  if (normalized.units?.length) {
+    for (const [index, unit] of normalized.units.entries()) {
+      const unitIdentifier = unit.kind === 'generator' ? unit.generator_melo : unit.melo;
+      if (!unitIdentifier || unitIdentifier === normalized.market_location_identifier) continue;
+      try {
+        const unitLocation = await getSapLocation(unitIdentifier);
+        if (!unitLocation) {
+          checks.push(verificationCheck(
+            `units.${index}.melo`, unitIdentifier, null, 'MISMATCH',
+            'The unit MeLo was not found in SAP.',
+            'Every apartment and generator must refer to an authoritative SAP location.',
+          ));
+          continue;
+        }
+        const unitInput: ProducerOnboarding = {
+          ...normalized,
+          market_location_identifier: unitIdentifier,
+          market_location_malo: unit.kind === 'generator'
+            ? unit.generator_malo ?? null
+            : normalized.building_market_location_malo ?? normalized.market_location_malo,
+          production_type: unit.kind === 'generator' ? unitLocation.plant.production_type : 'Keine',
+          plant_capacity_kw: unit.kind === 'generator' ? unitLocation.plant.capacity_kw : 0,
+          units: undefined,
+        };
+        checks.push(...compare(unitInput, unitLocation).map((check) => ({
+          ...check,
+          field: `units.${index}.${check.field}`,
+        })));
+      } catch {
+        checks.push(verificationCheck(
+          `units.${index}.melo`, unitIdentifier, null, 'MISMATCH',
+          'The unit SAP source is unavailable.',
+          'Every apartment and generator must be checked against the authoritative SAP source.',
+        ));
+      }
+    }
+  }
   const networkOperatorMismatch = checks.some(
     (check) => check.field === 'network_operator' && check.result === 'MISMATCH',
   );
