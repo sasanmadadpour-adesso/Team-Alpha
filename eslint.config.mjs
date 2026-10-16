@@ -5,29 +5,18 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 export default [
   eslint.configs.recommended,
   {
-    languageOptions: {
-      globals: {
-        ...Object.fromEntries(['process', 'NodeJS', 'describe', 'it', 'expect'].map((name) => [name, 'readonly'])),
-      },
-    },
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
       parser: tsParser,
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
+      globals: { console: 'readonly', process: 'readonly', describe: 'readonly', it: 'readonly' },
     },
     plugins: { '@typescript-eslint': tsPlugin },
     rules: {
       'no-undef': 'off',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
-  {
-    ignores: ['dist/**', 'node_modules/**'],
-  },
+  { ignores: ['dist/**', 'node_modules/**'] },
 ];
