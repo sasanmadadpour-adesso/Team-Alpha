@@ -80,6 +80,18 @@ entity ProducerOnboarding {
   contractStartUtc : Date; contractEndUtc : Date; buildingId : String(40); sourceData : LargeString;
 }
 
+/** Registrations received from the external Registration MVP; separate from immutable workbook rows. */
+entity ProducerRegistrationRequests : cuid, managed {
+  idempotencyKey : String(200) @assert.unique; status : String(30); constructType : String(30);
+  firstName : String(120); lastName : String(120); email : String(255); salutation : String(40);
+  isBusiness : Boolean; isReverseCharge : Boolean; deliveryStreet : String(200); deliveryHouseNumber : String(40);
+  deliveryZipcode : String(20); deliveryCity : String(120); subscriptionReason : String(80); productionType : String(80);
+  plantCapacityKw : Decimal(15,6); latitude : Decimal(12,8); longitude : Decimal(12,8); marketLocationId : String(80);
+  tranche : String(120); preferredDeliveryStart : Timestamp; saasCustomerId : String(120); saasContractId : String(120);
+  productName : String(160); consumerSaasContractId : String(120); controlResource : String(200); technicalResources : String(500);
+  contractStartUtc : Timestamp; contractEndUtc : Timestamp; buildingId : String(40); submittedBy : String(80); payload : LargeString;
+}
+
 entity HourlyConsumption {
   key sourceId : String(160); sourceFile : String(200); sourceSheet : String(100); sourceRowNumber : Integer; importChecksum : String(64);
   startTime : Timestamp; endTime : Timestamp; buildingId : String(40); meloId : String(80); maloId : String(40);

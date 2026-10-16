@@ -124,6 +124,19 @@ curl "http://localhost:4004/api/v1/Constructs/B-MUL-01/relationshipList()"
 
 The internal read-only OData V4 view is available at `/odata/v4/malo`.
 
+### Registration MVP integration
+
+Another MVP can create a producer registration without changing constructs, lifecycle periods or Ruhendstellung state:
+
+```http
+POST /api/v1/producer-onboardings
+Authorization: Bearer rk_...
+Idempotency-Key: registration-unique-key
+Content-Type: application/json
+```
+
+The endpoint accepts the `Producer Onboarding` snake-case contract, including nested `plant_specifics`, persists it separately in `ProducerRegistrationRequests`, and returns `201 Created`. Replaying the same key and payload returns the existing registration; reusing a key for different data returns `409`. It records only a simulated onboarding acceptance and never claims SAP registration. Authenticated clients can retrieve records through `GET /api/v1/ProducerRegistrations`. The API playground is at `/api-console`; credential creation and revocation are separated at `/api-console/access`.
+
 ## Code layout
 
 | Path | Content |

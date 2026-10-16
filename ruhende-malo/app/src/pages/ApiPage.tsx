@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 type Need = 'READ' | 'PUBLIC' | 'ANY' | 'WRITE' | 'MAINTAINER';
-type Group = 'process' | 'malo' | 'read' | 'access';
+type Group = 'registration' | 'process' | 'malo' | 'read' | 'access';
 interface Ep { id: string; method: 'GET' | 'POST'; path: string; group: Group; need: Need; title: string; body?: (d: Ctx) => object }
 interface Ctx { construct: string; malo: string; issue: string }
 
@@ -28,6 +28,14 @@ const context = (d: Snapshot): Ctx => ({
 
 const DEMO = { construct: 'B-API-01', reststrom: '50000000101', household: '50000000110', meloR: `DE${'0'.repeat(30)}9`, meloH: `DE${'0'.repeat(30)}1` };
 const CATALOGUE: Ep[] = [
+  { id: 'producerOnboarding', method: 'POST', path: '/producer-onboardings', group: 'registration', need: 'WRITE', title: 'api.e.producerOnboarding', body: () => ({
+    first_name:'Anna',last_name:'Schmidt',email:'anna.schmidt@example.de',salutation:'Frau',is_business:true,is_reverse_charge:false,
+    deliv_address_street:'Rathausmarkt',deliv_address_house_number:'1',deliv_address_zipcode:'20095',deliv_address_city:'Hamburg',subscription_reason:'E01',
+    construct_type:'FEED_IN',production_type:'Solar',plant_capacity_kw:6,plant_specifics:{latitude:53.55,longitude:10},market_location_identifier:'DE0073325707820000000000000090001',tranche:null,
+    preferred_delivery_start:'2026-10-01T00:00:00Z',saas_customer_id:null,saas_contract_id:null,product_name:null,consumer_saas_contract_id:null,control_resource:null,technical_resources:null,
+    contract_start_utc:'2026-10-01T00:00:00Z',contract_end_utc:'2027-10-01T00:00:00Z',building_id:'B-HAM-01'
+  }) },
+  { id: 'producerRegistrations', method: 'GET', path: '/ProducerRegistrations?$orderby=createdAt desc&$top=20', group: 'registration', need: 'READ', title: 'api.e.producerRegistrations' },
   { id: 'register', method: 'POST', path: '/registerConstruct', group: 'process', need: 'WRITE', title: 'api.e.register', body: () => ({ construct: { buildingId: DEMO.construct, city: 'Essen', stichtag: '2026-11-01', participants: [
     { role: 'Marktlokation Reststrom', maloId: DEMO.reststrom, meloId: DEMO.meloR },
     { role: 'Haushaltsverbrauch', maloId: DEMO.household, meloId: DEMO.meloH, participates: true }] } }) },
@@ -53,7 +61,7 @@ const CATALOGUE: Ep[] = [
   { id: 'me', method: 'GET', path: '/me()', group: 'access', need: 'READ', title: 'api.e.me' },
   { id: 'createKey', method: 'POST', path: '/createApiKey', group: 'access', need: 'MAINTAINER', title: 'api.e.createKey', body: () => ({ name: 'ERP-Test', role: 'PIPELINE' }) },
 ];
-const GROUPS: { id: Group; key: string }[] = [{ id: 'process', key: 'api.g.process' }, { id: 'malo', key: 'api.g.malo' }, { id: 'read', key: 'api.g.read' }, { id: 'access', key: 'api.g.access' }];
+const GROUPS: { id: Group; key: string }[] = [{ id: 'registration', key: 'api.g.registration' }, { id: 'process', key: 'api.g.process' }, { id: 'malo', key: 'api.g.malo' }, { id: 'read', key: 'api.g.read' }, { id: 'access', key: 'api.g.access' }];
 
 /** The example flow: a brand-new construct, from registration to the relationship list. */
 const RECIPE: { key: string; ep: string; path?: string; body?: object }[] = [
@@ -108,7 +116,7 @@ export function ApiPage() {
   useEffect(() => { if (route.endsWith('/access')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
 
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); toast(t('api.copied')); } catch { toast(text); } };
-  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'READ' || ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
+  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.id === 'producerOnboarding' ? ' \\\n  -H "Idempotency-Key: registration-demo-001"' : ''}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
 
   const send = async () => {
     if (ep.method === 'POST') { try { JSON.parse(body || '{}'); } catch { setBodyErr(true); return; } }
@@ -117,6 +125,7 @@ export function ApiPage() {
       const before = metrics(await loadSnapshot());
       const started = performance.now();
       const headers: Record<string, string> = getToken() ? { Authorization: `Bearer ${getToken()}` } : {};
+      if(ep.id==='producerOnboarding') headers['Idempotency-Key']=`console-${Date.now()}`;
       if (ep.method === 'POST') headers['Content-Type'] = 'application/json';
       const res = await fetch(`/api/v1${encodeURI(path)}`, ep.method === 'POST' ? { method: 'POST', headers, body: body || '{}' } : { headers });
       const ms = Math.round(performance.now() - started);
@@ -224,9 +233,13 @@ export function ApiPage() {
         </section>
       </div>
 
-      <KeysSection />
     </>
   );
+}
+
+export function AccessPage(){
+  const {t}=useI18n();
+  return <><PageHeader title={t('api.keys.title')} description={t('api.keys.sub')} badge={<Badge variant="info">Access</Badge>}/><KeysSection/></>;
 }
 
 /** Access for other systems: create keys (secret shown once), see use, revoke. */

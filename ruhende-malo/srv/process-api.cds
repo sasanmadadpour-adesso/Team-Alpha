@@ -103,6 +103,8 @@ service ProcessApi {
   /** Demo access: API keys (the secret is never returned after creation) and the log of write calls. */
   @readonly entity ApiKeys           as projection on db.ApiKeys excluding { hash };
   @readonly entity ApiCalls          as projection on db.ApiCalls;
+  /** Registrations created by the external Registration MVP. Personal data requires authenticated access. */
+  @readonly entity ProducerRegistrations as projection on db.ProducerRegistrationRequests excluding { payload };
   /** Handover to downstream processes (UTILMD, INVOIC, EDM) — recorded, NOT sent. */
   @readonly entity Outbox            as projection on db.OutboxEvents;
 

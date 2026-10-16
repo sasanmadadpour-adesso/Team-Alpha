@@ -12,7 +12,7 @@ import { ConfirmHost, confirmDialog } from './confirm';
 import { OverviewPage } from './pages/Overview';
 import { ConstructPage } from './pages/Construct';
 import { CasesPage } from './pages/Cases';
-import { ApiPage } from './pages/ApiPage';
+import { AccessPage, ApiPage } from './pages/ApiPage';
 import { ProtokollPage } from './pages/Protokoll';
 import { StagesPage } from './pages/Stages';
 import { CaseDrawer } from './pages/CaseDrawer';
@@ -134,7 +134,7 @@ export default function App() {
               {section === 'cases' && <CasesPage />}
               {section === 'stages' && <StagesPage />}
               {section === 'log' && <ProtokollPage initialConstruct={logConstruct} />}
-              {section === 'api' && <ApiPage />}
+              {section === 'api' && (route.startsWith('/api-console/access') ? <AccessPage /> : <ApiPage />)}
             </div>
             {caseId && <CaseDrawer caseId={caseId} onClose={() => setCaseId(undefined)} />}
           </AppContext.Provider>
