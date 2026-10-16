@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { aggregateHostedRows, energyTotals, hostedEnergy, portalRows } = require('../srv/lib/hosted-energy-client');
+const { aggregateHostedRows, energyTotals, hostedEnergy, portalRows, sumEnergyTrends } = require('../srv/lib/hosted-energy-client');
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, status, text: async () => JSON.stringify(body) };
@@ -82,5 +82,20 @@ test('the Overview house-member portal proxy uses a producer feed-in MaLo for de
 test('the Overview exposes a hosted building-energy proxy', () => {
   const server = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'server.js'), 'utf8');
   assert.match(server, /app\.get\('\/building-energy'/);
-  assert.match(server, /roleCode: 'RESIDUAL_SUPPLY'/);
+  assert.match(server, /sumEnergyTrends/);
+  assert.match(server, /\['HOUSEHOLD', 'GENERATION'\]/);
+});
+
+test('sums aligned member energy trends into one building trend', () => {
+  const point = (consumptionKwh, generationKwh, localEnergyKwh, residualGridKwh, exportKwh) => ({
+    bucketStart: '2026-10-15T00:00:00.000Z', bucketEnd: '2026-10-16T00:00:00.000Z',
+    bucketLabel: '2026-10-15T00:00:00.000Z', granularity: 'day', intervalCount: 24,
+    consumptionKwh, generationKwh, localEnergyKwh, residualGridKwh, exportKwh
+  });
+  assert.deepEqual(sumEnergyTrends([[point(4, 0, 1, 3, 0)], [point(0, 6, 2, 0, 4)]], 'B-1')[0], {
+    ID: 'BUILDING-SUM-B-1-0', parentID: 'B-1', bucketStart: '2026-10-15T00:00:00.000Z',
+    bucketEnd: '2026-10-16T00:00:00.000Z', bucketLabel: '2026-10-15T00:00:00.000Z',
+    granularity: 'day', consumptionKwh: 4, generationKwh: 6, localEnergyKwh: 3,
+    residualGridKwh: 3, exportKwh: 4, intervalCount: 24
+  });
 });

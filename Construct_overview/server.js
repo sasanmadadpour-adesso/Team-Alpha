@@ -1,6 +1,6 @@
 const cds = require('@sap/cds');
 const { getLiveConstructSync } = require('./srv/lib/live-construct-sync');
-const { hostedEnergy } = require('./srv/lib/hosted-energy-client');
+const { hostedEnergy, sumEnergyTrends } = require('./srv/lib/hosted-energy-client');
 
 function authorized(req) {
   const expected = process.env.SYNC_API_KEY;
@@ -56,9 +56,20 @@ cds.on('bootstrap', app => {
     if (!building) return res.status(400).json({ error: { code: 'BUILDING_REQUIRED', message: 'Query parameter building is required' } });
     try {
       res.setHeader('Cache-Control', 'private, max-age=30');
-      const payload = await hostedEnergy({ malo: `building-${building}`, building, range, roleCode: 'RESIDUAL_SUPPLY' });
-      payload.value = payload.value.map(row => ({ ...row, parentID: building }));
-      return res.json(payload);
+      const members = sync.registered().filter(row =>
+        String(row.buildingID || row.buildingId || '') === building &&
+        ['HOUSEHOLD', 'GENERATION'].includes(row.roleCode)
+      );
+      if (!members.length) return res.status(404).json({ error: { code: 'BUILDING_MEMBERS_NOT_FOUND', message: `No energy members found for building ${building}` } });
+      const results = await Promise.all(members.map(member => {
+        const malo = member.roleCode === 'GENERATION' ? (member.exportMaLo || member.primaryMaLo) : member.primaryMaLo;
+        return hostedEnergy({ malo, building, range, roleCode: member.roleCode });
+      }));
+      return res.json({
+        value: sumEnergyTrends(results.map(result => result.value), building),
+        source: 'SUMMED_MEMBER_TRENDS', memberCount: members.length,
+        generatedAt: new Date().toISOString()
+      });
     } catch (error) {
       return res.status(error.status || 502).json({ error: { code: error.code || 'HOSTED_ENERGY_ERROR', message: error.message } });
     }

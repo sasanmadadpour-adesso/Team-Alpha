@@ -80,6 +80,31 @@ function energyTotals(rows) {
   };
 }
 
+function sumEnergyTrends(series, parentID) {
+  const buckets = new Map();
+  for (const rows of series) {
+    for (const row of rows) {
+      const key = row.bucketStart;
+      const bucket = buckets.get(key) || {
+        parentID, bucketStart: key, bucketEnd: row.bucketEnd, bucketLabel: row.bucketLabel,
+        granularity: row.granularity, consumptionKwh: 0, generationKwh: 0,
+        localEnergyKwh: 0, residualGridKwh: 0, exportKwh: 0, intervalCount: 0
+      };
+      for (const field of ['consumptionKwh', 'generationKwh', 'localEnergyKwh', 'residualGridKwh', 'exportKwh']) {
+        bucket[field] += Number(row[field] || 0);
+      }
+      bucket.intervalCount = Math.max(bucket.intervalCount, Number(row.intervalCount || 0));
+      buckets.set(key, bucket);
+    }
+  }
+  return [...buckets.values()].sort((a, b) => a.bucketStart.localeCompare(b.bucketStart)).map((row, index) => ({
+    ID: `BUILDING-SUM-${parentID}-${index}`, ...row,
+    consumptionKwh: round(row.consumptionKwh), generationKwh: round(row.generationKwh),
+    localEnergyKwh: round(row.localEnergyKwh), residualGridKwh: round(row.residualGridKwh),
+    exportKwh: round(row.exportKwh)
+  }));
+}
+
 function portalRows(payload, malo, range) {
   const trend = payload?.trends?.member;
   if (!trend || !Array.isArray(trend.points)) throw Object.assign(new Error('Hosted portal returned no member trend'), { status: 502 });
@@ -188,4 +213,4 @@ async function hostedEnergy({ malo, building, range = '7d', roleCode, fetchImpl 
   }
 }
 
-module.exports = { RANGES, aggregateHostedRows, configuredUrls, energyTotals, hostedEnergy, portalRows };
+module.exports = { RANGES, aggregateHostedRows, configuredUrls, energyTotals, hostedEnergy, portalRows, sumEnergyTrends };
