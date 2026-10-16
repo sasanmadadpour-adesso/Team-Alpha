@@ -1,0 +1,58 @@
+{
+  "name": "mk7-control-center",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MK7 Control Center \u2014 local SAP CAP simulation",
+  "workspaces": [
+    "app"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others -n CAP,UI -c blue,green \"npm run dev:cap\" \"npm run dev:ui\"",
+    "predev": "npm run stop:local",
+    "dev:cap": "cds serve",
+    "dev:ui": "npm run dev --workspace app",
+    "stop:local": "tsx scripts/stop-local.ts",
+    "deploy:local": "npm run import:data",
+    "correct:data": "tsx scripts/create-corrected-workbook.ts",
+    "preimport:data": "npm run correct:data",
+    "import:data": "tsx scripts/import-workbook.ts",
+    "build": "npm run build:cap && npm run build --workspace app",
+    "build:cap": "cds build --production",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspace app",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "cds-serve",
+    "api:spec": "cds compile srv/process-api.cds --service ProcessApi --to openapi --openapi:url /api/v1 > docs/openapi.json && cp docs/openapi.json app/public/openapi.json"
+  },
+  "dependencies": {
+    "@cap-js/sqlite": "^3.1.2",
+    "@sap/cds": "^10.1.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@cap-js/cds-types": "^0.20.0",
+    "@sap/cds-dk": "^10.1.0",
+    "@types/node": "^24.7.2",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^7.0.0",
+    "vitest": "^5.0.5"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": {
+          "url": "db.sqlite"
+        }
+      },
+      "auth": {
+        "kind": "dummy"
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

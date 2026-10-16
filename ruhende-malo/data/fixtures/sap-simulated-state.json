@@ -1,0 +1,24 @@
+{
+  "_notice": "SIMULATED SAP / market-communication state for the local demo. NOT real SAP data. The pipeline READS it at run time: knownConstructs = constructs whose measuring concepts were ordered via DSO-DP (vSZ step 1); defaults/malo = supplier Abmeldung and MCM status (stage 4). iMSys is NOT simulated: it is read from the workbook column 'messsystem'. The vSZ steps 4.1-4.7 are executed by the pipeline itself in the simulated SAP.",
+  "knownConstructs": [
+    "B-FRA-01",
+    "B-CGN-01",
+    "B-MUL-01"
+  ],
+  "defaults": {
+    "imsys": "INSTALLED",
+    "abmeldung": "CONFIRMED",
+    "mcm": "COMPLETED"
+  },
+  "malo": {
+    "50539603876": {
+      "abmeldung": "PENDING",
+      "_why": "Simulated demo gap: the workbook column vorlieferant is empty, so the supplier's deregistration is genuinely unknown."
+    },
+    "50539603103": {
+      "abmeldung": "PENDING",
+      "_why": "Simulated demo gap: the workbook column vorlieferant is empty, so the supplier's deregistration is genuinely unknown."
+    }
+  },
+  "melo": {}
+}

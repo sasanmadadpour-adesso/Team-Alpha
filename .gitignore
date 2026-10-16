@@ -1,5 +1,6 @@
 # Local editor and office lock files
 .~lock.*#
+.DS_Store
 
 # Generated Graphify state that should not be shared
 graphify-out/cache/
