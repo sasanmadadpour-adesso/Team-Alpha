@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, X } from 'lucide-react';
 import { execute, loadPeriods, preview, resolveIssue, updateSapState, type Case, type CaseIssue, type Operation, type OperationResult, type Period, type Resolution } from '../api';
-import { fmtDate, fmtDateTime, useI18n, type Key } from '../i18n';
+import { fmtDate, fmtDateTime, resultText, useI18n, type Key } from '../i18n';
 import { confirmDialog } from '../confirm';
+import { humanReason } from './Protokoll';
 import { StateIcon, StatusChip, ToneIcon, caseHeadline, errorText, primaryIssue, statusLabel, stepUi, useApp } from '../ui';
 
 const STATUS_INPUT: Record<string, { attribute: 'imsys' | 'abmeldung' | 'mcm'; value: string }> = {
@@ -43,7 +44,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
       if (target !== caseId) openCase(target);
       const now = latest.find((x) => x.caseId === target);
       setPhase({ kind: 'done', ruhend: now?.status === 'DONE', status: now ? statusLabel(t, now) : '' });
-    } catch (e) { setPhase({ kind: 'idle' }); toast(errorText(t, e), 'err'); }
+    } catch (e) { setPhase({ kind: 'idle' }); toast(errorText(t, e), 'err'); void refresh(); }
   };
 
   const issues = [...c.issues].sort((a, b) => (a.ID === primaryIssue(c)?.ID ? -1 : b.ID === primaryIssue(c)?.ID ? 1 : 0));
@@ -59,7 +60,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
             <StatusChip c={c} animateKey={String(data.loadedAt)} />
             <button className="icon-btn" aria-label={t('common.close')} onClick={close}><X size={18} /></button>
           </div>
-          <div className="d-id">{c.maloId}<button className="copy" aria-label="copy" onClick={() => { void navigator.clipboard?.writeText(c.maloId); toast(t('common.copied')); }}><Copy size={14} /></button></div>
+          <div className="d-id">{c.maloId}<button className="copy" aria-label={t('common.copy')} onClick={() => { void navigator.clipboard?.writeText(c.maloId); toast(t('common.copied')); }}><Copy size={14} /></button></div>
           <div className="subtle">{t(`role.${c.role}`)} · {c.city} ({c.constructId}) · MeLo <span className="mono">{c.meloId}</span></div>
         </div>
 
@@ -72,7 +73,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
                 <h3>{head.title}</h3>
                 <p>{head.text}</p>
                 {issues.length > 0 && (
-                  <details className="tech"><summary>{t('common.details')}</summary>{issues.map((i) => <p key={i.ID}>{i.ruleId} · {i.message}</p>)}</details>
+                  <details className="tech"><summary>{t('common.details')}</summary>{issues.map((i) => <p key={i.ID}>{t('case.tech', { rule: i.ruleId, object: i.constructIds.includes(',') ? `${c.maloId} (${i.constructIds.replaceAll(',', ' · ')})` : c.maloId, field: i.field ? ` · ${i.field}` : '' })}</p>)}</details>
                 )}
               </div>
             </div>
@@ -104,7 +105,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
               {c.steps.map((s, i) => {
                 const ui = c.status === 'NEW' ? 'todo' : stepUi(s.id, s.state);
                 return (
-                  <div key={s.id} className={`sv sv-${ui}`} style={{ ['--i' as string]: i }} title={c.status === 'NEW' ? '' : s.detail}>
+                  <div key={s.id} className={`sv sv-${ui}`} style={{ ['--i' as string]: i }} title={c.status === 'NEW' ? '' : t(`state.${ui}`)}>
                     <StateIcon state={ui} size={20} />
                     <span>{t(`step.${s.id}`)}</span>
                     <small>{c.status === 'NEW' ? t('state.notrun') : t(`state.${ui}`)}</small>
@@ -131,7 +132,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
               <div className="rel-list">
                 {rels.map((r) => (
                   <div key={r.ID} className={`rel-row ${r.validToExclusive ? 'closed' : ''}`} style={{ gridTemplateColumns: '64px minmax(0,1fr) auto' }}>
-                    <span className="chip info" style={{ justifyContent: 'center' }}>{r.context === 'EINSPEISE_MEMA' ? 'Einsp.' : r.kind === 'MEMA' ? 'MeMa' : 'MaMa'}</span>
+                    <span className="chip info" style={{ justifyContent: 'center' }}>{r.context === 'EINSPEISE_MEMA' ? t('rel.einspeise') : r.kind === 'MEMA' ? 'MeMa' : 'MaMa'}</span>
                     <span className="mono" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${r.fromLocationId} → ${r.toLocationId}`}>{r.fromLocationId} → {r.toLocationId}</span>
                     <span className="when">{fmtDate(lang, r.validFrom)} – {r.validToExclusive ? fmtDate(lang, r.validToExclusive) : '31.12.9999'}</span>
                   </div>
@@ -145,7 +146,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
               <h4>{t('case.periods')}</h4>
               <div className="periods">
                 {periods.map((p) => (
-                  <div key={p.ID} className={`period ${p.businessState}`}><b>{p.businessState === 'RUHEND' ? 'Ruhend' : lang === 'de' ? 'Aktiv' : 'Active'}</b><span>{p.validFrom ? fmtDate(lang, p.validFrom) : '…'} – {p.validToExclusive ? fmtDate(lang, p.validToExclusive) : '∞'}</span></div>
+                  <div key={p.ID} className={`period ${p.businessState}`}><b>{p.businessState === 'RUHEND' ? t('state.period.RUHEND') : t('state.period.ACTIVE')}</b><span>{p.validFrom ? fmtDate(lang, p.validFrom) : '…'} – {p.validToExclusive ? fmtDate(lang, p.validToExclusive) : '∞'}</span></div>
                 ))}
               </div>
             </section>
@@ -157,7 +158,7 @@ export function CaseDrawer({ caseId, onClose }: { caseId: string; onClose: () =>
             <section className="d-sec">
               <h4>{t('case.history')}</h4>
               <div className="hist">
-                {history.map((e) => <div key={e.ID}>{t(`act.${e.operation}`)}{e.reason && e.operation !== 'SET_DORMANT' ? ` — ${e.reason}` : ''}<small>{t(`actor.${e.actor}`) === `actor.${e.actor}` ? e.actor : t(`actor.${e.actor}`)} · {fmtDateTime(lang, e.eventTime)}</small></div>)}
+                {history.map((e) => <div key={e.ID}>{t(`act.${e.operation}`)}{humanReason(e) ? ` — ${humanReason(e)}` : ''}<small>{t(`actor.${e.actor}`) === `actor.${e.actor}` ? e.actor : t(`actor.${e.actor}`)} · {fmtDateTime(lang, e.eventTime)}</small></div>)}
               </div>
             </section>
           )}
@@ -292,12 +293,12 @@ function LifecycleActions({ c }: { c: Case }) {
   useEffect(() => { if (needsRef && !ref && refs[0]) setRef(refs[0].ID); }, [needsRef, ref, refs]);
 
   const command = { operation: op, maloId: c.maloId, buildingId: c.constructId, effectiveDate: date, reason: reason.trim() || undefined, referenceOperationId: needsRef ? ref || undefined : undefined };
-  const check = async () => { setBusy(true); try { setResult(await preview(command)); } catch (e) { toast(errorText(t, e), 'err'); } setBusy(false); };
+  const check = async () => { setBusy(true); try { setResult(await preview(command)); } catch (e) { toast(errorText(t, e), 'err'); void refresh(); } setBusy(false); };
   const go = async () => {
     if (!(await confirmDialog(`${t('confirm.life', { op: t(`life.${op}`), m: c.maloId, d: fmtDate(lang, date) })}\n\n${t('confirm.life.d')}`, t))) return;
     setBusy(true);
-    try { const r = await execute(command); setResult(r); await refresh(); toast(`${t(`life.${op}`)} · ${r.status === 'SUCCESS' ? '✓' : r.message}`, r.status === 'SUCCESS' ? 'ok' : 'err'); }
-    catch (e) { toast(errorText(t, e), 'err'); }
+    try { const r = await execute(command); setResult(r); await refresh(); toast(`${t(`life.${op}`)} · ${r.status === 'SUCCESS' ? '✓' : resultText(t, r.code, op, '')}`, r.status === 'SUCCESS' ? 'ok' : 'err'); }
+    catch (e) { toast(errorText(t, e), 'err'); void refresh(); }
     setBusy(false);
   };
 
@@ -319,7 +320,7 @@ function LifecycleActions({ c }: { c: Case }) {
           </label>
         )}
         {needsReason && <label className="field">{t('common.reason')}<textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('common.reason.placeholder')} /></label>}
-        {result && <div className={`banner ${result.canExecute || result.status === 'SUCCESS' ? 'ok' : 'err'}`} style={{ margin: 0 }}>{result.message}</div>}
+        {result && <div className={`banner ${result.canExecute || result.status === 'SUCCESS' ? 'ok' : 'err'}`} style={{ margin: 0 }}>{resultText(t, result.status === 'SUCCESS' ? 'SIMULATED_SUCCESS' : result.code, op, '')}</div>}
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn secondary" disabled={busy || (needsReason && !reason.trim())} onClick={check}>{t('life.check')}</button>
           <button className="btn primary" disabled={busy || !result?.canExecute} onClick={go}>{busy ? <span className="spin" /> : null}{t('life.run')}</button>

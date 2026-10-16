@@ -21,7 +21,14 @@ export function buildLifecyclePlan(input:LifecycleInput):LifecyclePlan {
     const current=input.periods.find(p=>p.businessState==='RUHEND'&&covers(p,input.effectiveDate)); if(!current||!current.validFrom||input.effectiveDate<=current.validFrom) return blocked(input,'INVALID_CHRONOLOGY','Reactivation must occur after the dormant period started.');
     return {status:'READY',code:'READY',message:'Wiederaktivierung is valid for local simulation.',canExecute:true,beforeState:'RUHEND',afterState:'ACTIVE',effectiveDate:input.effectiveDate,changes:{closePeriodId:current.id,openState:'ACTIVE'}};
   }
-  if(input.operation==='REMOVE_FROM_CONSTRUCT') return {status:'READY',code:'READY',message:'Herauslösung will close mock-observed construct relationships; business state remains unchanged.',canExecute:true,beforeState:input.currentState,afterState:input.currentState,effectiveDate:input.effectiveDate,changes:{relationshipAction:'CLOSE'}};
+  if(input.operation==='REMOVE_FROM_CONSTRUCT'){
+    // A ruhende MaLo must belong to a construct (its MaMa links it to the Reststrom-MaLo). Leaving the construct therefore also returns it to ACTIVE.
+    if(input.currentState==='RUHEND'){
+      const current=input.periods.find(p=>p.businessState==='RUHEND'&&covers(p,input.effectiveDate)); if(!current||!current.validFrom||input.effectiveDate<=current.validFrom) return blocked(input,'INVALID_CHRONOLOGY','Herauslösung must occur after the dormant period started.');
+      return {status:'READY',code:'READY',message:'Herauslösung closes MeMa/MaMa and returns the MaLo to ACTIVE.',canExecute:true,beforeState:'RUHEND',afterState:'ACTIVE',effectiveDate:input.effectiveDate,changes:{closePeriodId:current.id,openState:'ACTIVE',relationshipAction:'CLOSE'}};
+    }
+    return {status:'READY',code:'READY',message:'Herauslösung closes MeMa/MaMa.',canExecute:true,beforeState:input.currentState,afterState:input.currentState,effectiveDate:input.effectiveDate,changes:{relationshipAction:'CLOSE'}};
+  }
   if(input.operation==='CORRECT_TRANSITION'){
     const oldDate=input.reference!.effectiveDate; if(input.effectiveDate===oldDate) return blocked(input,'NO_CORRECTION_CHANGE','Corrected date must differ from the original date.');
     const started=input.periods.find(p=>p.validFrom===oldDate); const ended=input.periods.find(p=>p.validToExclusive===oldDate); if(!started||!ended) return blocked(input,'CORRECTION_BOUNDARY_NOT_FOUND','Referenced transition boundary is not present in lifecycle history.');

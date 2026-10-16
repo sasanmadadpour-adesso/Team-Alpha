@@ -1,5 +1,5 @@
 {
-  "_notice": "SIMULATED SAP / market-communication state for the local demo. NOT real SAP data. Read by the pipeline at run time: knownConstructs = constructs whose measuring concepts were ordered via DSO-DP (vSZ step 1); defaults/malo/melo = iMSys, supplier Abmeldung and MCM status (stage 4). The vSZ steps 4.1–4.7 are executed by the pipeline itself in the simulated SAP.",
+  "_notice": "SIMULATED SAP / market-communication state for the local demo. NOT real SAP data. The pipeline READS it at run time: knownConstructs = constructs whose measuring concepts were ordered via DSO-DP (vSZ step 1); defaults/malo = supplier Abmeldung and MCM status (stage 4). iMSys is NOT simulated: it is read from the workbook column 'messsystem'. The vSZ steps 4.1-4.7 are executed by the pipeline itself in the simulated SAP.",
   "knownConstructs": [
     "B-FRA-01",
     "B-CGN-01",
@@ -13,13 +13,12 @@
   "malo": {
     "50539603876": {
       "abmeldung": "PENDING",
-      "_why": "Current supplier has not yet confirmed the deregistration (UTILMD Abmeldung)."
+      "_why": "Simulated demo gap: the workbook column vorlieferant is empty, so the supplier's deregistration is genuinely unknown."
+    },
+    "50539603103": {
+      "abmeldung": "PENDING",
+      "_why": "Simulated demo gap: the workbook column vorlieferant is empty, so the supplier's deregistration is genuinely unknown."
     }
   },
-  "melo": {
-    "DE0001815707800000101300000139045": {
-      "imsys": "MISSING",
-      "_why": "MeLo of MaLo 50539603103 still has a conventional meter; a vSZ needs iMSys at every participating MeLo."
-    }
-  }
+  "melo": {}
 }

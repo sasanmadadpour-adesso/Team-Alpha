@@ -75,7 +75,7 @@ When the process runs, each step gets one of these outcomes:
 |---|---|---|---|
 | 1 Messkonzepte | p. 2 | Checks whether the DSO-DP order exists (C1001_M001 per Bezugs-MeLo, C1003_M001 per generator) | `CONFIRMED` (DSO-DP, simulated) or `UNKNOWN` |
 | 2 Steckbriefe | p. 2 | Verifies the participant list: number of metering points, tenants, operator | `CHECKED` (data) |
-| 3 iMSys | p. 2 | Counts participating Bezugs-MeLos with an iMSys | `CHECKED`, or `PARTIAL` (the rest is handled per MaLo in stage 4) |
+| 3 iMSys | p. 2 | Counts participating Bezugs-MeLos with an iMSys, read from the workbook column `messsystem` (e.g. `iMS/TF`) | `CHECKED`, or `PARTIAL` (the rest is handled per MaLo in stage 4) |
 | 4.1 Reststrom-MaLo + Anlage | pp. 2–3 | Verifies there is exactly one Reststrom-MaLo, then creates the Anlage (ES30): Stichtag, Sparte 01, AbrKl SLP, Tariftyp ES001, Serviceart 1001, Netzebene 01 | `DONE`, or `MISSING` |
 | 4.2 Geräteinfosatz | p. 4 | Creates device `VG-<MaLo>`, material 117-1000002, Sparte 01, billing installation OBIS 1.8.0 (EG34) | `DONE` |
 | 4.3 Zählpunktart | p. 5 | Sets Zählpunktart Marktlokation, description VBZS | `DONE` |
@@ -92,7 +92,7 @@ Steps 4.2–4.7 are only executed when 4.1 succeeded. Audit event: `VSZ_SETUP`.
 ## 4 · Voraussetzungen (prerequisites per MaLo)
 
 This is checked per participating MaLo:
-- **V10 iMSys** at the Bezugs-MeLo (`INSTALLED`). A virtual summation meter needs an iMSys at every participating MeLo.
+- **V10 iMSys** at the Bezugs-MeLo (`INSTALLED`), read from the workbook column `messsystem`. The workbook says `iMS/TF` for all 17 rows, so V10 only appears for rows without that value (e.g. API registrations). A virtual summation meter needs an iMSys at every participating MeLo.
 - **V11 Abmeldung:** the current supplier has deregistered the MaLo (`CONFIRMED`, UTILMD deregistration). A MaLo that still has a supplier cannot become ruhend.
 - **V09 MCM** for generators (`COMPLETED`). The Einspeise-MeMa may only be maintained after the MCM process (PDF §6.3).
 

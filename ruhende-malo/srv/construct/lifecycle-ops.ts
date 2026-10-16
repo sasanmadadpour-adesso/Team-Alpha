@@ -15,9 +15,9 @@ export interface LifecycleCommand { maloId: string; buildingId: string; effectiv
 export async function planLifecycle(tx: cds.Service, operation: LifecycleOperation, c: LifecycleCommand): Promise<LifecyclePlan> {
   const repository = new CapLifecycleRepository(tx);
   const currentState = await repository.state(c.maloId);
-  if (!currentState) throw new ProcessError(404, `MaLo ${c.maloId} not found.`);
+  if (!currentState) throw new ProcessError(404, `MaLo ${c.maloId} not found.`, 'MALO_NOT_FOUND', { maloId: c.maloId });
   const participant = await tx.run(SELECT.one.from(ns('ParticipantSourceRows')).columns('sourceId').where({ maloId: c.maloId, constructId: c.buildingId }));
-  if (!participant) throw new ProcessError(404, `MaLo ${c.maloId} is not registered in construct ${c.buildingId}.`);
+  if (!participant) throw new ProcessError(404, `MaLo ${c.maloId} is not registered in construct ${c.buildingId}.`, 'MALO_NOT_IN_CONSTRUCT', { maloId: c.maloId, construct: c.buildingId });
   return buildLifecyclePlan({
     operation, effectiveDate: c.effectiveDate, reason: c.reason, referenceOperationId: c.referenceOperationId, currentState,
     periods: await repository.periods(c.maloId), reference: await repository.reference(c.referenceOperationId, c.maloId),
@@ -50,13 +50,16 @@ export async function executeLifecycle(tx: cds.Service, operation: LifecycleOper
     const ids = open.filter((r) => (r.fromLocationId === c.maloId || melos.includes(r.toLocationId)) && r.validFrom < c.effectiveDate).map((r) => r.ID);
     if (ids.length) await tx.run(UPDATE(ns('Relationships')).set({ validToExclusive: c.effectiveDate }).where({ ID: { in: ids } }));
     closed = ids.length;
-    await tx.run(UPDATE(ns('ParticipantSourceRows')).set({ excluded: true, exclusionReason: `Herauslösung from ${c.effectiveDate}: ${c.reason ?? ''}` }).where({ maloId: c.maloId, constructId: c.buildingId }));
+    await tx.run(UPDATE(ns('ParticipantSourceRows')).set({ excluded: true, exclusionReason: c.reason ?? null }).where({ maloId: c.maloId, constructId: c.buildingId }));
   }
   if (plan.changes.correction) {
     await tx.run(UPDATE(ns('LifecyclePeriods')).set({ validToExclusive: plan.changes.correction.newDate }).where({ maloId: c.maloId, validToExclusive: plan.changes.correction.previousDate }));
     await tx.run(UPDATE(ns('LifecyclePeriods')).set({ validFrom: plan.changes.correction.newDate }).where({ maloId: c.maloId, validFrom: plan.changes.correction.previousDate }));
     // Keep relationship Zeitscheiben consistent with the corrected dormant start.
-    await tx.run(UPDATE(ns('Relationships')).set({ validFrom: plan.changes.correction.newDate }).where({ source: 'SIMULATED', buildingId: c.buildingId, fromLocationId: c.maloId, validFrom: plan.changes.correction.previousDate }));
+    const melos = (await tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('meloId').where({ maloId: c.maloId, constructId: c.buildingId })) as { meloId: string }[]).map((r) => r.meloId);
+    const moved = (await tx.run(SELECT.from(ns('Relationships')).columns('ID', 'fromLocationId', 'toLocationId').where({ source: 'SIMULATED', buildingId: c.buildingId, validFrom: plan.changes.correction.previousDate })) as { ID: string; fromLocationId: string; toLocationId: string }[])
+      .filter((r) => r.fromLocationId === c.maloId || melos.includes(r.toLocationId)).map((r) => r.ID);   // MaMa, household MeMa and Einspeise-MeMa of this MaLo move together
+    if (moved.length) await tx.run(UPDATE(ns('Relationships')).set({ validFrom: plan.changes.correction.newDate }).where({ ID: { in: moved } }));
   }
 
   const afterPeriods = await repository.periods(c.maloId);
@@ -66,9 +69,9 @@ export async function executeLifecycle(tx: cds.Service, operation: LifecycleOper
   await tx.run(INSERT.into(ns('AuditEvents')).entries({
     requestId, referenceOperationId: c.referenceOperationId, operation, maloId: c.maloId, actor, effectiveDate: c.effectiveDate, eventTime: now,
     beforeValue: JSON.stringify(before), afterValue: JSON.stringify({ businessState: persisted, periods: afterPeriods, closedRelationships: closed }),
-    reason: c.reason ?? plan.message, simulated: true,
+    reason: c.reason ?? null, simulated: true,
   }));
-  const message = operation === 'REMOVE_FROM_CONSTRUCT' ? `Herauslösung persisted: ${closed} relationship(s) closed as of ${c.effectiveDate}; participant removed from ${c.buildingId}.` : `${operation} persisted and verified in SQLite (simulated).`;
+  const message = `${operation} persisted and verified in SQLite (simulated).`;
   await tx.run(UPDATE(ns('ProcessRequests')).set({ status: 'SUCCESS', resultCode: 'SIMULATED_SUCCESS', resultMessage: message, beforeState: plan.beforeState, afterState: persisted }).where({ ID: requestId }));
   await refreshConstructs(tx);
   return { plan: { ...plan, status: 'SUCCESS', code: 'SIMULATED_SUCCESS', message, canExecute: false }, requestId };

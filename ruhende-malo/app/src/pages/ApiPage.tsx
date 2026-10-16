@@ -7,37 +7,37 @@ interface Endpoint { method: 'GET' | 'POST'; path: string; title: string; body?:
 
 const GROUPS: { name: string; endpoints: Endpoint[] }[] = [
   {
-    name: 'Prozess · Process',
+    name: 'api.g.process',
     endpoints: [
-      { method: 'POST', path: '/registerConstruct', title: 'Anmeldung Konstrukt (JSON) — wird sofort verarbeitet', safe: false, body: { construct: { buildingId: 'B-NEW-01', city: 'Essen', stichtag: '2026-11-01', participants: [
+      { method: 'POST', path: '/registerConstruct', title: 'api.e.register', safe: false, body: { construct: { buildingId: 'B-NEW-01', city: 'Essen', stichtag: '2026-11-01', participants: [
         { role: 'Marktlokation Reststrom', maloId: '50000000001', meloId: 'DE0000000000000000000000000000009' },
         { role: 'Haushaltsverbrauch', maloId: '50000000010', meloId: 'DE0000000000000000000000000000001', participates: true }] } } },
-      { method: 'GET', path: '/cases()', title: 'Ein Fall pro Teilnehmer — eine Wahrheit für alle Clients', safe: true },
-      { method: 'POST', path: '/processAll', title: 'Automatischer Prozess für alle Konstrukte', body: {}, safe: false },
-      { method: 'POST', path: '/Constructs/B-MUL-01/process', title: 'Automatischer Prozess für ein Konstrukt', body: {}, safe: false },
-      { method: 'POST', path: '/Constructs/B-MUL-01/previewSwitch', title: 'Umstellungsplan (MeMa/MaMa) — schreibt nie', body: {}, safe: true },
-      { method: 'POST', path: '/updateSapState', title: 'Statusmeldung aus SAP / MaKo / MSB — Prozess läuft automatisch weiter', body: { attribute: 'abmeldung', objectId: '50539603876', value: 'CONFIRMED', actor: 'MAKO_GATEWAY' }, safe: false, note: 'attribute: imsys (MeLo) · abmeldung (MaLo) · mcm (Einspeise-MaLo)' },
-      { method: 'POST', path: '/Issues/{ID}/resolve', title: 'Klärfall entscheiden (Begründung Pflicht) — Prozess läuft weiter', body: { resolution: 'CHOOSE_BUILDING', value: 'B-CGN-01', reason: 'Mieter wohnt in Köln' }, safe: false, note: 'resolution: CHOOSE_BUILDING · EXCLUDE_PARTICIPANT · FIX_VALUE · CONFIRM_ASSUMPTION' },
-      { method: 'POST', path: '/Constructs/B-MUL-01/confirmVsz', title: 'Aufbau vSZ bestätigen (PDF 1–4.7)', body: { evidence: 'Geprüft im SAP-Testsystem' }, safe: false },
-      { method: 'GET', path: '/Constructs/B-MUL-01/relationshipList()', title: '§5 Beziehungsliste für die Abrechnung', safe: true },
-      { method: 'GET', path: '/Outbox', title: 'Übergaben (UTILMD, INVOIC, EDM) — vorbereitet, nicht gesendet', safe: true },
+      { method: 'GET', path: '/cases()', title: 'api.e.cases', safe: true },
+      { method: 'POST', path: '/processAll', title: 'api.e.processAll', body: {}, safe: false },
+      { method: 'POST', path: '/Constructs/B-MUL-01/process', title: 'api.e.process', body: {}, safe: false },
+      { method: 'POST', path: '/Constructs/B-MUL-01/previewSwitch', title: 'api.e.preview', body: {}, safe: true },
+      { method: 'POST', path: '/updateSapState', title: 'api.e.sapState', body: { attribute: 'abmeldung', objectId: '50539603876', value: 'CONFIRMED', actor: 'MAKO_GATEWAY' }, safe: false, note: 'attribute: imsys (MeLo) · abmeldung (MaLo) · mcm (Einspeise-MaLo)' },
+      { method: 'POST', path: '/Issues/{ID}/resolve', title: 'api.e.resolve', body: { resolution: 'CHOOSE_BUILDING', value: 'B-CGN-01', reason: 'Tenant lives in Köln' }, safe: false, note: 'resolution: CHOOSE_BUILDING · EXCLUDE_PARTICIPANT · FIX_VALUE · CONFIRM_ASSUMPTION' },
+      { method: 'POST', path: '/Constructs/B-MUL-01/confirmVsz', title: 'api.e.vsz', body: { evidence: 'Checked in the SAP test system' }, safe: false },
+      { method: 'GET', path: '/Constructs/B-MUL-01/relationshipList()', title: 'api.e.relList', safe: true },
+      { method: 'GET', path: '/Outbox', title: 'api.e.outbox', safe: true },
     ],
   },
   {
-    name: 'Einzelne MaLo · Single MaLo',
+    name: 'api.g.malo',
     endpoints: [
-      { method: 'POST', path: '/preview', title: 'Operation prüfen — schreibt nie', body: { command: { operation: 'REACTIVATE', maloId: '50539603921', buildingId: 'B-MUL-01', effectiveDate: '2026-12-01' } }, safe: true },
-      { method: 'POST', path: '/execute', title: 'Operation ausführen (wiederholsicher)', body: { command: { operation: 'REACTIVATE', maloId: '50539603921', buildingId: 'B-MUL-01', effectiveDate: '2026-12-01' } }, safe: false, note: 'SET_DORMANT · REACTIVATE · REMOVE_FROM_CONSTRUCT · CORRECT_TRANSITION · REVERSE_TRANSITION' },
+      { method: 'POST', path: '/preview', title: 'api.e.opPreview', body: { command: { operation: 'REACTIVATE', maloId: '50539603921', buildingId: 'B-MUL-01', effectiveDate: '2026-12-01' } }, safe: true },
+      { method: 'POST', path: '/execute', title: 'api.e.opExecute', body: { command: { operation: 'REACTIVATE', maloId: '50539603921', buildingId: 'B-MUL-01', effectiveDate: '2026-12-01' } }, safe: false, note: 'SET_DORMANT · REACTIVATE · REMOVE_FROM_CONSTRUCT · CORRECT_TRANSITION · REVERSE_TRANSITION' },
     ],
   },
   {
-    name: 'Lesen · Read',
+    name: 'api.g.read',
     endpoints: [
-      { method: 'GET', path: '/Constructs', title: 'Konstrukte mit Kennzahlen', safe: true },
-      { method: 'GET', path: "/MarketLocations?$filter=businessState eq 'RUHEND'", title: 'Marktlokationen und Zustand', safe: true },
-      { method: 'GET', path: "/LifecyclePeriods?$filter=maloId eq '50539603921'", title: 'Zeitscheiben [von, bis)', safe: true },
-      { method: 'GET', path: '/AuditEvents?$orderby=eventTime desc&$top=10', title: 'Protokoll (nur anhängend)', safe: true },
-      { method: 'GET', path: '/health()', title: 'Status und Verbindungsmodus', safe: true },
+      { method: 'GET', path: '/Constructs', title: 'api.e.constructs', safe: true },
+      { method: 'GET', path: "/MarketLocations?$filter=businessState eq 'RUHEND'", title: 'api.e.malos', safe: true },
+      { method: 'GET', path: "/LifecyclePeriods?$filter=maloId eq '50539603921'", title: 'api.e.periods', safe: true },
+      { method: 'GET', path: '/AuditEvents?$orderby=eventTime desc&$top=10', title: 'api.e.audit', safe: true },
+      { method: 'GET', path: '/health()', title: 'api.e.health', safe: true },
     ],
   },
 ];
@@ -55,7 +55,7 @@ export function ApiPage() {
       </div>
       {GROUPS.map((g) => (
         <section key={g.name} className="card api-group">
-          <h2>{g.name}</h2>
+          <h2>{t(g.name)}</h2>
           {g.endpoints.map((e) => <EndpointRow key={e.path + e.method} endpoint={e} />)}
         </section>
       ))}
@@ -88,7 +88,7 @@ function EndpointRow({ endpoint }: { endpoint: Endpoint }) {
     <div className="endpoint">
       <button className="ep-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className={`method ${endpoint.method}`}>{endpoint.method}</span>
-        <span><span className="mono">{endpoint.path}</span><span className="subtle" style={{ display: 'block' }}>{endpoint.title}</span></span>
+        <span><span className="mono">{endpoint.path}</span><span className="subtle" style={{ display: 'block' }}>{t(endpoint.title)}</span></span>
         <ChevronDown size={18} className={`chev ${open ? 'open' : ''}`} />
       </button>
       {open && (

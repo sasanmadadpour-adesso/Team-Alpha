@@ -100,7 +100,7 @@ const de = {
   'co.back': 'Übersicht', 'co.continue': 'Prozess fortsetzen', 'co.participants': 'Teilnehmer', 'co.needs': 'Braucht Ihre Aufmerksamkeit', 'co.done': 'Erledigt', 'co.other': 'Weitere',
   'co.timeline': 'Ablauf nach Prozessbeschreibung',
   'co.s.anmeldung': 'Anmeldung Konstrukt', 'co.s.anmeldung.d': '{rows} Zeilen aus {src} · {hh} Haushalte, davon {part} teilnehmend',
-  'co.s.pruefung': 'Prüfung der Daten', 'co.s.pruefung.ok': 'Keine offenen Befunde', 'co.s.pruefung.open': '{n} offene Befunde – Details bei den Teilnehmern', 'co.s.pruefung.not': 'Noch nicht geprüft',
+  'co.s.pruefung': 'Prüfung der Daten', 'co.s.pruefung.ok': 'Keine offenen Befunde', 'co.f.total': '{n} offener Befund · {n} offene Befunde', 'co.f.err': '{n} Datenfehler · {n} Datenfehler', 'co.f.dec': '{n} Entscheidung · {n} Entscheidungen', 'co.s.pruefung.not': 'Noch nicht geprüft',
   'co.s.vsz': 'Aufbau vSZ', 'co.s.vsz.d': '{done} von {total} Schritten erledigt', 'co.s.vsz.confirm': 'Offene Schritte bestätigen', 'co.s.vsz.evidence': 'Nachweis', 'co.s.vsz.evidence.ph': 'Geprüft im SAP-Testsystem am 14.10.2026',
   'co.s.mema': 'MeMa pflegen (§6.1)', 'co.s.mema.d': 'Reststrom-MaLo → Bezugs-MeLos · {n} Beziehungen',
   'co.s.mama': 'MaMa pflegen (§6.2)', 'co.s.mama.d': 'Bezugs-MaLo → Reststrom-MaLo mit Zeitscheibe · {n} Beziehungen',
@@ -127,11 +127,46 @@ const de = {
 
   'life.REACTIVATE': 'Wiederaktivieren', 'life.REMOVE_FROM_CONSTRUCT': 'Herauslösen', 'life.CORRECT_TRANSITION': 'Datum korrigieren', 'life.REVERSE_TRANSITION': 'Rücknahme',
   'life.REACTIVATE.d': 'Ruhend → aktiv ab Datum. Die ruhende Zeitscheibe bleibt in der Historie.',
-  'life.REMOVE_FROM_CONSTRUCT.d': 'MeMa und MaMa enden zum Datum, die MaLo verlässt das Konstrukt.',
+  'life.REMOVE_FROM_CONSTRUCT.d': 'MeMa und MaMa enden zum Datum, die MaLo verlässt das Konstrukt und ist wieder aktiv.',
   'life.CORRECT_TRANSITION.d': 'Verschiebt das Datum einer früheren Umstellung. Das Original bleibt protokolliert.',
   'life.REVERSE_TRANSITION.d': 'Gleicht eine frühere Umstellung durch eine neue aus. Nichts wird gelöscht.',
   'life.date': 'Wirksam ab', 'life.ref': 'Bezieht sich auf', 'life.check': 'Prüfen', 'life.run': 'Ausführen', 'life.noref': 'Keine passende frühere Umstellung',
 
+  'err.ERROR': 'Es ist ein Fehler aufgetreten.', 'err.NETWORK': 'Keine Verbindung zum Backend. Läuft `npm run dev`?',
+  'err.ISSUE_NOT_FOUND': 'Dieser Klärfall existiert nicht mehr. Die Ansicht wird aktualisiert.', 'err.ISSUE_NOT_OPEN': 'Dieser Klärfall wurde bereits bearbeitet ({status}).',
+  'err.RESOLUTION_NOT_ALLOWED': 'Die Entscheidung „{resolution}“ ist für {rule} nicht erlaubt.', 'err.REASON_REQUIRED': 'Bitte eine Begründung angeben.',
+  'err.CHOOSE_ONE_OF': 'Bitte eines dieser Konstrukte wählen: {options}.', 'err.NOT_CORRECTABLE': 'Dieser Befund hat kein korrigierbares Feld.', 'err.VALUE_REQUIRED': 'Bitte einen neuen Wert für {field} eingeben.',
+  'err.EVIDENCE_REQUIRED': 'Bitte einen Nachweis angeben (z. B. „Geprüft im SAP am 14.10.2026“).', 'err.UNKNOWN_VSZ_ITEMS': 'Unbekannte Schritte: {items}.',
+  'err.CONSTRUCT_NOT_FOUND': 'Konstrukt {construct} nicht gefunden.', 'err.MALO_NOT_FOUND': 'MaLo {maloId} nicht gefunden.', 'err.MALO_NOT_IN_CONSTRUCT': 'MaLo {maloId} gehört nicht zum Konstrukt {construct}.',
+  'err.BUILDING_REQUIRED': 'Die Gebäude-ID fehlt.', 'err.PARTICIPANTS_REQUIRED': 'Mindestens ein Teilnehmer ist nötig.', 'err.PARTICIPANT_FIELDS_REQUIRED': 'Teilnehmer {index}: Rolle, MaLo und MeLo sind Pflicht.',
+  'err.FILE_REQUIRED': 'Die Datei fehlt.', 'err.WORKBOOK_REJECTED': 'Die Datei wurde abgelehnt: {detail}', 'err.ATTRIBUTE_INVALID': 'Ungültiges Attribut. Erlaubt: {options}.',
+  'err.STATUS_VALUE_INVALID': 'Ungültiger Wert für {attribute}. Erlaubt: {options}.', 'err.SAP_OBJECT_NOT_FOUND': 'Kein Teilnehmer für {attribute} {objectId} gefunden.',
+  'err.RESOLUTION_INVALID': 'Ungültige Entscheidung. Erlaubt: {options}.', 'err.IDS_REQUIRED': 'Keine Klärfälle ausgewählt.', 'err.STICHTAG_FORMAT': 'Der Stichtag muss als JJJJ-MM-TT angegeben werden.',
+  'err.COMMAND_REQUIRED': 'Der Auftrag fehlt.', 'err.OPERATION_INVALID': 'Ungültige Operation. Erlaubt: {options}.', 'err.COMMAND_FIELDS_REQUIRED': 'MaLo und Konstrukt sind Pflicht.',
+  'err.DATE_REQUIRED': 'Bitte ein Datum angeben.', 'err.CONFIRM_REQUIRED': 'Bitte die Aktion bestätigen.',
+  'res.READY.REACTIVATE': 'Bereit: Die MaLo wird ab dem Datum wieder aktiv.', 'res.READY.REMOVE_FROM_CONSTRUCT': 'Bereit: MeMa und MaMa enden zum Datum, die MaLo verlässt das Konstrukt und ist wieder aktiv.',
+  'res.READY.CORRECT_TRANSITION': 'Bereit: Das Datum der früheren Umstellung wird verschoben.', 'res.READY.REVERSE_TRANSITION': 'Bereit: Die frühere Umstellung wird ausgeglichen.', 'res.READY.SET_DORMANT': 'Bereit: Die MaLo kann ruhend gestellt werden.', 'res.READY': 'Bereit.',
+  'res.SIMULATED_SUCCESS': 'Erledigt und zurückgelesen (simuliert).', 'res.ALREADY_DONE': 'Das ist bereits erledigt. Es wurde nichts doppelt gebucht.',
+  'res.INVALID_OPERATION_SEQUENCE.REACTIVATE': 'Nur eine ruhende MaLo kann wiederaktiviert werden. Diese MaLo ist derzeit nicht ruhend.', 'res.INVALID_OPERATION_SEQUENCE.REVERSE_TRANSITION': 'Der Zielzustand der Rücknahme ist bereits erreicht.', 'res.INVALID_OPERATION_SEQUENCE': 'Diese Operation passt nicht zum aktuellen Zustand.',
+  'res.INVALID_CHRONOLOGY.REACTIVATE': 'Die Wiederaktivierung muss nach Beginn der ruhenden Zeitscheibe liegen.', 'res.INVALID_CHRONOLOGY.REVERSE_TRANSITION': 'Die Rücknahme muss nach der ursprünglichen Operation liegen.', 'res.INVALID_CHRONOLOGY.CORRECT_TRANSITION': 'Das neue Datum würde die Zeitscheiben überschneiden oder verdrehen.', 'res.INVALID_CHRONOLOGY': 'Die Reihenfolge der Daten passt nicht.',
+  'res.INVALID_EFFECTIVE_DATE': 'Das Datum ist ungültig.', 'res.LIFECYCLE_INTERVAL_CONFLICT': 'Die Zeitscheiben dieser MaLo überschneiden sich oder decken das Datum nicht ab.',
+  'res.NO_CORRECTION_CHANGE': 'Das neue Datum muss sich vom bisherigen unterscheiden.', 'res.CORRECTION_BOUNDARY_NOT_FOUND': 'Der Übergang der gewählten Operation ist in den Zeitscheiben nicht mehr zu finden.',
+  'res.REFERENCE_AND_REASON_REQUIRED': 'Bitte eine frühere Operation und eine Begründung angeben.', 'res.REFERENCE_NOT_FOUND': 'Die gewählte frühere Operation wurde für diese MaLo nicht gefunden.',
+  'res.BUSINESS_STATE_UNKNOWN': 'Der Zustand dieser MaLo ist unbekannt. Prüfen Sie sie zuerst im Prozess.', 'res.MALO_NOT_FOUND': 'MaLo nicht gefunden.', 'res.MALO_NOT_IN_CONSTRUCT': 'Die MaLo ist in diesem Konstrukt nicht aktiv.',
+  'res.STICHTAG_MISMATCH': 'Die Umstellung nutzt den Stichtag des Konstrukts. Bitte zuerst den Stichtag ändern.', 'res.VSZ_NOT_READY': 'Der Aufbau vSZ ist noch nicht vollständig. Es wird nichts umgestellt.',
+  'res.CONSTRUCT_BLOCKED': 'Das Konstrukt hat einen Befund, der alle Teilnehmer stoppt.', 'res.CONSTRUCT_INCOMPLETE': 'Reststrom-MaLo oder Stichtag fehlen.', 'res.NOT_PARTICIPATING': 'Teilnahme MK7 = nein: kein MeMa/MaMa, die MaLo bleibt aktiv.',
+  'res.RESTSTROM_TARGET': 'Die Reststrom-MaLo ist der Anker des Konstrukts und wird nicht ruhend gestellt.', 'res.CONFLICTING_MAMA': 'Es gibt bereits eine offene MaMa auf ein anderes Ziel.', 'res.TIME_SLICE_CONFLICT': 'Eine ruhende Zeitscheibe ab dem Stichtag würde eine bestehende überschneiden.',
+  'res.INVALID_STATE': 'Nur aktive MaLos können ruhend gestellt werden.', 'res.REACTIVATED': 'Wurde ruhend gestellt und später wiederaktiviert. Sie wird nicht automatisch erneut umgestellt.', 'res.WAITING_FOR_MCM': 'Wartet auf den MCM-Prozess.', 'res.NO_CLEARED_MELOS': 'Noch keine freigegebene Bezugs-MeLo.',
+  'res.NOT_PLANNED': 'Noch nicht geprüft.', 'res.EXCLUDED': 'Ausgeschlossen.',
+  'vsz.ev.skipped': 'Nicht ausgeführt: Schritt 4.1 (Reststrom-MaLo) fehlt oder ist nicht eindeutig.',
+  'vsz.ev.MESSKONZEPT.ok': 'Beauftragt: C1001_M001 für {hh} Bezugs-MeLo(s), C1003_M001 für {gen} Erzeugungsanlage(n).', 'vsz.ev.MESSKONZEPT.unknown': 'Keine Beauftragung der Messkonzepte über die DSO-DP bekannt.',
+  'vsz.ev.STECKBRIEFE.ok': 'Teilnehmerliste liegt vor: {points} Zählpunkte, {tenants} Mieter, Betreiber {operator}.', 'vsz.ev.STECKBRIEFE.missing': 'Keine Teilnehmerliste vorhanden.',
+  'vsz.ev.IMSYS.none': 'Keine teilnehmenden Bezugs-MeLos.', 'vsz.ev.IMSYS.ok': 'iMSys an allen {n} teilnehmenden Bezugs-MeLos (Messsystem laut Teilnehmerliste: iMS).', 'vsz.ev.IMSYS.partial': 'iMSys an {ok} von {n} Bezugs-MeLos. Fehlende werden je MaLo in „Marktstatus“ geklärt.',
+  'vsz.ev.RESTSTROM_MALO.ok': 'Reststrom-MaLo {malo} · Anlage angelegt (ES30) ab {ab} · Sparte 01 · AbrKl SLP · Tariftyp ES001 · Serviceart 1001 · Netzebene 01.', 'vsz.ev.RESTSTROM_MALO.bad': '{n} Reststrom-MaLos gefunden, genau eine ist nötig.',
+  'vsz.ev.GERAETEINFOSATZ': 'Gerät VG-{malo} · Material 117-1000002 · Sparte 01 · abrechnungstechnischer Einbau OBIS 1.8.0 (EG34) ab {ab}.', 'vsz.ev.ZAEHLPUNKTART': 'Zählpunkt {malo}: Zählpunktart Marktlokation · Beschreibung VBZS.',
+  'vsz.ev.LASTPROFIL': 'Lastprofil SLP an der Anlage der Reststrom-MaLo {malo} ab {ab}.', 'vsz.ev.ZP_STATUS': 'ZP-Status „Aktiv“ ab IBN-Datum {ab} (nur Einrichtung, nicht die Ruhendstellung).',
+  'vsz.ev.BILANZIERUNG': 'SETTLEMALO-Daten (KN-L) ab {ab} hinterlegt · Zählverfahren E02, Prognose auf Basis von Werten.', 'vsz.ev.SERVICES': 'BIKO- und MSB-Service am Versorgungsszenario angelegt (Pflegetransaktion; /EKN/ESERVICE_UPD wird nicht verwendet).',
+  'case.tech': 'Regel {rule} · Objekt {object}{field}', 'api.e.register': 'Anmeldung Konstrukt (JSON) — wird sofort verarbeitet', 'api.e.cases': 'Ein Fall pro Teilnehmer — eine Wahrheit für alle Clients', 'api.e.processAll': 'Automatischer Prozess für alle Konstrukte', 'api.e.process': 'Automatischer Prozess für ein Konstrukt', 'api.e.preview': 'Umstellungsplan (MeMa/MaMa) — schreibt nie', 'api.e.sapState': 'Statusmeldung aus SAP / MaKo / MSB — Prozess läuft automatisch weiter', 'api.e.resolve': 'Klärfall entscheiden (Begründung Pflicht) — Prozess läuft weiter', 'api.e.vsz': 'Aufbau vSZ bestätigen (Prozessbeschreibung 1–4.7)', 'api.e.relList': '§5 Beziehungsliste für die Abrechnung', 'api.e.outbox': 'Übergaben (UTILMD, INVOIC, EDM) — vorbereitet, nicht gesendet', 'api.e.opPreview': 'Operation prüfen — schreibt nie', 'api.e.opExecute': 'Operation ausführen (wiederholsicher)', 'api.e.constructs': 'Konstrukte mit Kennzahlen', 'api.e.malos': 'Marktlokationen und Zustand', 'api.e.periods': 'Zeitscheiben [von, bis)', 'api.e.audit': 'Protokoll (nur anhängend)', 'api.e.health': 'Status und Verbindungsmodus', 'api.g.process': 'Prozess', 'api.g.malo': 'Einzelne MaLo', 'api.g.read': 'Lesen', 'rel.einspeise': 'Einsp.', 'state.period.RUHEND': 'Ruhend', 'state.period.ACTIVE': 'Aktiv', 'common.copy': 'Kopieren', 'nav.main': 'Hauptnavigation', 'lang.label': 'Sprache',
   'rule.V01': 'Pflichtangaben fehlen', 'rule.V02': 'ID-Format ungültig', 'rule.V03': 'Prüfziffer falsch', 'rule.V04': 'Reststrom-MaLo nicht eindeutig', 'rule.V05': 'MaLo in zwei Konstrukten',
   'rule.V06': 'MeLo doppelt zugeordnet', 'rule.V07': 'Teilnahme unklar', 'rule.V08': 'Einspeise-MaLo fehlt', 'rule.V09': 'MCM-Prozess nicht abgeschlossen', 'rule.V10': 'Kein iMSys an der MeLo',
   'rule.V11': 'Abmeldung des Lieferanten fehlt', 'rule.V12': 'Zeitscheiben-Konflikt', 'rule.V13': 'Kein teilnehmender Haushalt', 'rule.V14': 'Einspeise-MaLo mehrfach genutzt', 'rule.VSZ': 'Aufbau vSZ nicht bestätigt',
@@ -178,7 +213,7 @@ const en: Record<keyof typeof de, string> = {
   'menu.title': 'Demo', 'menu.selfcheck': 'Run test scenarios', 'menu.import': 'Import participant list', 'menu.reset': 'Reset demo',
   'common.loading': 'Loading…', 'common.cancel': 'Cancel', 'common.confirm': 'Confirm', 'common.close': 'Close', 'common.back': 'Back',
   'common.reason': 'Reason', 'common.reason.placeholder': 'Who confirmed what, and when?', 'common.reason.required': 'Add a reason first.',
-  'common.stichtag': 'Stichtag', 'common.reststrom': 'Reststrom-MaLo', 'common.melo': 'MeLo', 'common.malo': 'MaLo', 'common.einspeise': 'Einspeise-MaLo',
+  'common.stichtag': 'Stichtag', 'common.reststrom': 'Reststrom-MaLo', 'common.melo': 'MeLo', 'common.malo': 'MaLo', 'common.einspeise': 'Einspeise-MaLo (feed-in)',
   'common.copied': 'Copied', 'common.open': 'Open', 'common.details': 'Technical details', 'common.since': 'since {d}',
   'common.offline': 'No connection to the backend. Is `npm run dev` running?',
   'role.Haushaltsverbrauch': 'Household', 'role.Solaranlage': 'Solar plant', 'role.Windkraftanlage': 'Wind turbine', 'role.Marktlokation Reststrom': 'Reststrom',
@@ -258,11 +293,11 @@ const en: Record<keyof typeof de, string> = {
   'co.back': 'Overview', 'co.continue': 'Continue process', 'co.participants': 'Participants', 'co.needs': 'Needs your attention', 'co.done': 'Done', 'co.other': 'Other',
   'co.timeline': 'Steps per process description',
   'co.s.anmeldung': 'Construct registration', 'co.s.anmeldung.d': '{rows} rows from {src} · {hh} households, {part} participating',
-  'co.s.pruefung': 'Data validation', 'co.s.pruefung.ok': 'No open findings', 'co.s.pruefung.open': '{n} open findings – see participants', 'co.s.pruefung.not': 'Not validated yet',
+  'co.s.pruefung': 'Data validation', 'co.s.pruefung.ok': 'No open findings', 'co.f.total': '{n} open finding · {n} open findings', 'co.f.err': '{n} data error · {n} data errors', 'co.f.dec': '{n} decision · {n} decisions', 'co.s.pruefung.not': 'Not validated yet',
   'co.s.vsz': 'vSZ setup', 'co.s.vsz.d': '{done} of {total} steps done', 'co.s.vsz.confirm': 'Confirm open steps', 'co.s.vsz.evidence': 'Evidence', 'co.s.vsz.evidence.ph': 'Checked in the SAP test system on 14.10.2026',
   'co.s.mema': 'Maintain MeMa (§6.1)', 'co.s.mema.d': 'Reststrom-MaLo → Bezugs-MeLos · {n} relationships',
   'co.s.mama': 'Maintain MaMa (§6.2)', 'co.s.mama.d': 'Bezugs-MaLo → Reststrom-MaLo with Zeitscheibe · {n} relationships',
-  'co.s.einspeise': 'Einspeise-MeMa (§6.3)', 'co.s.einspeise.d': 'MeMa only, no MaMa · {n} relationships',
+  'co.s.einspeise': 'Einspeise-MeMa (feed-in, §6.3)', 'co.s.einspeise.d': 'MeMa only, no MaMa · {n} relationships',
   'co.s.ruhend': 'Ruhendstellung', 'co.s.ruhend.d': '{done} of {total} participating MaLos ruhend',
   'co.s.uebergabe': 'Handover', 'co.s.uebergabe.d': '{n} events prepared · not sent', 'co.s.csv': 'Download relationship list (§5)',
   'co.rel.open': 'open', 'co.rel.closed': 'ended',
@@ -285,14 +320,49 @@ const en: Record<keyof typeof de, string> = {
 
   'life.REACTIVATE': 'Reactivate', 'life.REMOVE_FROM_CONSTRUCT': 'Remove from construct', 'life.CORRECT_TRANSITION': 'Correct date', 'life.REVERSE_TRANSITION': 'Reverse',
   'life.REACTIVATE.d': 'Ruhend → active from the date. The dormant Zeitscheibe stays in the history.',
-  'life.REMOVE_FROM_CONSTRUCT.d': 'MeMa and MaMa end on the date and the MaLo leaves the construct.',
+  'life.REMOVE_FROM_CONSTRUCT.d': 'MeMa and MaMa end on the date; the MaLo leaves the construct and is active again.',
   'life.CORRECT_TRANSITION.d': 'Moves the date of an earlier switch. The original stays in the log.',
   'life.REVERSE_TRANSITION.d': 'Compensates an earlier switch with a new one. Nothing is deleted.',
   'life.date': 'Effective from', 'life.ref': 'Refers to', 'life.check': 'Check', 'life.run': 'Execute', 'life.noref': 'No matching earlier switch',
 
+  'err.ERROR': 'Something went wrong.', 'err.NETWORK': 'No connection to the backend. Is `npm run dev` running?',
+  'err.ISSUE_NOT_FOUND': 'This case no longer exists. The view is being refreshed.', 'err.ISSUE_NOT_OPEN': 'This case was already handled ({status}).',
+  'err.RESOLUTION_NOT_ALLOWED': 'The decision “{resolution}” is not allowed for {rule}.', 'err.REASON_REQUIRED': 'Add a reason first.',
+  'err.CHOOSE_ONE_OF': 'Choose one of these constructs: {options}.', 'err.NOT_CORRECTABLE': 'This finding has no correctable field.', 'err.VALUE_REQUIRED': 'Enter a new value for {field}.',
+  'err.EVIDENCE_REQUIRED': 'Add evidence (e.g. “Checked in SAP on 14.10.2026”).', 'err.UNKNOWN_VSZ_ITEMS': 'Unknown steps: {items}.',
+  'err.CONSTRUCT_NOT_FOUND': 'Construct {construct} not found.', 'err.MALO_NOT_FOUND': 'MaLo {maloId} not found.', 'err.MALO_NOT_IN_CONSTRUCT': 'MaLo {maloId} does not belong to construct {construct}.',
+  'err.BUILDING_REQUIRED': 'The building ID is missing.', 'err.PARTICIPANTS_REQUIRED': 'At least one participant is required.', 'err.PARTICIPANT_FIELDS_REQUIRED': 'Participant {index}: role, MaLo and MeLo are required.',
+  'err.FILE_REQUIRED': 'The file is missing.', 'err.WORKBOOK_REJECTED': 'The file was rejected: {detail}', 'err.ATTRIBUTE_INVALID': 'Invalid attribute. Allowed: {options}.',
+  'err.STATUS_VALUE_INVALID': 'Invalid value for {attribute}. Allowed: {options}.', 'err.SAP_OBJECT_NOT_FOUND': 'No participant found for {attribute} {objectId}.',
+  'err.RESOLUTION_INVALID': 'Invalid decision. Allowed: {options}.', 'err.IDS_REQUIRED': 'No cases selected.', 'err.STICHTAG_FORMAT': 'The Stichtag must be given as YYYY-MM-DD.',
+  'err.COMMAND_REQUIRED': 'The command is missing.', 'err.OPERATION_INVALID': 'Invalid operation. Allowed: {options}.', 'err.COMMAND_FIELDS_REQUIRED': 'MaLo and construct are required.',
+  'err.DATE_REQUIRED': 'Enter a date.', 'err.CONFIRM_REQUIRED': 'Please confirm the action.',
+  'res.READY.REACTIVATE': 'Ready: the MaLo becomes active again from the date.', 'res.READY.REMOVE_FROM_CONSTRUCT': 'Ready: MeMa and MaMa end on the date; the MaLo leaves the construct and is active again.',
+  'res.READY.CORRECT_TRANSITION': 'Ready: the date of the earlier switch will be moved.', 'res.READY.REVERSE_TRANSITION': 'Ready: the earlier switch will be compensated.', 'res.READY.SET_DORMANT': 'Ready: the MaLo can be set ruhend.', 'res.READY': 'Ready.',
+  'res.SIMULATED_SUCCESS': 'Done and read back (simulated).', 'res.ALREADY_DONE': 'This is already done. Nothing was booked twice.',
+  'res.INVALID_OPERATION_SEQUENCE.REACTIVATE': 'Only a ruhend MaLo can be reactivated. This MaLo is not ruhend right now.', 'res.INVALID_OPERATION_SEQUENCE.REVERSE_TRANSITION': 'The target state of the reversal is already reached.', 'res.INVALID_OPERATION_SEQUENCE': 'This operation does not fit the current state.',
+  'res.INVALID_CHRONOLOGY.REACTIVATE': 'The reactivation must be after the start of the ruhend Zeitscheibe.', 'res.INVALID_CHRONOLOGY.REVERSE_TRANSITION': 'The reversal must be after the original operation.', 'res.INVALID_CHRONOLOGY.CORRECT_TRANSITION': 'The new date would overlap or reverse the Zeitscheiben.', 'res.INVALID_CHRONOLOGY': 'The order of the dates does not fit.',
+  'res.INVALID_EFFECTIVE_DATE': 'The date is invalid.', 'res.LIFECYCLE_INTERVAL_CONFLICT': 'The Zeitscheiben of this MaLo overlap or do not cover the date.',
+  'res.NO_CORRECTION_CHANGE': 'The new date must differ from the current one.', 'res.CORRECTION_BOUNDARY_NOT_FOUND': 'The transition of the chosen operation can no longer be found in the Zeitscheiben.',
+  'res.REFERENCE_AND_REASON_REQUIRED': 'Choose an earlier operation and give a reason.', 'res.REFERENCE_NOT_FOUND': 'The chosen earlier operation was not found for this MaLo.',
+  'res.BUSINESS_STATE_UNKNOWN': 'The state of this MaLo is unknown. Run it through the process first.', 'res.MALO_NOT_FOUND': 'MaLo not found.', 'res.MALO_NOT_IN_CONSTRUCT': 'The MaLo is not active in this construct.',
+  'res.STICHTAG_MISMATCH': 'The switch uses the Stichtag of the construct. Change the Stichtag first.', 'res.VSZ_NOT_READY': 'The vSZ setup is not complete yet. Nothing is switched.',
+  'res.CONSTRUCT_BLOCKED': 'The construct has a finding that stops all participants.', 'res.CONSTRUCT_INCOMPLETE': 'Reststrom-MaLo or Stichtag is missing.', 'res.NOT_PARTICIPATING': 'Teilnahme MK7 = nein: no MeMa/MaMa, the MaLo stays active.',
+  'res.RESTSTROM_TARGET': 'The Reststrom-MaLo is the anchor of the construct and is not set ruhend.', 'res.CONFLICTING_MAMA': 'An open MaMa already points to another target.', 'res.TIME_SLICE_CONFLICT': 'A ruhend Zeitscheibe from the Stichtag would overlap an existing one.',
+  'res.INVALID_STATE': 'Only active MaLos can be set ruhend.', 'res.REACTIVATED': 'Was set ruhend and reactivated later. It is not switched again automatically.', 'res.WAITING_FOR_MCM': 'Waiting for the MCM process.', 'res.NO_CLEARED_MELOS': 'No cleared Bezugs-MeLo yet.',
+  'res.NOT_PLANNED': 'Not checked yet.', 'res.EXCLUDED': 'Excluded.',
+  'vsz.ev.skipped': 'Not executed: step 4.1 (Reststrom-MaLo) is missing or not unique.',
+  'vsz.ev.MESSKONZEPT.ok': 'Ordered: C1001_M001 for {hh} Bezugs-MeLo(s), C1003_M001 for {gen} generation plant(s).', 'vsz.ev.MESSKONZEPT.unknown': 'No order of the measuring concepts via DSO-DP is known.',
+  'vsz.ev.STECKBRIEFE.ok': 'Participant list received: {points} metering points, {tenants} tenants, operator {operator}.', 'vsz.ev.STECKBRIEFE.missing': 'No participant list available.',
+  'vsz.ev.IMSYS.none': 'No participating Bezugs-MeLos.', 'vsz.ev.IMSYS.ok': 'iMSys at all {n} participating Bezugs-MeLos (measuring system per participant list: iMS).', 'vsz.ev.IMSYS.partial': 'iMSys at {ok} of {n} Bezugs-MeLos. The missing ones are handled per MaLo in “Market status”.',
+  'vsz.ev.RESTSTROM_MALO.ok': 'Reststrom-MaLo {malo} · Anlage created (ES30) from {ab} · Sparte 01 · AbrKl SLP · tariff type ES001 · service type 1001 · grid level 01.', 'vsz.ev.RESTSTROM_MALO.bad': '{n} Reststrom-MaLos found, exactly one is required.',
+  'vsz.ev.GERAETEINFOSATZ': 'Device VG-{malo} · material 117-1000002 · Sparte 01 · billing installation OBIS 1.8.0 (EG34) from {ab}.', 'vsz.ev.ZAEHLPUNKTART': 'Zählpunkt {malo}: type Marktlokation · description VBZS.',
+  'vsz.ev.LASTPROFIL': 'Load profile SLP on the Anlage of Reststrom-MaLo {malo} from {ab}.', 'vsz.ev.ZP_STATUS': 'ZP status “Active” from commissioning date {ab} (setup only, not the dormancy).',
+  'vsz.ev.BILANZIERUNG': 'SETTLEMALO data (KN-L) stored from {ab} · metering method E02, forecast based on values.', 'vsz.ev.SERVICES': 'BIKO and MSB services created on the supply scenario (maintenance transaction; /EKN/ESERVICE_UPD is not used).',
+  'case.tech': 'Rule {rule} · object {object}{field}', 'api.e.register': 'Construct registration (JSON) — processed immediately', 'api.e.cases': 'One case per participant — one truth for all clients', 'api.e.processAll': 'Automatic process for all constructs', 'api.e.process': 'Automatic process for one construct', 'api.e.preview': 'Switch plan (MeMa/MaMa) — never writes', 'api.e.sapState': 'Status message from SAP / market communication / MSB — the process continues automatically', 'api.e.resolve': 'Decide a case (reason required) — the process continues', 'api.e.vsz': 'Confirm vSZ setup (process description 1–4.7)', 'api.e.relList': '§5 relationship list for billing', 'api.e.outbox': 'Handovers (UTILMD, INVOIC, EDM) — prepared, not sent', 'api.e.opPreview': 'Check an operation — never writes', 'api.e.opExecute': 'Execute an operation (repeat-safe)', 'api.e.constructs': 'Constructs with counters', 'api.e.malos': 'Market locations and state', 'api.e.periods': 'Zeitscheiben [from, to)', 'api.e.audit': 'Log (append-only)', 'api.e.health': 'Status and connection mode', 'api.g.process': 'Process', 'api.g.malo': 'Single MaLo', 'api.g.read': 'Read', 'rel.einspeise': 'Feed-in', 'state.period.RUHEND': 'Ruhend', 'state.period.ACTIVE': 'Active', 'common.copy': 'Copy', 'nav.main': 'Main navigation', 'lang.label': 'Language',
   'rule.V01': 'Required data missing', 'rule.V02': 'Invalid ID format', 'rule.V03': 'Wrong check digit', 'rule.V04': 'Reststrom-MaLo not unique', 'rule.V05': 'MaLo in two constructs',
-  'rule.V06': 'MeLo assigned twice', 'rule.V07': 'Participation unclear', 'rule.V08': 'Einspeise-MaLo missing', 'rule.V09': 'MCM process not completed', 'rule.V10': 'No iMSys at the MeLo',
-  'rule.V11': 'Supplier deregistration missing', 'rule.V12': 'Zeitscheibe conflict', 'rule.V13': 'No participating household', 'rule.V14': 'Einspeise-MaLo shared', 'rule.VSZ': 'vSZ setup not confirmed',
+  'rule.V06': 'MeLo assigned twice', 'rule.V07': 'Participation unclear', 'rule.V08': 'Einspeise-MaLo (feed-in) missing', 'rule.V09': 'MCM process not completed', 'rule.V10': 'No iMSys at the MeLo',
+  'rule.V11': 'Supplier deregistration missing', 'rule.V12': 'Zeitscheibe conflict', 'rule.V13': 'No participating household', 'rule.V14': 'Einspeise-MaLo (feed-in) shared', 'rule.VSZ': 'vSZ setup not confirmed',
   'rule.V01.x': 'A MaLo, MeLo or role is missing in the participant list.',
   'rule.V02.x': 'A MeLo ID has 33 characters (DE + 31), a MaLo ID has 11 digits. This ID does not fit.',
   'rule.V04.x': 'Each construct needs exactly one Reststrom-MaLo. Register the construct again.',
@@ -324,6 +394,8 @@ const en: Record<keyof typeof de, string> = {
 
 export type Key = keyof typeof de;
 const DICT: Record<Lang, Record<Key, string>> = { de, en };
+/** Exposed for the language completeness tests. */
+export const DICTIONARIES = DICT;
 
 export function translate(lang: Lang, key: Key | string, params: Record<string, string | number> = {}): string {
   let text = DICT[lang][key as Key] ?? DICT.de[key as Key] ?? key;
@@ -339,8 +411,25 @@ export const I18nContext = createContext<{ lang: Lang; t: (key: Key | string, pa
 });
 export const useI18n = () => useContext(I18nContext);
 
-export const fmtDate = (lang: Lang, d?: string | null) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) : '—');
-export const fmtDateTime = (lang: Lang, t: string) => new Date(t).toLocaleString(lang === 'de' ? 'de-DE' : 'en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+/** Translates a backend result (stable code, optionally per operation) — falls back to the raw text only if the code is unknown. */
+export function resultText(t: (k: Key | string, p?: Record<string, string | number>) => string, code: string | undefined | null, operation?: string, fallback = '') {
+  if (!code) return fallback;
+  for (const key of [operation ? `res.${code}.${operation}` : '', `res.${code}`, `rule.${code}.x`]) {
+    if (key && t(key) !== key) return t(key);
+  }
+  return fallback;
+}
+
+/** Evidence/result texts stored as "i18n:<key>|<json>" are translated; anything a person typed stays as typed. */
+export function evidenceText(t: (k: Key | string, p?: Record<string, string | number>) => string, raw?: string | null) {
+  if (!raw) return '';
+  if (!raw.startsWith('i18n:')) return raw;
+  const [key, json] = raw.slice(5).split('|');
+  try { return t(key, JSON.parse(json ?? '{}') as Record<string, string | number>); } catch { return t(key); }
+}
+
+export const fmtDate = (lang: Lang, d?: string | null) => (d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }) : '—');
+export const fmtDateTime = (lang: Lang, t: string) => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 export function relTime(lang: Lang, t: string): string {
   const diff = (Date.now() - new Date(t).getTime()) / 1000;
   const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });

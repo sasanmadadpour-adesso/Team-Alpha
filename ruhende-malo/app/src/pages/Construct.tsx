@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowLeft, ChevronDown, Download, Play, Sun, Wind, Home } from 'lucide-react';
 import { confirmVsz, processConstruct, type Case, type Relationship } from '../api';
-import { fmtDate, useI18n } from '../i18n';
-import { NEEDS_ATTENTION, StateChip, StateIcon, StatusChip, caseHeadline, constructRail, errorText, stepUi, useApp, type UiState } from '../ui';
+import { evidenceText, fmtDate, useI18n } from '../i18n';
+import { NEEDS_ATTENTION, StateChip, StateIcon, StatusChip, caseHeadline, constructRail, errorText, findingsText, stepUi, useApp, type UiState, type WorkItem } from '../ui';
 import { HistoryList, eventConstructs } from './Protokoll';
 
 type StepTone = UiState;
@@ -12,7 +12,7 @@ export function ConstructPage({ constructId }: { constructId: string }) {
   const { t, lang } = useI18n();
   const [busy, setBusy] = useState(false);
   const c = data.constructs.find((x) => x.constructId === constructId);
-  if (!c) return <div className="banner err">Konstrukt {constructId} nicht gefunden.</div>;
+  if (!c) return <div className="banner err">{t('err.CONSTRUCT_NOT_FOUND', { construct: constructId })}</div>;
 
   const cases = data.cases.filter((x) => x.constructId === constructId);
   const rels = data.relationships.filter((r) => r.buildingId === constructId);
@@ -22,7 +22,6 @@ export function ConstructPage({ constructId }: { constructId: string }) {
   const participating = households.filter((x) => !['EXCLUDED', 'NOT_PARTICIPATING'].includes(x.status));
   const done = participating.filter((x) => x.status === 'DONE').length;
   const generators = cases.filter((x) => x.kind === 'GENERATOR' && x.status !== 'EXCLUDED');
-  const findings = new Set(cases.flatMap((x) => x.issues.map((i) => i.ID))).size;
   const relsOf = (ctx: string) => rels.filter((r) => r.context === ctx);
 
   const cont = async () => {
@@ -32,6 +31,8 @@ export function ConstructPage({ constructId }: { constructId: string }) {
   };
 
   const rail = constructRail(t, data, constructId);
+  const pruefItems = rail.items.filter((w) => w.category === 'DECISION' || w.category === 'CORRECTION'); // exactly the findings counted in the text
+  const findings = pruefItems.length;
   const stage = (id: string) => rail.nodes.find((n) => n.id === id)!;
   const tone = (id: string): StepTone => stage(id).state;
   const prereqOf = (x: Case) => x.steps.find((st) => st.id === 'PREREQ');
@@ -40,8 +41,8 @@ export function ConstructPage({ constructId }: { constructId: string }) {
 
   const steps: { key: string; n: number; title: string; ref?: string; sub: string; tone: StepTone; detail?: ReactNode }[] = [
     { key: 'anm', n: 1, title: t('co.s.anmeldung'), sub: `${c.validatedAt ? t('co.s.anmeldung.ok') : t('co.s.anmeldung.in')} · ${t('co.s.anmeldung.d', { rows: cases.length + 1, src: 'MK7 Teilnehmer', hh: households.length, part: participating.length })}`, tone: tone('ANMELDUNG') },
-    { key: 'pru', n: 2, title: t('stage.PRUEFUNG'), sub: !c.validatedAt ? t('co.s.pruefung.not') : findings ? t('co.s.pruefung.open', { n: findings }) : t('co.s.pruefung.ok'), tone: tone('PRUEFUNG'),
-      detail: findings ? <IssueList cases={cases.filter((x) => x.issues.length)} /> : undefined },
+    { key: 'pru', n: 2, title: t('stage.PRUEFUNG'), sub: !c.validatedAt ? t('co.s.pruefung.not') : findings ? findingsText(t, rail.corr, rail.dec) : t('co.s.pruefung.ok'), tone: tone('PRUEFUNG'),
+      detail: findings ? <IssueList items={pruefItems} /> : undefined },
     { key: 'vsz', n: 3, title: t('co.s.vsz'), ref: t('vsz.ref'), sub: c.validatedAt ? t('co.s.vsz.d', { done: c.vszConfirmed, total: c.vszTotal }) : t('co.s.vsz.notread'), tone: tone('VSZ'),
       detail: <VszDetail items={vsz} onConfirm={async (ev) => { await confirmVsz(constructId, ev); await refresh(); toast(t('toast.vsz')); }} /> },
     { key: 'pre', n: 4, title: t('co.s.prereq'), ref: 'FR-09 · FR-11', sub: c.validatedAt ? t('co.s.prereq.d', { ok: prereqOk, total: prereqCases.length }) : t('co.s.prereq.pending'), tone: tone('PREREQ'),
@@ -153,15 +154,15 @@ function PrereqList({ cases }: { cases: Case[] }) {
   );
 }
 
-function IssueList({ cases }: { cases: Case[] }) {
+function IssueList({ items }: { items: WorkItem[] }) {
   const { t } = useI18n();
   const { openCase } = useApp();
   return (
     <div className="rel-list">
-      {cases.map((c) => (
-        <button key={c.caseId} className="rel-row" style={{ gridTemplateColumns: 'minmax(0,1fr) auto', textAlign: 'left' }} onClick={() => openCase(c.caseId)}>
-          <span><span className="mono">{c.maloId}</span> · {caseHeadline(t, c).title}</span>
-          <StatusChip c={c} />
+      {items.map((w) => (
+        <button key={w.issue?.ID ?? w.c.caseId} className="rel-row" style={{ gridTemplateColumns: 'minmax(0,1fr) auto', textAlign: 'left' }} onClick={() => openCase(w.c.caseId)}>
+          <span><span className="mono">{w.issue?.ruleId === 'V14' && w.c.feedInMaloId ? w.c.feedInMaloId : w.c.maloId}</span> · {caseHeadline(t, w.c, w.issue).title}</span>
+          <StateChip state={w.category === 'CORRECTION' ? 'err' : 'act'} />
         </button>
       ))}
     </div>
@@ -203,7 +204,7 @@ function VszDetail({ items, onConfirm }: { items: { ID: string; itemCode: string
             <span className="step">{v.step}</span>
             <div>
               <b className="ci-title">{t(`vsz.${v.itemCode}`) === `vsz.${v.itemCode}` ? v.label : t(`vsz.${v.itemCode}`)}</b>
-              {v.evidence && v.status !== 'UNKNOWN' ? <span className="ci-result">{v.evidence}</span> : <span className="ci-result muted">{v.status === 'UNKNOWN' && !v.confirmedBy ? t('vsz.notrun') : v.evidence}</span>}
+              {v.evidence && v.status !== 'UNKNOWN' ? <span className="ci-result">{evidenceText(t, v.evidence)}</span> : <span className="ci-result muted">{v.status === 'UNKNOWN' && !v.confirmedBy ? t('vsz.notrun') : evidenceText(t, v.evidence)}</span>}
               <small>{t('vsz.page', { p: v.pdfPage })}{v.confirmedBy ? ` · ${t('vsz.via', { who: by(v.confirmedBy) })}` : ''}</small>
             </div>
             <StateChip state={VSZ_UI[v.status] ?? 'todo'} label={t(`vsz.s.${v.status}`)} />

@@ -31,29 +31,32 @@ export async function runVszSetup(tx: cds.Service, constructId: string, actor: s
   const anlageOk = reststrom.length === 1;
   const ordered = fixture.knownConstructs.includes(constructId);
   const imsysOk = households.filter((r) => ['INSTALLED', 'CONFIRMED_MANUAL'].includes(r.imsysStatus)).length;
-  const exec = (evidence: string): Outcome => (anlageOk ? { status: 'DONE', by: PIPELINE, evidence } : { status: 'MISSING', by: PIPELINE, evidence: 'Nicht ausgeführt: Reststrom-MaLo fehlt oder ist nicht eindeutig (Schritt 4.1).' });
+  /** Language-neutral result text: "i18n:<key>|<json params>" — the UI translates it; human evidence stays as typed. */
+  const ev = (key: string, params: Record<string, string | number> = {}) => `i18n:${key}|${JSON.stringify(params)}`;
+  const exec = (key: string, params: Record<string, string | number> = {}): Outcome => (anlageOk ? { status: 'DONE', by: PIPELINE, evidence: ev(key, params) } : { status: 'MISSING', by: PIPELINE, evidence: ev('vsz.ev.skipped') });
+  const operatorName = construct.operator ?? rows[0]?.operator ?? '—';
 
   const outcomes: Record<string, Outcome> = {
     MESSKONZEPT: ordered
-      ? { status: 'CONFIRMED', by: 'DSO-DP (Simulation)', evidence: `Beauftragt: C1001_M001 für ${households.length} Bezugs-MeLo(s)${generators.length ? `, C1003_M001 für ${generators.length} Erzeugungsanlage(n)` : ''}.` }
-      : { status: 'UNKNOWN', by: 'DSO-DP (Simulation)', evidence: 'Keine Beauftragung der Messkonzepte über die DSO-DP bekannt.' },
+      ? { status: 'CONFIRMED', by: 'DSO-DP (Simulation)', evidence: ev('vsz.ev.MESSKONZEPT.ok', { hh: households.length, gen: generators.length }) }
+      : { status: 'UNKNOWN', by: 'DSO-DP (Simulation)', evidence: ev('vsz.ev.MESSKONZEPT.unknown') },
     STECKBRIEFE: rows.length
-      ? { status: 'CHECKED', by: DATA_CHECK, evidence: `Teilnehmerliste liegt vor: ${rows.length} Zählpunkte, ${households.length + rows.filter((r) => r.role === ROLE.household && !r.participates).length} Mieter, Betreiber ${construct.operator ?? rows[0]?.operator ?? '—'}.` }
-      : { status: 'MISSING', by: DATA_CHECK, evidence: 'Keine Teilnehmerliste vorhanden.' },
+      ? { status: 'CHECKED', by: DATA_CHECK, evidence: ev('vsz.ev.STECKBRIEFE.ok', { points: rows.length, tenants: rows.filter((r) => r.role === ROLE.household).length, operator: operatorName }) }
+      : { status: 'MISSING', by: DATA_CHECK, evidence: ev('vsz.ev.STECKBRIEFE.missing') },
     IMSYS_EINBAU: households.length === 0
-      ? { status: 'MISSING', by: DATA_CHECK, evidence: 'Keine teilnehmenden Bezugs-MeLos.' }
+      ? { status: 'MISSING', by: DATA_CHECK, evidence: ev('vsz.ev.IMSYS.none') }
       : imsysOk === households.length
-        ? { status: 'CHECKED', by: DATA_CHECK, evidence: `iMSys an allen ${households.length} teilnehmenden Bezugs-MeLos eingebaut.` }
-        : { status: 'PARTIAL', by: DATA_CHECK, evidence: `iMSys an ${imsysOk} von ${households.length} Bezugs-MeLos. Fehlende werden je MaLo in Stufe 4 geklärt.` },
+        ? { status: 'CHECKED', by: DATA_CHECK, evidence: ev('vsz.ev.IMSYS.ok', { n: households.length }) }
+        : { status: 'PARTIAL', by: DATA_CHECK, evidence: ev('vsz.ev.IMSYS.partial', { ok: imsysOk, n: households.length }) },
     RESTSTROM_MALO: anlageOk
-      ? { status: 'DONE', by: PIPELINE, evidence: `Reststrom-MaLo ${malo} · Anlage angelegt (ES30) ab ${ab} · Sparte 01 · AbrKl SLP · Tariftyp ES001 · Serviceart 1001 · Netzebene 01.` }
-      : { status: 'MISSING', by: DATA_CHECK, evidence: `${reststrom.length} Reststrom-MaLos gefunden, genau eine ist nötig.` },
-    GERAETEINFOSATZ: exec(`Gerät VG-${malo} · Gerätetyp/Material 117-1000002 · Sparte 01 · abrechnungstechnischer Einbau OBIS 1.8.0 (EG34) ab ${ab}.`),
-    ZAEHLPUNKTART: exec(`Zählpunkt ${malo}: Zählpunktart Marktlokation · Beschreibung VBZS.`),
-    LASTPROFIL: exec(`Lastprofil SLP an der Anlage der Reststrom-MaLo ${malo} ab ${ab}.`),
-    ZP_STATUS: exec(`ZP-Status „Aktiv“ ab IBN-Datum ${ab} (nur Einrichtung, nicht die Ruhendstellung).`),
-    BILANZIERUNG: exec(`SETTLEMALO-Daten (KN-L) ab ${ab} hinterlegt · Zählverfahren E02, Prognose auf Basis von Werten.`),
-    SERVICES: exec(`BIKO- und MSB-Service am Versorgungsszenario angelegt (Pflegetransaktion; /EKN/ESERVICE_UPD wird nicht verwendet).`),
+      ? { status: 'DONE', by: PIPELINE, evidence: ev('vsz.ev.RESTSTROM_MALO.ok', { malo, ab }) }
+      : { status: 'MISSING', by: DATA_CHECK, evidence: ev('vsz.ev.RESTSTROM_MALO.bad', { n: reststrom.length }) },
+    GERAETEINFOSATZ: exec('vsz.ev.GERAETEINFOSATZ', { malo, ab }),
+    ZAEHLPUNKTART: exec('vsz.ev.ZAEHLPUNKTART', { malo }),
+    LASTPROFIL: exec('vsz.ev.LASTPROFIL', { malo, ab }),
+    ZP_STATUS: exec('vsz.ev.ZP_STATUS', { ab }),
+    BILANZIERUNG: exec('vsz.ev.BILANZIERUNG', { ab }),
+    SERVICES: exec('vsz.ev.SERVICES'),
   };
 
   const now = new Date().toISOString();
@@ -69,7 +72,7 @@ export async function runVszSetup(tx: cds.Service, constructId: string, actor: s
   if (changed.length) {
     await tx.run(INSERT.into(ns('AuditEvents')).entries({
       operation: 'VSZ_SETUP', actor, eventTime: now, afterValue: JSON.stringify({ constructId, steps: changed }),
-      reason: `Aufbau vSZ ausgeführt/geprüft: ${changed.join(', ')}`, simulated: true,
+      reason: null, simulated: true,
     }));
   }
 }

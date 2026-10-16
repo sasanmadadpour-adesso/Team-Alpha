@@ -19,9 +19,10 @@ Everything in this application is a **local simulation**. There is no SAP connec
 - **Stichtag** of a construct defaults to the earliest `mk7_versorgungsbeginn_utc` of its participating households (2026-10-01). This is a **demo default**, not a confirmed legal date. It can be changed through `setStichtag`.
 - `vertragsbeginn_utc` / `vertragsende_utc` (2026-10-01 → 2026-10-02 for every row) look like placeholders. They are displayed but not used as the dormancy window.
 - **Baseline business state:** household MaLos start as `ACTIVE` (provenance `BASELINE_ASSUMED_ACTIVE`). The workbook contains no state; ACTIVE is the documented demo assumption.
-- **Simulated SAP state.** iMSys per MeLo (V10), supplier Abmeldung per MaLo (V11), MCM per generator (V09) and the Aufbau vSZ checklist are *not* in the workbook. In a real integration they would be read from SAP IS-U and market communication. For the demo they come from the explicitly labeled fixture `data/fixtures/sap-simulated-state.json`. The pipeline **reads** it at run time (audit event `SAP_READ`); nothing is pre-confirmed at import or reset, and only values that are still UNKNOWN are filled:
-  - Default: iMSys INSTALLED, Abmeldung CONFIRMED, MCM COMPLETED, vSZ confirmed for all three constructs.
-  - Deliberate realistic gaps: Abmeldung **PENDING** for `50539603876`, and **no iMSys** at the MeLo of `50539603103`.
+- **Simulated SAP state.** Supplier Abmeldung per MaLo (V11), MCM per generator (V09) and the DSO-DP order (vSZ step 1) are *not* in the workbook (the column `vorlieferant` is empty). iMSys *is* in the workbook (`messsystem` = `iMS/TF` for every row) and is read from there, not simulated. In a real integration they would be read from SAP IS-U and market communication. For the demo they come from the explicitly labeled fixture `data/fixtures/sap-simulated-state.json`. The pipeline **reads** it at run time (audit event `SAP_READ`); nothing is pre-confirmed at import or reset, and only values that are still UNKNOWN are filled:
+  - Default: Abmeldung CONFIRMED, MCM COMPLETED; DSO-DP order known for all three constructs.
+  - Deliberate demo gaps (labeled as simulated): Abmeldung **PENDING** for `50539603876` and `50539603103`.
+- **Only the sheet `MK7 Teilnehmer` is imported.** The sheets `Stündlicher Verbrauch`, `Stündliche Erzeugung`, `Strompreise`, `Zahlungsregeln`, `Feldbeschreibungen` and `Erzeuger Registrierung` belong to the wider energy-sharing / billing case and are outside this MVP.
   - Constructs registered through the API or by file upload start with **UNKNOWN** status and are blocked until the status arrives (`POST /updateSapState`) or a person confirms it with a reason.
 
 ## Business rules (from Prozessschritte.pdf)
@@ -58,3 +59,10 @@ Everything in this application is a **local simulation**. There is no SAP connec
 - Idempotency: the key `SET_DORMANT|MaLo|construct|Stichtag` makes a repeated run return `ALREADY_DONE`. A blocked attempt is retried on the same request record.
 - **Reset Demo** re-registers the workbook baseline and clears the simulated state, the outbox and the audit history. This endpoint exists for the demo only.
 - The automatic process is triggered by a click or an API call. It is not an unattended scheduler.
+
+## Lifecycle semantics (verified by the end-to-end tests)
+
+- **Herauslösung** ends the MaLo's MeMa and MaMa on the effective date, excludes the participant from the construct, and returns a RUHEND MaLo to ACTIVE (it needs a date after the dormant start). A later pipeline run does not switch it again.
+- **Korrektur** moves the dormant start together with the MaMa, the household MeMa and the Einspeise-MeMa of that MaLo. The original request stays in the history; the audit keeps the reason.
+- **Wiederaktivierung** returns the MaLo to ACTIVE. MeMa/MaMa stay open (assumption, not specified in the PDF).
+- A request with status SUCCESS is never overwritten by a later run. "Already switched" is date-independent, so a Korrektur is not flagged as a conflict.

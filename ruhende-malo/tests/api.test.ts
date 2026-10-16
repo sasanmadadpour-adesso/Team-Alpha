@@ -4,7 +4,7 @@
  * the presentation database is never touched. Tests run in order and share state.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -81,10 +81,10 @@ describe('REST API v1 — construct process', () => {
     const byCode = (c: string, code: string) => vsz.find((v) => v.constructId === c && v.itemCode === code);
     expect(byCode('B-MUL-01', 'RESTSTROM_MALO')).toMatchObject({ status: 'DONE' });
     expect(byCode('B-MUL-01', 'RESTSTROM_MALO')?.evidence).toContain('50539603639');
-    expect(byCode('B-MUL-01', 'GERAETEINFOSATZ')?.evidence).toContain('VG-50539603639');
+    expect(byCode('B-MUL-01', 'GERAETEINFOSATZ')?.evidence).toMatch(/^i18n:vsz\.ev\.GERAETEINFOSATZ\|.*50539603639/); // language-neutral result, translated by the UI
     expect(byCode('B-MUL-01', 'STECKBRIEFE')).toMatchObject({ status: 'CHECKED' });
     expect(byCode('B-MUL-01', 'MESSKONZEPT')).toMatchObject({ status: 'CONFIRMED' });
-    expect(byCode('B-CGN-01', 'IMSYS_EINBAU')).toMatchObject({ status: 'PARTIAL' }); // 50539603103 has no iMSys
+    expect(byCode('B-CGN-01', 'IMSYS_EINBAU')).toMatchObject({ status: 'CHECKED' }); // workbook column messsystem = iMS/TF for every MeLo
     expect((await get("AuditEvents?$filter=operation eq 'VSZ_SETUP'")).length).toBe(3);
     expect(run.body.success).toBe(6);
     for (const m of ['50539603921', '50539603000', '50539603944', '50539603532', '50539603234', '50539603873']) expect(await state(m)).toBe('RUHEND');
@@ -114,14 +114,18 @@ describe('REST API v1 — construct process', () => {
   });
 
   it('S3 rejects a Korrektur without reason (422) and an unknown resolution (400)', async () => {
-    const [id] = await openIssues('V10');
+    const [id] = await openIssues('V11');
     expect((await post(`Issues/${id}/resolve`, { resolution: 'CONFIRM_ASSUMPTION' })).status).toBe(422);
     expect((await post(`Issues/${id}/resolve`, { resolution: 'DELETE', reason: 'x' })).status).toBe(400);
   });
 
-  it('manual override with reason (iMSys confirmed) lets the next run finish the MaLo', async () => {
-    const [id] = await openIssues('V10');
-    expect((await post(`Issues/${id}/resolve`, { resolution: 'CONFIRM_ASSUMPTION', reason: 'iMSys installed per MSB note 12.10.' })).status).toBe(200);
+  it('iMSys comes from the workbook: no V10 finding for any workbook MaLo', async () => {
+    expect((await openIssues('V10')).length).toBe(0);
+  });
+
+  it('manual override with reason (Abmeldung confirmed) lets the next run finish the MaLo', async () => {
+    const [id] = await openIssues('V11');
+    expect((await post(`Issues/${id}/resolve`, { resolution: 'CONFIRM_ASSUMPTION', reason: 'Abmeldung per Lieferantenbrief 12.10. bestätigt' })).status).toBe(200);
     expect(await state('50539603103')).toBe('RUHEND'); // continued automatically
   });
 
@@ -197,5 +201,165 @@ describe('REST API v1 — Anmeldung by JSON', () => {
 
   it('rejects a registration without participants (400)', async () => {
     expect((await post('registerConstruct', { construct: { buildingId: 'B-X', participants: [] } })).status).toBe(400);
+  });
+});
+
+/* ------------------------------------------------------------------------------------------------
+ * End-to-end: every action a user has, driven through the real API on a fresh baseline.
+ * ---------------------------------------------------------------------------------------------- */
+describe('End-to-end: every user action works and leaves consistent data', () => {
+  const issueOf = async (rule: string, objectId?: string) => (await get<{ ID: string; objectId: string }[]>(`Issues?$filter=status eq 'OPEN' and ruleId eq '${rule}'&$select=ID,objectId`)).find((i) => !objectId || i.objectId === objectId);
+  const periods = (maloId: string) => get<{ businessState: string; validFrom: string | null; validToExclusive: string | null }[]>(`LifecyclePeriods?$filter=maloId eq '${maloId}'&$orderby=validFrom`);
+  const openRels = (query: string) => get(`Relationships?$filter=${query} and validToExclusive eq null`);
+  const cmd = (operation: string, maloId: string, buildingId: string, effectiveDate: string, extra: object = {}) => ({ command: { operation, maloId, buildingId, effectiveDate, ...extra } });
+
+  it('baseline via workbook UPLOAD (base64 xlsx): 17 rows, 3 constructs, every participant NEW', async () => {
+    const bytes = readFileSync('data/source/Datensatz_Deutsch.xlsx').toString('base64');
+    const res = await post('importWorkbook', { fileName: 'Datensatz_Deutsch.xlsx', contentBase64: bytes });
+    expect(res.body).toMatchObject({ rows: 17, households: 11, participating: 10 });
+    expect((await get('Constructs')).length).toBe(3);
+    expect((await get('cases()')).filter((c) => c.status === 'NEW').length).toBe(13);
+    expect((await post('importWorkbook', { fileName: 'x.xlsx', contentBase64: Buffer.from('not a workbook').toString('base64') })).status).toBe(422);
+  });
+
+  it('first run: 6 ruhend; data error, decisions and waiting cases are parked', async () => {
+    const run = await post('processAll');
+    expect(run.body.success).toBe(6);
+    const st = (await get('cases()')).reduce((a: Json, c) => ({ ...a, [c.status]: (a[c.status] ?? 0) + 1 }), {});
+    expect(st).toMatchObject({ DONE: 6, DECISION: 5, WAITING: 2, NOT_PARTICIPATING: 1 });
+  });
+
+  it('FIX_VALUE: a wrong MeLo (34 chars) is rejected live, a correct one clears the data error', async () => {
+    const v02 = await issueOf('V02');
+    expect((await post(`Issues/${v02!.ID}/resolve`, { resolution: 'FIX_VALUE', value: '', reason: 'x' })).status).toBe(422);
+    const fixed = await post(`Issues/${v02!.ID}/resolve`, { resolution: 'FIX_VALUE', value: 'DE0073325707820000000000000880945', reason: 'Typo corrected per MSB list' });
+    expect(fixed.status).toBe(200);
+    expect((await get(`Participants?$filter=maloId eq '51781123945'&$select=meloId`))[0].meloId).toBe('DE0073325707820000000000000880945');
+    expect(await issueOf('V02')).toBeUndefined();
+  });
+
+  it('status input + manual override resolve the two Abmeldung cases; the MaLos finish by themselves', async () => {
+    expect((await post('updateSapState', { attribute: 'abmeldung', objectId: '50539603876', value: 'CONFIRMED', actor: 'MAKO' })).status).toBe(200);
+    const v11 = await issueOf('V11', '50539603103');
+    expect((await post(`Issues/${v11!.ID}/resolve`, { resolution: 'CONFIRM_ASSUMPTION', reason: 'Lieferantenbrief liegt vor' })).status).toBe(200);
+    expect(await state('50539603876')).toBe('RUHEND');
+    expect(await state('50539603103')).toBe('RUHEND');
+  });
+
+  it('CHOOSE_BUILDING: 50539603888 goes to Köln, Frankfurt excludes it', async () => {
+    const v05 = await issueOf('V05');
+    expect((await post(`Issues/${v05!.ID}/resolve`, { resolution: 'CHOOSE_BUILDING', value: 'B-NOPE', reason: 'x' })).status).toBe(422);
+    expect((await post(`Issues/${v05!.ID}/resolve`, { resolution: 'CHOOSE_BUILDING', value: 'B-CGN-01', reason: 'Tenant lives in Köln' })).status).toBe(200);
+    const rows = (await get('cases()')).filter((c) => c.maloId === '50539603888');
+    expect(rows.map((c) => `${c.constructId}:${c.status}`).sort()).toEqual(['B-CGN-01:DONE', 'B-FRA-01:EXCLUDED']);
+  });
+
+  it('V14 CONFIRM: all three generators get Einspeise-MeMa (MeMa only) to exactly the cleared MeLos of their construct', async () => {
+    const v14 = await issueOf('V14');
+    expect((await post(`Issues/${v14!.ID}/resolve`, { resolution: 'CONFIRM_ASSUMPTION', reason: 'Shared feed-in is intended' })).status).toBe(200);
+    const ein = await openRels(`context eq 'EINSPEISE_MEMA'`);
+    expect(ein.length).toBe(9); // CGN 4 + FRA 2 + MUL 3 households
+    expect(new Set(ein.map((r) => r.fromLocationId))).toEqual(new Set(['51664053767']));
+    expect((await get(`Relationships?$filter=kind eq 'MAMA' and fromLocationId eq '51664053767'`)).length).toBe(0); // never MaMa for generators
+  });
+
+  it('the whole pipeline is complete and consistent: 9 ruhend, no open case, UTILMD once per construct', async () => {
+    const cases = await get('cases()');
+    expect(cases.filter((c) => ['DECISION', 'CORRECTION', 'WAITING'].includes(c.status)).length).toBe(0);
+    expect(new Set(cases.filter((c) => c.kind === 'HOUSEHOLD' && c.status === 'DONE').map((c) => c.maloId)).size).toBe(9);
+    expect((await get('Outbox?$filter=' + encodeURIComponent("eventType eq 'UTILMD_EINZUG_RESTSTROM_LIEFERANT'"))).length).toBe(3);
+    expect(await openRels(`kind eq 'MEMA' and context eq 'HOUSEHOLD_MEMA'`)).toHaveLength(9);
+    expect(await openRels(`kind eq 'MAMA'`)).toHaveLength(9);
+  });
+
+  it('Korrektur moves the dormant start; MeMa/MaMa follow; the next run does NOT book anything twice', async () => {
+    const dormant = (await get(`ProcessRequests?$filter=maloId eq '50539603921' and operation eq 'SET_DORMANT' and status eq 'SUCCESS'`))[0];
+    const noReason = await post('execute', cmd('CORRECT_TRANSITION', '50539603921', 'B-MUL-01', '2026-10-15', { referenceOperationId: dormant.ID }));
+    expect(noReason.body.code).toBe('REFERENCE_AND_REASON_REQUIRED');
+    const done = await post('execute', cmd('CORRECT_TRANSITION', '50539603921', 'B-MUL-01', '2026-10-15', { referenceOperationId: dormant.ID, reason: 'Switch date was 15.10.' }));
+    expect(done.body.status).toBe('SUCCESS');
+    expect(await periods('50539603921')).toMatchObject([{ businessState: 'ACTIVE', validToExclusive: '2026-10-15' }, { businessState: 'RUHEND', validFrom: '2026-10-15', validToExclusive: null }]);
+    { const moved = (await openRels(`fromLocationId eq '50539603921' or toLocationId eq 'DE0001815707800000101300000131964'`)).map((r) => r.validFrom); expect(moved.length).toBeGreaterThanOrEqual(2); expect(new Set(moved)).toEqual(new Set(['2026-10-15'])); } // MeMa and MaMa move together
+    const before = { rel: (await get('Relationships')).length, per: (await get('LifecyclePeriods')).length };
+    await post('processAll');
+    expect((await get(`ProcessRequests?$filter=maloId eq '50539603921' and operation eq 'SET_DORMANT'`))[0].status).toBe('SUCCESS'); // a later run never downgrades history
+    expect((await get('cases()')).find((c) => c.maloId === '50539603921')?.status).toBe('DONE'); // a Korrektur is accepted, not flagged as conflict
+    expect({ rel: (await get('Relationships')).length, per: (await get('LifecyclePeriods')).length }).toEqual(before);
+    expect(await periods('50539603921')).toHaveLength(2);
+  });
+
+  it('Herauslösung ends the relationships and takes the MaLo out; the next run keeps it out', async () => {
+    const r = await post('execute', cmd('REMOVE_FROM_CONSTRUCT', '50539603000', 'B-MUL-01', '2026-11-01', { reason: 'Tenant leaves MK7' }));
+    expect(r.body).toMatchObject({ status: 'SUCCESS', beforeState: 'RUHEND', afterState: 'ACTIVE' }); // leaves the construct and is active again
+    expect(await state('50539603000')).toBe('ACTIVE');
+    expect(await openRels(`fromLocationId eq '50539603000'`)).toHaveLength(0);
+    await post('processAll');
+    expect(await openRels(`fromLocationId eq '50539603000'`)).toHaveLength(0);
+    expect(await state('50539603000')).toBe('ACTIVE'); // not switched again
+    expect((await get('cases()')).find((c) => c.maloId === '50539603000')?.status).toBe('EXCLUDED');
+  });
+
+  it('Wiederaktivierung then Rücknahme restore the right states and keep full history', async () => {
+    const re = await post('execute', cmd('REACTIVATE', '50539603944', 'B-MUL-01', '2026-12-01'));
+    expect(re.body).toMatchObject({ status: 'SUCCESS', afterState: 'ACTIVE' });
+    expect((await post('execute', cmd('REACTIVATE', '50539603944', 'B-MUL-01', '2026-12-05'))).body.code).toBe('INVALID_OPERATION_SEQUENCE'); // already active
+    const rev = await post('execute', cmd('REVERSE_TRANSITION', '50539603944', 'B-MUL-01', '2027-01-01', { referenceOperationId: re.body.requestId, reason: 'Reactivated by mistake' }));
+    expect(rev.body).toMatchObject({ status: 'SUCCESS', afterState: 'RUHEND' });
+    expect((await periods('50539603944')).map((p) => p.businessState)).toEqual(['ACTIVE', 'RUHEND', 'ACTIVE', 'RUHEND']);
+  });
+
+  it('data invariants hold after everything: no overlap, state = open period, every ruhend MaLo has exactly one open MaMa', async () => {
+    const malos = await get<{ maloId: string; businessState: string }[]>('MarketLocations?$select=maloId,businessState');
+    for (const m of malos.filter((x) => x.businessState !== 'UNKNOWN')) {
+      const ps = await periods(m.maloId);
+      const open = ps.filter((p) => !p.validToExclusive);
+      if (ps.length) {
+        expect(open.length, `open periods of ${m.maloId}`).toBe(1);
+        expect(open[0].businessState, `state of ${m.maloId}`).toBe(m.businessState);
+        for (let i = 1; i < ps.length; i++) expect((ps[i - 1].validToExclusive ?? '9999') <= (ps[i].validFrom ?? '0000'), `overlap ${m.maloId}`).toBe(true);
+      }
+      if (m.businessState === 'RUHEND') expect(await openRels(`kind eq 'MAMA' and fromLocationId eq '${m.maloId}'`), `MaMa of ${m.maloId}`).toHaveLength(1);
+    }
+  });
+
+  it('API registration reaches ruhend: vSZ gate → evidence → status inputs → ruhend; EXCLUDE removes a bad row', async () => {
+    const reg = await post('registerConstruct', { construct: { buildingId: 'B-E2E-01', city: 'Teststadt', stichtag: '2026-11-01', participants: [
+      { role: 'Marktlokation Reststrom', maloId: '50000000001', meloId: `DE${'0'.repeat(30)}9` },
+      { role: 'Haushaltsverbrauch', maloId: '50000000010', meloId: `DE${'0'.repeat(30)}1`, participates: true },
+      { role: 'Haushaltsverbrauch', maloId: '5000000002', meloId: `DE${'0'.repeat(30)}2`, participates: true }, // 10 digits: invalid
+    ] } });
+    expect(reg.status).toBe(200);
+    const bad = await issueOf('V02', '5000000002');
+    expect(bad).toBeDefined();
+    expect((await post(`Issues/${bad!.ID}/resolve`, { resolution: 'EXCLUDE_PARTICIPANT', reason: 'Row is wrong, tenant not registered' })).status).toBe(200);
+    expect((await get('cases()')).find((c) => c.maloId === '5000000002')?.status).toBe('EXCLUDED');
+    // gate: the DSO-DP order is unknown for an API construct → a person confirms with evidence
+    expect((await post('Constructs/B-E2E-01/confirmVsz', { evidence: '' })).status).toBe(422);
+    expect((await post('Constructs/B-E2E-01/confirmVsz', { evidence: 'DSO-DP order C1001_M001 confirmed by phone' })).status).toBe(200);
+    expect(await state('50000000010')).toBe('ACTIVE'); // still waiting for iMSys + Abmeldung
+    await post('updateSapState', { attribute: 'imsys', objectId: `DE${'0'.repeat(30)}1`, value: 'INSTALLED' });
+    expect(await state('50000000010')).toBe('ACTIVE');
+    await post('updateSapState', { attribute: 'abmeldung', objectId: '50000000010', value: 'CONFIRMED' });
+    expect(await state('50000000010')).toBe('RUHEND');
+    expect((await get<Json>('Constructs/B-E2E-01')).stage).toBe('SWITCHED');
+  });
+
+  it('setStichtag changes the date of an unprocessed construct and the run uses it', async () => {
+    await post('registerConstruct', { construct: { buildingId: 'B-E2E-02', city: 'Zweitstadt', stichtag: '2026-11-01', participants: [
+      { role: 'Marktlokation Reststrom', maloId: '50000000003', meloId: `DE${'0'.repeat(30)}8` },
+      { role: 'Haushaltsverbrauch', maloId: '50000000020', meloId: `DE${'0'.repeat(30)}3`, participates: true },
+    ] } });
+    expect((await post('Constructs/B-E2E-02/setStichtag', { stichtag: '2026-13-45' })).status).toBe(400);
+    expect((await post('Constructs/B-E2E-02/setStichtag', { stichtag: '2026-12-15' })).status).toBe(200);
+    expect((await get<Json>('Constructs/B-E2E-02')).stichtag).toBe('2026-12-15');
+  });
+
+  it('reset restores the exact baseline: all NEW, no relationships, no handovers, audit shows only the registration', async () => {
+    expect((await post('resetDemo', { confirm: true })).status).toBe(200);
+    expect((await get('Constructs')).length).toBe(3);
+    expect((await get('cases()')).filter((c) => c.status === 'NEW').length).toBe(13);
+    expect((await get('Relationships')).length).toBe(0);
+    expect((await get('Outbox')).length).toBe(0);
+    expect((await get('AuditEvents')).map((e) => e.operation)).toEqual(['REGISTER_CONSTRUCT', 'REGISTER_CONSTRUCT', 'REGISTER_CONSTRUCT']);
   });
 });

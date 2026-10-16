@@ -38,7 +38,7 @@ export async function loadSapFixture(): Promise<SapFixture> {
 export async function readSapState(tx: cds.Service, constructId: string, actor: string) {
   const fixture = await loadSapFixture();
   if (!fixture.knownConstructs.includes(constructId)) return { known: false, updated: 0, vsz: 0 };
-  const rows = await tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'maloId', 'meloId', 'imsysStatus', 'deregistrationStatus', 'mcmStatus').where({ constructId })) as { sourceId: string; maloId: string; meloId: string; imsysStatus: string; deregistrationStatus: string; mcmStatus: string }[];
+  const rows = await tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'maloId', 'meloId', 'imsysStatus', 'deregistrationStatus', 'mcmStatus', 'sourceData').where({ constructId })) as { sourceId: string; maloId: string; meloId: string; imsysStatus: string; deregistrationStatus: string; mcmStatus: string; sourceData: string | null }[];
   let updated = 0;
   for (const r of rows) {
     const set: Record<string, string> = {};
@@ -47,6 +47,9 @@ export async function readSapState(tx: cds.Service, constructId: string, actor: 
       const value = fixture.melo[r.meloId]?.[attr] ?? fixture.malo[r.maloId]?.[attr] ?? fixture.defaults[attr];
       if (current === 'UNKNOWN' && value && value !== 'UNKNOWN') set[COLUMN[attr]] = value;
     }
+    // iMSys is real workbook data (column "messsystem", e.g. "iMS/TF"), not simulated: it wins over any fixture value.
+    const messsystem = (() => { try { return String((JSON.parse(r.sourceData ?? '{}') as { messsystem?: string }).messsystem ?? ''); } catch { return ''; } })();
+    if (/\bims\b|^ims/i.test(messsystem) && r.imsysStatus === 'UNKNOWN') set.imsysStatus = 'INSTALLED';
     if (Object.keys(set).length) { await tx.run(UPDATE(ns('ParticipantSourceRows')).set(set).where({ sourceId: r.sourceId })); updated++; }
   }
   const vsz = 0; // the vSZ steps are executed by runVszSetup (stage 3), not read here
@@ -54,7 +57,7 @@ export async function readSapState(tx: cds.Service, constructId: string, actor: 
     await tx.run(INSERT.into(ns('AuditEvents')).entries({
       operation: 'SAP_READ', actor, eventTime: new Date().toISOString(),
       afterValue: JSON.stringify({ constructId, participantsUpdated: updated, vszItemsConfirmed: vsz }),
-      reason: `Status read from simulated SAP: ${vsz} vSZ step(s), ${updated} participant(s)`, simulated: true,
+      reason: null, simulated: true,
     }));
   }
   return { known: true, updated, vsz };
@@ -68,7 +71,7 @@ export async function updateSapState(tx: cds.Service, attribute: SapAttribute, o
   await tx.run(UPDATE(ns('ParticipantSourceRows')).set({ [COLUMN[attribute]]: value }).where(where));
   await tx.run(INSERT.into(ns('AuditEvents')).entries({
     operation: 'SAP_STATE_UPDATE', maloId: attribute === 'abmeldung' ? objectId : null, actor, eventTime: new Date().toISOString(),
-    afterValue: JSON.stringify({ attribute, objectId, value }), reason: `Status input: ${attribute} = ${value}`, simulated: true,
+    afterValue: JSON.stringify({ attribute, objectId, value }), reason: null, simulated: true,
   }));
   return count;
 }

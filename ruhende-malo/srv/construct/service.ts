@@ -39,7 +39,7 @@ export async function loadContext(tx: cds.Service): Promise<Context> {
 
 /** Fingerprints a person explicitly accepted without a data change (CONFIRM_ASSUMPTION). */
 const acknowledged = (ctx: Context) => new Set(ctx.issues.filter((i) => i.status === 'RESOLVED' && i.resolution === 'CONFIRM_ASSUMPTION').map((i) => i.fingerprint));
-export const currentFindings = (ctx: Context): Finding[] => validateConstructs(ctx.constructs, ctx.rows, ctx.periods, acknowledged(ctx));
+export const currentFindings = (ctx: Context): Finding[] => validateConstructs(ctx.constructs, ctx.rows, ctx.periods, acknowledged(ctx), new Set(ctx.requests.filter((r) => r.operation === 'SET_DORMANT' && r.status === 'SUCCESS').map((r) => `${r.buildingId}|${r.maloId}`)));
 
 /* ------------------------------------------------------------------ S2 Prüfung der Daten */
 
@@ -59,15 +59,15 @@ export async function validateAll(tx: cds.Service, actor: string, processed: str
     const existing = byFingerprint.get(f.fingerprint);
     if (!existing) { await tx.run(INSERT.into(ns('ValidationIssues')).entries({ fingerprint: f.fingerprint, ...record, status: 'OPEN' })); opened++; }
     else if (existing.status === 'OPEN') await tx.run(UPDATE(ns('ValidationIssues')).set(record).where({ ID: existing.ID }));
-    else { await tx.run(UPDATE(ns('ValidationIssues')).set({ ...record, status: 'OPEN', resolution: null, reason: `Reopened: finding still present after ${existing.resolution}.` }).where({ ID: existing.ID })); opened++; }
+    else { await tx.run(UPDATE(ns('ValidationIssues')).set({ ...record, status: 'OPEN', resolution: null, reason: null }).where({ ID: existing.ID })); opened++; }
   }
   const live = new Set(findings.map((f) => f.fingerprint));
   for (const i of ctx.issues.filter((x) => x.status === 'OPEN' && !live.has(x.fingerprint))) {
-    await tx.run(UPDATE(ns('ValidationIssues')).set({ status: 'RESOLVED', resolution: 'AUTO_CLEARED', resolvedBy: 'SYSTEM', resolvedAt: now, reason: 'Finding no longer present after re-validation.' }).where({ ID: i.ID }));
+    await tx.run(UPDATE(ns('ValidationIssues')).set({ status: 'RESOLVED', resolution: 'AUTO_CLEARED', resolvedBy: 'SYSTEM', resolvedAt: now, reason: null }).where({ ID: i.ID }));
     cleared++;
   }
   if (processed.length) await tx.run(UPDATE(ns('Constructs')).set({ validatedAt: now }).where({ constructId: { in: processed } }));
-  await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'VALIDATE', actor, eventTime: now, afterValue: JSON.stringify({ findings: findings.length, opened, cleared }), reason: 'Prüfung der Daten', simulated: true }));
+  await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'VALIDATE', actor, eventTime: now, afterValue: JSON.stringify({ findings: findings.length, opened, cleared }), reason: null, simulated: true }));
   await refreshConstructs(tx);
   return { findings: findings.length, opened, cleared };
 }
@@ -91,32 +91,33 @@ export const toIssueDto = (i: IssueRow) => ({
 
 /* ------------------------------------------------------------------ S3 Korrektur Daten */
 
-export class ProcessError extends Error { constructor(readonly status: number, message: string) { super(message); } }
+/** Domain error with a stable machine code and parameters. The REST layer returns code + args; clients translate. */
+export class ProcessError extends Error { constructor(readonly status: number, message: string, readonly errorCode = 'ERROR', readonly params: Record<string, string | number> = {}) { super(message); } }
 
 const FIXABLE_FIELDS = new Set(['maloId', 'meloId', 'participationRaw', 'generationFeedInMaloId', 'stichtag']);
 
 export async function resolveIssue(tx: cds.Service, issueId: string, resolution: Resolution, value: string | undefined, reason: string | undefined, actor: string) {
   const issue = await tx.run(SELECT.one.from(ns('ValidationIssues')).where({ ID: issueId })) as IssueRow | undefined;
-  if (!issue) throw new ProcessError(404, `Issue ${issueId} not found.`);
-  if (issue.status !== 'OPEN') throw new ProcessError(409, `Issue is already ${issue.status}.`);
-  if (!issue.allowedResolutions.split(',').includes(resolution)) throw new ProcessError(422, `Resolution ${resolution} is not allowed for ${issue.ruleId}. Allowed: ${issue.allowedResolutions || 'none (re-register the construct)'}.`);
-  if (!reason?.trim()) throw new ProcessError(422, 'A reason is required for every Korrektur.');
+  if (!issue) throw new ProcessError(404, `Issue ${issueId} not found.`, 'ISSUE_NOT_FOUND');
+  if (issue.status !== 'OPEN') throw new ProcessError(409, `Issue is already ${issue.status}.`, 'ISSUE_NOT_OPEN', { status: issue.status });
+  if (!issue.allowedResolutions.split(',').includes(resolution)) throw new ProcessError(422, `Resolution ${resolution} is not allowed for ${issue.ruleId}. Allowed: ${issue.allowedResolutions || 'none (re-register the construct)'}.`, 'RESOLUTION_NOT_ALLOWED', { resolution, rule: issue.ruleId });
+  if (!reason?.trim()) throw new ProcessError(422, 'A reason is required for every Korrektur.', 'REASON_REQUIRED');
   const now = new Date().toISOString();
   const constructIds = issue.constructIds.split(',');
   const rows = ns('ParticipantSourceRows');
 
   if (resolution === 'CHOOSE_BUILDING') {
-    if (!value || !constructIds.includes(value)) throw new ProcessError(422, `Choose one of: ${constructIds.join(', ')}.`);
-    await tx.run(UPDATE(rows).set({ excluded: true, exclusionReason: `Korrektur ${issue.ruleId}: MaLo belongs to ${value}. ${reason}` }).where({ maloId: issue.objectId, constructId: { '!=': value } }));
+    if (!value || !constructIds.includes(value)) throw new ProcessError(422, `Choose one of: ${constructIds.join(', ')}.`, 'CHOOSE_ONE_OF', { options: constructIds.join(', ') });
+    await tx.run(UPDATE(rows).set({ excluded: true, exclusionReason: reason }).where({ maloId: issue.objectId, constructId: { '!=': value } }));
   } else if (resolution === 'EXCLUDE_PARTICIPANT') {
     const where = issue.sourceId ? { sourceId: issue.sourceId }
       : issue.objectType === 'MELO' ? { meloId: issue.objectId }
         : issue.objectType === 'GENERATOR' ? { generationFeedInMaloId: issue.objectId }
           : { maloId: issue.objectId, ...(value ? { constructId: value } : {}) };
-    await tx.run(UPDATE(rows).set({ excluded: true, exclusionReason: `Korrektur ${issue.ruleId}: ${reason}` }).where(where));
+    await tx.run(UPDATE(rows).set({ excluded: true, exclusionReason: reason }).where(where));
   } else if (resolution === 'FIX_VALUE') {
-    if (!issue.field || !FIXABLE_FIELDS.has(issue.field)) throw new ProcessError(422, 'This finding has no correctable field.');
-    if (!value?.trim()) throw new ProcessError(422, `A new value for ${issue.field} is required.`);
+    if (!issue.field || !FIXABLE_FIELDS.has(issue.field)) throw new ProcessError(422, 'This finding has no correctable field.', 'NOT_CORRECTABLE');
+    if (!value?.trim()) throw new ProcessError(422, `A new value for ${issue.field} is required.`, 'VALUE_REQUIRED', { field: issue.field });
     if (issue.field === 'stichtag') await tx.run(UPDATE(ns('Constructs')).set({ stichtag: value.trim() }).where({ constructId: issue.constructId }));
     else {
       const set: Record<string, unknown> = { [issue.field]: value.trim() };
@@ -142,10 +143,10 @@ export async function resolveIssue(tx: cds.Service, issueId: string, resolution:
 
 export async function confirmVsz(tx: cds.Service, constructId: string, itemCodes: string[] | undefined, evidence: string | undefined, actor: string) {
   await requireConstruct(tx, constructId);
-  if (!evidence?.trim()) throw new ProcessError(422, 'Evidence is required (e.g. "Checked in SAP by <name> on <date>").');
+  if (!evidence?.trim()) throw new ProcessError(422, 'Evidence is required (e.g. "Checked in SAP by <name> on <date>").', 'EVIDENCE_REQUIRED');
   const codes = itemCodes?.length ? itemCodes : VSZ_ITEMS.map((i) => i.itemCode);
   const unknown = codes.filter((c) => !VSZ_ITEMS.some((i) => i.itemCode === c));
-  if (unknown.length) throw new ProcessError(422, `Unknown checklist item(s): ${unknown.join(', ')}.`);
+  if (unknown.length) throw new ProcessError(422, `Unknown checklist item(s): ${unknown.join(', ')}.`, 'UNKNOWN_VSZ_ITEMS', { items: unknown.join(', ') });
   const now = new Date().toISOString();
   await tx.run(UPDATE(ns('VszChecklistItems')).set({ status: 'CONFIRMED', confirmedBy: actor, confirmedAt: now, evidence }).where({ constructId, itemCode: { in: codes } }));
   await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'CONFIRM_VSZ', actor, eventTime: now, afterValue: JSON.stringify({ constructId, items: codes }), reason: evidence, simulated: true }));
@@ -156,7 +157,7 @@ export async function confirmVsz(tx: cds.Service, constructId: string, itemCodes
 export async function setStichtag(tx: cds.Service, constructId: string, stichtag: string, actor: string) {
   await requireConstruct(tx, constructId);
   await tx.run(UPDATE(ns('Constructs')).set({ stichtag }).where({ constructId }));
-  await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'SET_STICHTAG', actor, eventTime: new Date().toISOString(), effectiveDate: stichtag, afterValue: JSON.stringify({ constructId, stichtag }), reason: 'Stichtag changed', simulated: true }));
+  await tx.run(INSERT.into(ns('AuditEvents')).entries({ operation: 'SET_STICHTAG', actor, eventTime: new Date().toISOString(), effectiveDate: stichtag, afterValue: JSON.stringify({ constructId, stichtag }), reason: null, simulated: true }));
   await validateAll(tx, actor);
 }
 
@@ -169,10 +170,11 @@ export async function previewSwitch(tx: cds.Service, constructId: string, onlyMa
 
 export function planFor(ctx: Context, constructId: string, onlyMaloId?: string): SwitchPlan {
   const construct = ctx.constructs.find((c) => c.constructId === constructId);
-  if (!construct) throw new ProcessError(404, `Construct ${constructId} not found.`);
+  if (!construct) throw new ProcessError(404, `Construct ${constructId} not found.`, 'CONSTRUCT_NOT_FOUND', { construct: constructId });
   const checklist = ctx.checklist.filter((c) => c.constructId === constructId);
   const findings = currentFindings(ctx);
-  const completed = new Set(ctx.requests.filter((r) => r.operation === 'SET_DORMANT' && r.status === 'SUCCESS' && r.buildingId === constructId && r.effectiveDate === construct.stichtag).map((r) => r.maloId));
+  // A MaLo that was switched once stays switched, whatever its date is now (a Korrektur may have moved it).
+  const completed = new Set(ctx.requests.filter((r) => r.operation === 'SET_DORMANT' && r.status === 'SUCCESS' && r.buildingId === constructId).map((r) => r.maloId));
   const activeFrom = new Map(ctx.periods.filter((p) => p.businessState === 'ACTIVE' && !p.validToExclusive).map((p) => [p.maloId, p.validFrom]));
   return buildSwitchPlan({
     construct, rows: ctx.rows, openFindings: findings, vsz: { complete: vszComplete(checklist), missing: vszMissing(checklist).map((i) => i.itemCode) },
@@ -230,7 +232,7 @@ export async function executeSwitch(tx: cds.Service, constructId: string, option
       requestId, operation, maloId: item.maloId, actor: options.actor, effectiveDate: stichtag, eventTime: now,
       beforeValue: JSON.stringify({ businessState: item.beforeState }),
       afterValue: JSON.stringify({ businessState: state ?? item.beforeState, relationships: own.map((r) => ({ kind: r.kind, context: r.context, from: r.fromId, to: r.toId, validFrom: r.validFrom })) }),
-      reason: options.mode === 'AUTO' ? 'Automatic Umstellung' : 'Manual Umstellung', simulated: true,
+      reason: null, simulated: true,
     }));
     if (operation === 'SET_DORMANT') {
       // Solution map: Umstellung auf ruhende MaLo → Schlussrechnung (INVOIC). Recorded only.
@@ -297,12 +299,14 @@ export async function relationshipList(tx: cds.Service, constructId?: string) {
 
 async function requireConstruct(tx: cds.Service, constructId: string) {
   const c = await tx.run(SELECT.one.from(ns('Constructs')).where({ constructId })) as ConstructRow | undefined;
-  if (!c) throw new ProcessError(404, `Construct ${constructId} not found.`);
+  if (!c) throw new ProcessError(404, `Construct ${constructId} not found.`, 'CONSTRUCT_NOT_FOUND', { construct: constructId });
   return c;
 }
 
 async function upsertRequest(tx: cds.Service, idempotencyKey: string, fields: Record<string, unknown>): Promise<string> {
-  const existing = await tx.run(SELECT.one.from(ns('ProcessRequests')).columns('ID').where({ idempotencyKey })) as { ID: string } | undefined;
+  const existing = await tx.run(SELECT.one.from(ns('ProcessRequests')).columns('ID', 'status').where({ idempotencyKey })) as { ID: string; status: string } | undefined;
+  // History is never downgraded: a successful request stays SUCCESS, whatever a later run finds.
+  if (existing?.status === 'SUCCESS' && fields.status !== 'SUCCESS') return existing.ID;
   const data = { ...fields, executionTime: new Date().toISOString(), simulated: true };
   if (existing) { await tx.run(UPDATE(ns('ProcessRequests')).set(data).where({ ID: existing.ID })); return existing.ID; }
   const ID = cds.utils.uuid();

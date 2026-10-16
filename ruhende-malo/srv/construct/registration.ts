@@ -84,7 +84,7 @@ export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[]
     await tx.run(INSERT.into(ns('VszChecklistItems')).entries(VSZ_ITEMS.map((item) => ({ constructId, ...item, status: 'UNKNOWN' }))));
     await tx.run(INSERT.into(ns('AuditEvents')).entries({
       operation: 'REGISTER_CONSTRUCT', maloId: reststromMaloId, actor: source.actor, eventTime: now,
-      afterValue: JSON.stringify({ constructId, rows: own.length, source: source.file }), reason: `Anmeldung Konstrukt ${constructId}`, simulated: true,
+      afterValue: JSON.stringify({ constructId, rows: own.length, source: source.file }), reason: null, simulated: true,
     }));
   }
 

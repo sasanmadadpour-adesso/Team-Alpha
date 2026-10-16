@@ -2,19 +2,24 @@
 const BASE = '/api/v1';
 export const ACTOR = 'DEMO_USER';
 
-export class ApiError extends Error { constructor(readonly status: number, message: string) { super(message); } }
+export class ApiError extends Error { constructor(readonly status: number, message: string, readonly code = 'ERROR', readonly params: Record<string, string> = {}) { super(message); } }
 
 async function http<T>(path: string, body?: object): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${BASE}/${path}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
   } catch {
-    throw new ApiError(0, 'NETWORK');
+    throw new ApiError(0, 'NETWORK', 'NETWORK');
   }
   const text = await response.text();
   let payload: unknown;
   try { payload = text ? JSON.parse(text) : undefined; } catch { payload = text; }
-  if (!response.ok) throw new ApiError(response.status, (payload as { error?: { message?: string } })?.error?.message ?? `HTTP ${response.status}`);
+  if (!response.ok) {
+    const e = (payload as { error?: { message?: string; code?: string; args?: string[] } } | undefined)?.error;
+    let params: Record<string, string> = {};
+    try { params = JSON.parse(e?.args?.[0] ?? '{}') as Record<string, string>; } catch { /* no params */ }
+    throw new ApiError(response.status, e?.message ?? `HTTP ${response.status}`, e?.code && /^[A-Z_]+$/.test(e.code) ? e.code : 'ERROR', params);
+  }
   return payload as T;
 }
 const q = (s: string) => encodeURIComponent(s);

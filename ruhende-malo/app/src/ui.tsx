@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Check, CircleDashed, Clock, GitFork, Minus, PencilLine, X } from 'lucide-react';
 import type { StepState } from './api';
-import type { Case, CaseIssue, CaseStatus, Snapshot } from './api';
-import { useI18n, type Key } from './i18n';
+import { ApiError, type Case, type CaseIssue, type CaseStatus, type Snapshot } from './api';
+import { resultText, translate, useI18n, type Key } from './i18n';
 
 /* ---------------- App context ---------------- */
 export interface AppCtx {
@@ -11,6 +11,8 @@ export interface AppCtx {
   openCase: (caseId: string) => void;
   toast: (message: string, tone?: 'ok' | 'err') => void;
   go: (path: string) => void;
+  /** Pause automatic refresh while an animation plays (nesting-safe). */
+  pause: (on: boolean) => void;
 }
 export const AppContext = createContext<AppCtx | null>(null);
 export const useApp = () => useContext(AppContext)!;
@@ -98,8 +100,8 @@ export function caseHeadline(t: (k: Key | string, p?: Record<string, string | nu
   if (c.status === 'NEW') return { title: t('status.NEW'), text: t('case.notrun'), tone: 'neutral' };
   if (c.status === 'READY') return { title: t('status.READY'), text: t('case.ready'), tone: 'info' };
   if (c.status === 'EXCLUDED') return { title: t('status.EXCLUDED'), text: c.exclusionReason ?? '', tone: 'neutral' };
-  if (c.status === 'NOT_PARTICIPATING') return { title: t('status.NOT_PARTICIPATING'), text: 'Teilnahme MK7 = nein', tone: 'neutral' };
-  return { title: statusLabel(t, c), text: c.message, tone: STATUS_TONE[c.status] };
+  if (c.status === 'NOT_PARTICIPATING') return { title: t('status.NOT_PARTICIPATING'), text: t('res.NOT_PARTICIPATING'), tone: 'neutral' };
+  return { title: statusLabel(t, c), text: resultText(t, c.code), tone: STATUS_TONE[c.status] };
 }
 
 export function ToneIcon({ tone, size = 18 }: { tone: Tone; size?: number }) {
@@ -109,6 +111,12 @@ export function ToneIcon({ tone, size = 18 }: { tone: Tone; size?: number }) {
   if (tone === 'wait') return <Clock size={size} strokeWidth={2} />;
   if (tone === 'neutral') return <Minus size={size} strokeWidth={2} />;
   return <CircleDashed size={size} strokeWidth={2} />;
+}
+
+/** "3 offene Befunde: 1 Datenfehler · 2 Entscheidungen" — zero parts are left out, singular/plural handled. */
+export function findingsText(t: (k: Key | string, p?: Record<string, string | number>) => string, corr: number, dec: number, withTotal = true) {
+  const parts = [corr ? t('co.f.err', { n: corr }) : '', dec ? t('co.f.dec', { n: dec }) : ''].filter(Boolean).join(' · ');
+  return withTotal ? `${t('co.f.total', { n: corr + dec })}: ${parts}` : parts;
 }
 
 /* ---------------- One state system for the whole UI ----------------
@@ -191,20 +199,23 @@ export function constructRail(t: (k: Key | string, p?: Record<string, string | n
   const households = participants.filter((x) => x.kind === 'HOUSEHOLD');
   const done = households.filter((x) => x.status === 'DONE').length;
   const items = openItems(data.cases).filter((w) => (w.issue?.constructIds.split(',') ?? [w.c.constructId]).includes(constructId));
-  const findings = items.filter((w) => w.category === 'DECISION' || w.category === 'CORRECTION').length;
+  const corr = items.filter((w) => w.category === 'CORRECTION').length;   // data errors
+  const dec = items.filter((w) => w.category === 'DECISION').length;      // decisions
+  const findings = corr + dec;
   const vszOk = c.vszConfirmed === c.vszTotal;
   const hint = (i: number) => `${t(`stage.${STAGES[i - 1]}`)} — ${t(`stage.${i}.what`)}`;
 
   /**
    * A stage is judged only by what happens IN that stage, aggregated over the participants' own step states
-   * (the same steps the case drawer shows). Participants stopped in an earlier stage don't make it look untouched.
+   * (the same steps the case drawer shows). A participant that never reached a stage (stopped earlier) is counted
+   * in the stage where it stopped, not here — so a full circle means: everyone who got this far passed it.
    */
   const STEP_IDS: Record<string, string[]> = { PRUEFUNG: ['PRUEFUNG'], PREREQ: ['PREREQ'], UMSTELLUNG: ['MEMA', 'MAMA', 'RUHEND'], UEBERGABE: ['UEBERGABE'] };
   const stage = (id: string): { state: RailState; count: string } => {
     if (!validated) return { state: running ? 'now' : 'todo', count: '–' };
     let relevant = 0, passed = 0, act = 0, wait = 0;
     for (const x of participants) {
-      const st = x.steps.filter((s) => STEP_IDS[id].includes(s.id) && s.state !== 'NA').map((s) => s.state);
+      const st = x.steps.filter((s) => STEP_IDS[id].includes(s.id) && s.state !== 'NA' && s.state !== 'SKIP').map((s) => s.state);
       if (!st.length) continue;
       relevant++;
       if (st.includes('FAIL')) act++;
@@ -217,7 +228,8 @@ export function constructRail(t: (k: Key | string, p?: Record<string, string | n
   const pruefung = stage('PRUEFUNG'), prereq = stage('PREREQ'), umst = stage('UMSTELLUNG'), ueb = stage('UEBERGABE');
   const nodes: RailNode[] = [
     { id: 'ANMELDUNG', label: t('rail.ANMELDUNG'), state: validated ? 'ok' : running ? 'now' : 'todo', count: String(cases.length), hint: hint(1) },
-    { id: 'PRUEFUNG', label: t('rail.PRUEFUNG'), state: pruefung.state === 'wait' || (findings && pruefung.state === 'ok') ? 'act' : pruefung.state, count: pruefung.count, hint: hint(2) },
+    // Most urgent open finding decides the colour: data error (red) > decision (violet). The tooltip spells out the split.
+    { id: 'PRUEFUNG', label: t('rail.PRUEFUNG'), state: !validated ? pruefung.state : corr ? 'err' : dec ? 'act' : pruefung.state === 'wait' ? 'act' : pruefung.state, count: pruefung.count, hint: `${hint(2)}${validated && findings ? ` · ${findingsText(t, corr, dec, false)}` : ''}` },
     { id: 'VSZ', label: t('rail.VSZ'), state: !validated ? (running ? 'now' : 'todo') : vszOk ? 'ok' : 'wait', count: `${c.vszConfirmed}/${c.vszTotal}`, hint: hint(3) },
     { id: 'PREREQ', label: t('rail.PREREQ'), state: prereq.state === 'act' ? 'wait' : prereq.state, count: prereq.count, hint: hint(4) }, // prerequisites wait for an external status
     { id: 'UMSTELLUNG', label: t('rail.UMSTELLUNG'), state: umst.state, count: umst.count, hint: hint(5) },
@@ -225,7 +237,7 @@ export function constructRail(t: (k: Key | string, p?: Record<string, string | n
   ];
   // Playback: stages before `reveal` show their real result, the current one is running, later ones wait.
   const shown: RailNode[] = reveal === undefined ? nodes : nodes.map((n, i) => (i < reveal ? n : i === reveal ? { ...n, state: 'now' as UiState, count: '…' } : { ...n, state: 'todo' as UiState, count: '–' }));
-  return { nodes: shown, done, total: households.length, open: items.length, items, validated, handover: data.outbox.filter((e) => e.constructId === constructId).length };
+  return { nodes: shown, done, total: households.length, open: items.length, items, corr, dec, validated, handover: data.outbox.filter((e) => e.constructId === constructId).length };
 }
 
 /* ---------------- Toasts ---------------- */
@@ -242,7 +254,7 @@ export function useToasts() {
       {items.map((i) => (
         <div key={i.id} className={`toast ${i.tone === 'err' ? 'err' : ''}`}>
           {i.tone === 'err' ? <X size={18} /> : <Check size={18} />}<span>{i.message}</span>
-          <button className="x" aria-label="close" onClick={() => setItems((x) => x.filter((y) => y.id !== i.id))}><X size={14} /></button>
+          <button className="x" aria-label={translate(document.documentElement.lang === 'en' ? 'en' : 'de', 'common.close')} onClick={() => setItems((x) => x.filter((y) => y.id !== i.id))}><X size={14} /></button>
         </div>
       ))}
     </div>
@@ -250,8 +262,11 @@ export function useToasts() {
   return { push, view };
 }
 
-/** Error text for API errors, translated where we know the cause. */
-export function errorText(t: (k: Key | string) => string, e: unknown) {
-  const m = e instanceof Error ? e.message : String(e);
-  return m === 'NETWORK' ? t('common.offline') : m;
+/** Error text for API errors, always in the UI language: stable code + parameters → translated sentence. */
+export function errorText(t: (k: Key | string, p?: Record<string, string | number>) => string, e: unknown) {
+  if (e instanceof ApiError) {
+    const text = t(`err.${e.code}`, e.params);
+    return text === `err.${e.code}` ? t('err.ERROR') : text;
+  }
+  return t('err.ERROR');
 }

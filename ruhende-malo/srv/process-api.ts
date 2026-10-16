@@ -40,7 +40,7 @@ export default class ProcessApi extends cds.ApplicationService {
   async init(): Promise<void> {
     // Domain errors map to HTTP status codes; anything else is a 500 — never a false success.
     const guard = <T>(fn: (req: cds.Request) => Promise<T>) => async (req: cds.Request) => {
-      try { return await fn(req); } catch (e) { return e instanceof ProcessError ? req.reject(e.status, e.message) : req.reject(500, e instanceof Error ? e.message : String(e)); }
+      try { return await fn(req); } catch (e) { return e instanceof ProcessError ? req.reject({ status: e.status, code: e.errorCode, message: e.message, args: [JSON.stringify(e.params)] }) : req.reject(500, e instanceof Error ? e.message : String(e)); }
     };
 
     this.on('cases', guard(async (req) => listCases(cds.tx(req))));
@@ -50,10 +50,10 @@ export default class ProcessApi extends cds.ApplicationService {
     /* ---------------- S1 Anmeldung */
     this.on('registerConstruct', guard(async (req) => {
       const input = (req.data as { construct?: RegistrationInput }).construct;
-      if (!input?.buildingId?.trim()) throw new ProcessError(400, 'construct.buildingId is required.');
-      if (!Array.isArray(input.participants) || input.participants.length === 0) throw new ProcessError(400, 'construct.participants must contain at least one row.');
+      if (!input?.buildingId?.trim()) throw new ProcessError(400, 'construct.buildingId is required.', 'BUILDING_REQUIRED');
+      if (!Array.isArray(input.participants) || input.participants.length === 0) throw new ProcessError(400, 'construct.participants must contain at least one row.', 'PARTICIPANTS_REQUIRED');
       const missing = input.participants.findIndex((p) => !p.role || !p.maloId || !p.meloId);
-      if (missing >= 0) throw new ProcessError(400, `participants[${missing}]: role, maloId and meloId are required.`);
+      if (missing >= 0) throw new ProcessError(400, `participants[${missing}]: role, maloId and meloId are required.`, 'PARTICIPANT_FIELDS_REQUIRED', { index: missing });
       const tx = cds.tx(req);
       const result = await registerConstructs(tx, rowsFromRegistration(input), { file: 'API', actor: actorOf(req) }, { stichtag: input.stichtag });
       await continueProcessing(tx, result.constructIds, actorOf(req)); // Anmeldung is an event: process at once
@@ -61,10 +61,10 @@ export default class ProcessApi extends cds.ApplicationService {
     }));
     this.on('importWorkbook', guard(async (req) => {
       const d = req.data as { fileName?: string; contentBase64?: string };
-      if (!d.contentBase64) throw new ProcessError(400, 'contentBase64 is required.');
+      if (!d.contentBase64) throw new ProcessError(400, 'contentBase64 is required.', 'FILE_REQUIRED');
       let parsed;
       try { parsed = parseParticipantWorkbook(Buffer.from(d.contentBase64, 'base64'), d.fileName ?? 'upload.xlsx'); }
-      catch (e) { throw new ProcessError(422, `Workbook rejected: ${e instanceof Error ? e.message : String(e)}`); }
+      catch (e) { throw new ProcessError(422, `Workbook rejected: ${e instanceof Error ? e.message : String(e)}`, 'WORKBOOK_REJECTED', { detail: e instanceof Error ? e.message : String(e) }); }
       const tx = cds.tx(req);
       const result = await registerConstructs(tx, parsed.rows, { file: d.fileName ?? 'upload.xlsx', checksum: parsed.checksum, actor: actorOf(req) }, { replaceAll: true });
       await validateAll(tx, actorOf(req));
@@ -74,11 +74,11 @@ export default class ProcessApi extends cds.ApplicationService {
     /* ---------------- Status input from other systems (simulated SAP / market communication) */
     this.on('updateSapState', guard(async (req) => {
       const d = req.data as { attribute?: SapAttribute; objectId?: string; value?: string };
-      if (!d.attribute || !(d.attribute in SAP_VALUES)) throw new ProcessError(400, `attribute must be one of ${Object.keys(SAP_VALUES).join(', ')}.`);
-      if (!d.objectId || !d.value || !SAP_VALUES[d.attribute].includes(d.value)) throw new ProcessError(400, `objectId and value (${SAP_VALUES[d.attribute!]?.join(' | ')}) are required.`);
+      if (!d.attribute || !(d.attribute in SAP_VALUES)) throw new ProcessError(400, `attribute must be one of ${Object.keys(SAP_VALUES).join(', ')}.`, 'ATTRIBUTE_INVALID', { options: Object.keys(SAP_VALUES).join(', ') });
+      if (!d.objectId || !d.value || !SAP_VALUES[d.attribute].includes(d.value)) throw new ProcessError(400, `objectId and value (${SAP_VALUES[d.attribute!]?.join(' | ')}) are required.`, 'STATUS_VALUE_INVALID', { attribute: d.attribute!, options: SAP_VALUES[d.attribute!]?.join(' | ') ?? '' });
       const tx = cds.tx(req);
       const updated = await updateSapState(tx, d.attribute, d.objectId, d.value, actorOf(req));
-      if (!updated) throw new ProcessError(404, `No participant found for ${d.attribute} ${d.objectId} (imsys: MeLo, abmeldung: MaLo, mcm: Einspeise-MaLo).`);
+      if (!updated) throw new ProcessError(404, `No participant found for ${d.attribute} ${d.objectId} (imsys: MeLo, abmeldung: MaLo, mcm: Einspeise-MaLo).`, 'SAP_OBJECT_NOT_FOUND', { attribute: d.attribute, objectId: d.objectId });
       const field = d.attribute === 'imsys' ? 'meloId' : d.attribute === 'mcm' ? 'generationFeedInMaloId' : 'maloId';
       const affected = await tx.run(SELECT.from('mk7.controlcenter.ParticipantSourceRows').columns('constructId').where({ [field]: d.objectId })) as { constructId: string }[];
       await continueProcessing(tx, affected.map((a) => a.constructId), actorOf(req));
@@ -93,7 +93,7 @@ export default class ProcessApi extends cds.ApplicationService {
     }));
     this.on('resolve', 'Issues', guard(async (req) => {
       const d = req.data as { resolution: Resolution; value?: string; reason?: string };
-      if (!RESOLUTIONS.includes(d.resolution)) throw new ProcessError(400, `resolution must be one of ${RESOLUTIONS.join(', ')}.`);
+      if (!RESOLUTIONS.includes(d.resolution)) throw new ProcessError(400, `resolution must be one of ${RESOLUTIONS.join(', ')}.`, 'RESOLUTION_INVALID', { options: RESOLUTIONS.join(', ') });
       const tx = cds.tx(req);
       const report = await resolveIssue(tx, keyOf(req), d.resolution, d.value, d.reason, actorOf(req));
       await continueProcessing(tx, report.issues.flatMap((i) => i.constructIds.split(',')), actorOf(req));
@@ -101,7 +101,7 @@ export default class ProcessApi extends cds.ApplicationService {
     }));
     this.on('resolveIssues', guard(async (req) => {
       const d = req.data as { ids?: string[]; resolution: Resolution; value?: string; reason?: string };
-      if (!d.ids?.length) throw new ProcessError(400, 'ids must not be empty.');
+      if (!d.ids?.length) throw new ProcessError(400, 'ids must not be empty.', 'IDS_REQUIRED');
       const tx = cds.tx(req);
       let report;
       const constructs = new Set<string>();
@@ -123,7 +123,7 @@ export default class ProcessApi extends cds.ApplicationService {
     }));
     this.on('setStichtag', 'Constructs', guard(async (req) => {
       const stichtag = (req.data as { stichtag?: string }).stichtag;
-      if (!stichtag || !/^\d{4}-\d{2}-\d{2}$/.test(stichtag)) throw new ProcessError(400, 'stichtag must be YYYY-MM-DD.');
+      if (!stichtag || !/^\d{4}-\d{2}-\d{2}$/.test(stichtag)) throw new ProcessError(400, 'stichtag must be YYYY-MM-DD.', 'STICHTAG_FORMAT');
       const tx = cds.tx(req);
       await setStichtag(tx, keyOf(req), stichtag, actorOf(req));
       return validationReport(tx, keyOf(req));
@@ -144,17 +144,17 @@ export default class ProcessApi extends cds.ApplicationService {
 
     /* ---------------- Manual mode (one MaLo) */
     const validateCommand = (c?: Command): Command => {
-      if (!c) throw new ProcessError(400, 'Body must contain a "command" object.');
-      if (!OPERATIONS.includes(c.operation)) throw new ProcessError(400, `operation must be one of ${OPERATIONS.join(', ')}.`);
-      if (!c.maloId || !c.buildingId) throw new ProcessError(400, 'maloId and buildingId are required.');
-      if (c.operation !== 'SET_DORMANT' && !c.effectiveDate) throw new ProcessError(400, 'effectiveDate is required for lifecycle operations.');
+      if (!c) throw new ProcessError(400, 'Body must contain a "command" object.', 'COMMAND_REQUIRED');
+      if (!OPERATIONS.includes(c.operation)) throw new ProcessError(400, `operation must be one of ${OPERATIONS.join(', ')}.`, 'OPERATION_INVALID', { options: OPERATIONS.join(', ') });
+      if (!c.maloId || !c.buildingId) throw new ProcessError(400, 'maloId and buildingId are required.', 'COMMAND_FIELDS_REQUIRED');
+      if (c.operation !== 'SET_DORMANT' && !c.effectiveDate) throw new ProcessError(400, 'effectiveDate is required for lifecycle operations.', 'DATE_REQUIRED');
       return c;
     };
     const manualDormant = async (req: cds.Request, c: Command, execute: boolean) => {
       const tx = cds.tx(req);
       const ctx = await loadContext(tx);
       const construct = ctx.constructs.find((x) => x.constructId === c.buildingId);
-      if (!construct) throw new ProcessError(404, `Construct ${c.buildingId} not found.`);
+      if (!construct) throw new ProcessError(404, `Construct ${c.buildingId} not found.`, 'CONSTRUCT_NOT_FOUND', { construct: c.buildingId });
       if (c.effectiveDate && construct.stichtag && c.effectiveDate !== construct.stichtag) {
         return { operation: c.operation, status: 'BLOCKED', code: 'STICHTAG_MISMATCH', message: `The Umstellung of ${c.buildingId} uses the construct Stichtag ${construct.stichtag}. Change it with setStichtag first.`, maloId: c.maloId, buildingId: c.buildingId, effectiveDate: c.effectiveDate, canExecute: false, simulated: true, checks: [], relationships: [] };
       }
@@ -198,7 +198,7 @@ export default class ProcessApi extends cds.ApplicationService {
 
     /* ---------------- System */
     this.on('resetDemo', guard(async (req) => {
-      if ((req.data as { confirm?: boolean }).confirm !== true) throw new ProcessError(400, 'Set "confirm": true to reset the demo.');
+      if ((req.data as { confirm?: boolean }).confirm !== true) throw new ProcessError(400, 'Set "confirm": true to reset the demo.', 'CONFIRM_REQUIRED');
       const tx = cds.tx(req);
       const { rows, checksum } = await readParticipantWorkbook();
       await tx.run(DELETE.from('mk7.controlcenter.AuditEvents'));

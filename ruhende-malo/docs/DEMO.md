@@ -9,7 +9,7 @@ Before you start: `npm run dev`, open http://localhost:5173, then **⋯ → Demo
    - *Abmeldung des Lieferanten fehlt* → **Abmeldung liegt vor** (a status input, as another system would send it) → the process continues on its own → **Erledigt, ruhend**.
    - *MaLo in zwei Konstrukten* → compare both buildings side by side → reason → **Gehört zu Köln** → ruhend in Köln, Frankfurt excluded.
    - *ID-Format ungültig* (wind MeLo with 34 characters) → type the corrected MeLo. The counter turns green at 33 → reason → **Korrigieren**.
-   - *Kein iMSys* → **iMSys ist eingebaut** or **Manuell bestätigen** with a reason.
+   - Second *Abmeldung des Lieferanten fehlt* (`50539603103`) → **Manuell bestätigen** with a reason.
 5. **Übersicht:** 9 of 9 ruhend. Handover events: UTILMD after the first ruhende MaLo, plus INVOIC per MaLo. All recorded, nothing sent.
 6. **Lifecycle:** open a ruhende MaLo → *Weitere Aktionen* → **Wiederaktivieren** 01.12.2026 → *Prüfen* → *Ausführen* → Zeitscheiben show Aktiv → Ruhend → Aktiv.
 7. **EN:** switch the language. The same screens appear in English, and the market terms stay German.

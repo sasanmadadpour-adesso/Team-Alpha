@@ -63,7 +63,7 @@ const ok = (status: string, ...good: string[]) => [...good, 'CONFIRMED_MANUAL'].
  * Validates all constructs together (cross-construct rules need the full picture).
  * `acknowledged` holds fingerprints of findings a person explicitly accepted (CONFIRM_ASSUMPTION without data change).
  */
-export function validateConstructs(constructs: RuleConstruct[], allRows: RuleRow[], periods: RulePeriod[], acknowledged: Set<string> = new Set()): Finding[] {
+export function validateConstructs(constructs: RuleConstruct[], allRows: RuleRow[], periods: RulePeriod[], acknowledged: Set<string> = new Set(), switched: Set<string> = new Set()): Finding[] {
   const rows = allRows.filter((r) => !r.excluded);
   const findings: Finding[] = [];
   const add = (f: Omit<Finding, 'step'> & { step?: Finding['step'] }) => { if (!acknowledged.has(f.fingerprint)) findings.push({ step: 'PRUEFUNG', ...f }); };
@@ -116,7 +116,7 @@ export function validateConstructs(constructs: RuleConstruct[], allRows: RuleRow
     } else {
       for (const r of hh) {
         const dormant = periods.find((p) => p.maloId === r.maloId && p.businessState === 'RUHEND' && !p.validToExclusive);
-        if (dormant && dormant.validFrom !== c.stichtag) add({ fingerprint: `V12|${r.maloId}|${c.stichtag}`, ruleId: 'V12', checkGroup: 'Zeitscheiben', severity: 'ERROR', constructIds: [c.constructId], objectType: 'MALO', objectId: r.maloId, message: `MaLo is already RUHEND since ${dormant.validFrom}; a second Zeitscheibe from ${c.stichtag} would overlap. Use Korrektur in manual mode.`, allowedResolutions: ['EXCLUDE_PARTICIPANT'], affects: [`MALO:${r.maloId}`] });
+        if (dormant && dormant.validFrom !== c.stichtag && !switched.has(`${c.constructId}|${r.maloId}`)) add({ fingerprint: `V12|${r.maloId}|${c.stichtag}`, ruleId: 'V12', checkGroup: 'Zeitscheiben', severity: 'ERROR', constructIds: [c.constructId], objectType: 'MALO', objectId: r.maloId, message: `MaLo is already RUHEND since ${dormant.validFrom}; a second Zeitscheibe from ${c.stichtag} would overlap. Use Korrektur in manual mode.`, allowedResolutions: ['EXCLUDE_PARTICIPANT'], affects: [`MALO:${r.maloId}`] });
       }
     }
   }

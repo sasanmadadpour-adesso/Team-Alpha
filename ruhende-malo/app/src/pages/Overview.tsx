@@ -9,7 +9,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const STAGE_MS = [380, 420, 620, 460, 620, 420]; // vSZ and the switch take longest: that's where most work happens
 
 export function OverviewPage() {
-  const { data: live, refresh, toast, go } = useApp();
+  const { data: live, refresh, toast, go, pause } = useApp();
   const { t, lang } = useI18n();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ProcessResult>();
@@ -26,7 +26,7 @@ export function OverviewPage() {
   const lastRun = data.events.find((e) => e.operation === 'VALIDATE')?.eventTime;
 
   const run = async () => {
-    setRunning(true); setResult(undefined); setBefore(live);
+    setRunning(true); setResult(undefined); setBefore(live); pause(true);
     try {
       const r = await processAll();           // the real run: all rules, writes, read-back, audit (about 0.1 s)
       const fresh = await refresh();          // the real result
@@ -40,7 +40,7 @@ export function OverviewPage() {
       await sleep(250);
       setBefore(undefined); setReveal({}); setResult(r);
     } catch (e) { setBefore(undefined); setReveal({}); toast(errorText(t, e), 'err'); }
-    setRunning(false);
+    pause(false); setRunning(false);
   };
 
   return (

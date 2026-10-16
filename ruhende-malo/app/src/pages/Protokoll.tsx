@@ -20,6 +20,10 @@ export function eventSubject(e: AuditEvent, data: Snapshot): string {
   return e.maloId ?? '';
 }
 
+/** Operations whose `reason` is text a person typed (everything else is system-generated and not shown). */
+const HUMAN_REASON = new Set(['RESOLVE_ISSUE', 'CONFIRM_VSZ', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION']);
+export const humanReason = (e: AuditEvent) => (HUMAN_REASON.has(e.operation) ? e.reason ?? '' : '');
+
 const tone = (op: string) => (['SET_DORMANT', 'MAINTAIN_EINSPEISE_MEMA', 'CONFIRM_VSZ'].includes(op) ? 'ok' : ['RESOLVE_ISSUE', 'SAP_STATE_UPDATE', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION'].includes(op) ? 'act' : '');
 
 /** Compact history list, used on the construct page. */
@@ -63,7 +67,7 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
     if (!showChecks && e.operation === 'VALIDATE') return false;
     if (operation && e.operation !== operation) return false;
     if (construct && !eventConstructs(e, data).includes(construct)) return false;
-    if (query && !`${e.maloId ?? ''} ${eventSubject(e, data)} ${e.reason ?? ''} ${e.actor}`.toLowerCase().includes(query.toLowerCase())) return false;
+    if (query && !`${e.maloId ?? ''} ${eventSubject(e, data)} ${humanReason(e)} ${e.actor}`.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
 
@@ -105,7 +109,7 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
                   <td><span className={`chip ${tone(e.operation) || 'neutral'}`}>{t(`act.${e.operation}`)}</span></td>
                   <td className={e.maloId ? 'mono' : ''}>{eventSubject(e, data)}</td>
                   <td>{actor(e.actor)}</td>
-                  <td className="why">{e.operation === 'SET_DORMANT' || e.operation === 'VALIDATE' ? '' : e.reason}</td>
+                  <td className="why">{humanReason(e)}</td>
                 </tr>
               );
             })}

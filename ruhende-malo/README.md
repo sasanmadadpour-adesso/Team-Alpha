@@ -69,11 +69,11 @@ One run processes every participant through all steps; **the pipeline never stop
 - Waiting for Korrektur:
   - `50539603888`: in two constructs (V05)
   - `50539603876`: Abmeldung of the current supplier pending (V11)
-  - `50539603103`: no iMSys (V10)
+  - `50539603103`: Abmeldung of the current supplier pending (V11)
   - the wind MeLo with 34 characters (V02)
   - one Einspeise-MaLo shared by three generators (V14)
 - `50539603604` is skipped (Teilnahme nein).
-- After the status input "Abmeldung received" (`POST /updateSapState`), the building decision and the iMSys confirmation, **9 of 9 are ruhend**.
+- After the status input "Abmeldung received" (`POST /updateSapState`), the building decision and a manual confirmation, **9 of 9 are ruhend**.
 - The BDEW check digit (V03) fails for all workbook IDs (synthetic test data). It is shown as a notice and blocks nothing.
 
 ## User interface

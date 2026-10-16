@@ -106,7 +106,7 @@ export function buildSwitchPlan(input: SwitchInput): SwitchPlan {
   }
 
   const open = input.relationships.filter((r) => !r.validToExclusive || r.validToExclusive > stichtag!);
-  const exists = (kind: string, from: string, to: string) => open.some((r) => r.kind === kind && r.fromLocationId === from && r.toLocationId === to && (r.validFrom ?? '') <= stichtag!);
+  const exists = (kind: string, from: string, to: string) => open.some((r) => r.kind === kind && r.fromLocationId === from && r.toLocationId === to); // an open record that starts later was set deliberately (Korrektur): never book a second one
   const rel = (kind: 'MEMA' | 'MAMA', context: RelationshipContext, pdfRef: string, fromId: string, toId: string, ownerKey: string): PlannedRelationship =>
     ({ kind, context, pdfRef, fromId, toId, validFrom: stichtag!, validToExclusive: null, status: exists(kind, fromId, toId) ? 'EXISTS' : 'TO_CREATE', ownerKey });
 
@@ -137,7 +137,8 @@ export function buildSwitchPlan(input: SwitchInput): SwitchPlan {
     const state = input.states.get(r.maloId);
     if (state === 'RUHEND' && input.completed.has(r.maloId)) {
       clearedMelos.push(r.meloId);
-      if (memo.status === 'EXISTS' && mama.status === 'EXISTS') {
+      const openAny = (kind: string, from: string, to: string) => open.some((x) => x.kind === kind && x.fromLocationId === from && x.toLocationId === to);
+      if (openAny('MEMA', reststrom!, r.meloId) && openAny('MAMA', r.maloId, reststrom!)) {   // start dates may have been corrected: only existence matters here
         relationships.push(memo, mama);
         items.push(item(r, 'ALREADY_DONE', 'ALREADY_DONE', 'Already RUHEND with MeMa and MaMa for this Stichtag.', STEP_ORDER.map((id) => ({ id, state: 'DONE' as StepState, detail: '' }))));
         continue;
