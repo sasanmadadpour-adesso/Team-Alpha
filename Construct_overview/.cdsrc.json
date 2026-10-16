@@ -1,0 +1,8 @@
+{
+  "requires": {
+    "db": false
+  },
+  "odata": {
+    "version": "v4"
+  }
+}

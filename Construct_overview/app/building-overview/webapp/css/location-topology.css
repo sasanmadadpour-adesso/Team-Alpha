@@ -1,0 +1,18 @@
+/* Metering and market locations graphic. Scoped under .vnbLt. */
+.vnbLtRoot { width: 100%; }
+.vnbLt { padding: 1rem; border: 1px solid #d5dadd; border-radius: .75rem; background: linear-gradient(135deg, #f8fbfd, #f2f8f8); box-sizing: border-box; }
+.vnbLt-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+.vnbLt-card { flex: 1 1 14rem; min-width: 12rem; padding: .8rem 1rem; border: 1px solid #d5dadd; border-top: .25rem solid #0a6ed1; border-radius: .6rem; background: #fff; box-sizing: border-box; box-shadow: 0 .125rem .35rem rgb(0 0 0 / 6%); }
+.vnbLt-card h4 { margin: 0 0 .5rem; font-size: .95rem; color: #20343a; }
+.vnbLt-card p { margin: .3rem 0 0; color: #64777d; font-size: .8rem; }
+.vnbLt-own { border-top-color: #0a6ed1; }
+.vnbLt-counter { border-top-color: #0f828f; border-width: 2px; border-top-width: .25rem; border-color: #0f828f; background: #f4fbfb; }
+.vnbLt-grid { flex: 0 1 10rem; border-top-color: #7f8c8d; background: #f1f4f5; }
+.vnbLt-kind { font-weight: 600; color: #075d66 !important; }
+.vnbLt-row { display: flex; flex-direction: column; margin-top: .45rem; font-size: .75rem; color: #64777d; }
+.vnbLt-id { color: #20343a; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8rem; font-weight: 600; overflow-wrap: anywhere; }
+.vnbLt-wire { flex: 0 0 2.5rem; align-self: center; height: 3px; background: #526d73; position: relative; }
+.vnbLt-wire::after { content: ""; position: absolute; right: -1px; top: -.3rem; border-top: .4rem solid transparent; border-bottom: .4rem solid transparent; border-left: .6rem solid #526d73; }
+.vnbLt-link { display: inline-block; margin-top: .6rem; font-size: .8rem; font-weight: 600; color: #176e99; text-decoration: underline; text-underline-offset: .15rem; }
+.vnbLt-note { margin: .8rem 0 0; color: #64777d; font-size: .85rem; }
+@media (max-width: 48rem) { .vnbLt-flow { flex-direction: column; } .vnbLt-wire { width: 3px; height: 1.6rem; flex-basis: 1.6rem; } .vnbLt-wire::after { right: auto; left: -.3rem; top: auto; bottom: -1px; border: .4rem solid transparent; border-top: .6rem solid #526d73; border-bottom: 0; } .vnbLt-grid { flex-basis: auto; } }

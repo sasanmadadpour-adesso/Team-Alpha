@@ -1,0 +1,57 @@
+{
+  "_version": "1.77.0",
+  "sap.app": {
+    "id": "vnb.constructs",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": { "version": "1.0.0" },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/energy-overview/",
+        "type": "OData",
+        "settings": { "odataVersion": "4.0", "annotations": [] }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": { "icon": "sap-icon://connected" },
+    "deviceTypes": { "desktop": true, "tablet": true, "phone": true }
+  },
+  "sap.ui5": {
+    "flexEnabled": false,
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": { "sap.m": {}, "sap.ui.core": {}, "sap.fe.templates": {}, "sap.f": {}, "sap.ui.layout": {} }
+    },
+    "models": {
+      "i18n": { "type": "sap.ui.model.resource.ResourceModel", "settings": { "bundleName": "vnb.constructs.i18n.i18n" } },
+      "": { "dataSource": "mainService", "preload": true, "settings": { "operationMode": "Server", "autoExpandSelect": true, "earlyRequests": true, "synchronizationMode": "None" } }
+    },
+    "resources": { "css": [{ "uri": "css/style.css" }, { "uri": "css/building-house.css" }, { "uri": "css/location-topology.css" }] },
+    "routing": {
+      "config": {},
+      "routes": [
+        { "pattern": ":?query:", "name": "Overview", "target": "Overview" },
+        { "pattern": "Constructs({key}):?query:", "name": "ConstructsObjectPage", "target": "ConstructsObjectPage" },
+        { "pattern": "Buildings({key}):?query:", "name": "BuildingsObjectPage", "target": "BuildingsObjectPage" }
+      ],
+      "targets": {
+        "Overview": {
+          "type": "Component", "id": "Overview", "name": "vnb.constructs.overview",
+          "options": { "settings": {} }
+        },
+        "ConstructsObjectPage": {
+          "type": "Component", "id": "ConstructsObjectPage", "name": "sap.fe.templates.ObjectPage",
+           "options": { "settings": { "contextPath": "/Constructs", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "SharedMeLoTopology": { "template": "vnb.constructs.ext.Topology", "title": "{i18n>topologyTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
+        },
+        "BuildingsObjectPage": {
+           "type": "Component", "id": "BuildingsObjectPage", "name": "sap.fe.templates.ObjectPage",
+            "options": { "settings": { "contextPath": "/Buildings", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "BuildingSchematic": { "template": "vnb.constructs.ext.BuildingSchematic", "title": "{i18n>schematicTitle}", "position": { "placement": "After", "anchor": "EnergySummary" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "BuildingSchematic" } } } } } } }
+        }
+      }
+    }
+  }
+}
