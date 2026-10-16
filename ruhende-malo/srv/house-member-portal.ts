@@ -42,6 +42,14 @@ function aggregate(consumption:Consumption[],generation:Generation[],memberMalo:
 }
 
 export class PortalError extends Error{constructor(readonly status:number,readonly code:string,message:string,readonly details:object={}){super(message)}}
+/** Privacy-minimal member check: no master data is returned and ambiguous identities never validate. */
+export async function validateHouseMember(malo:string,houseNumber:string):Promise<boolean>{
+  if(!malo||!houseNumber) return false;
+  const rows=await cds.db.run(SELECT.from(ns('ParticipantSourceRows')).columns('buildingId','streetAddress').where({maloId:malo,role:'Haushaltsverbrauch',participates:true,excluded:false})) as {buildingId:string;streetAddress?:string}[];
+  if(rows.length!==1) return false;
+  const actual=rows[0].streetAddress?.trim().match(/(?:^|\s)(\d+[a-zA-Z]?)\s*$/)?.[1];
+  return actual?.toLocaleLowerCase('de')===houseNumber.trim().toLocaleLowerCase('de');
+}
 export async function houseMemberPortal(malo:string,range:PortalRange,building?:string){
   const db=cds.db;
   const assignments=await db.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId','buildingId','maloId','meloId','role','participates','excluded','streetAddress','city','sourceData').where({maloId:malo})) as Array<Record<string,unknown>>;

@@ -29,6 +29,7 @@ const context = (d: Snapshot): Ctx => ({
 const DEMO = { construct: 'B-API-01', reststrom: '50000000101', household: '50000000110', meloR: `DE${'0'.repeat(30)}9`, meloH: `DE${'0'.repeat(30)}1` };
 const CATALOGUE: Ep[] = [
   { id: 'houseMemberPortal', method: 'GET', path: '/house-member-portal?malo=50539603888&range=7d', group: 'portal', need: 'READ', title: 'api.e.houseMemberPortal' },
+  { id: 'validateHouseMember', method: 'GET', path: '/validate-house-member?malo=50539603888&houseNumber=21', group: 'portal', need: 'READ', title: 'api.e.validateHouseMember' },
   { id: 'producerOnboarding', method: 'POST', path: '/producer-onboardings', group: 'registration', need: 'WRITE', title: 'api.e.producerOnboarding', body: () => ({
     first_name:'Anna',last_name:'Schmidt',email:'anna.schmidt@example.de',salutation:'Frau',is_business:true,is_reverse_charge:false,
     deliv_address_street:'Rathausmarkt',deliv_address_house_number:'1',deliv_address_zipcode:'20095',deliv_address_city:'Hamburg',subscription_reason:'E01',

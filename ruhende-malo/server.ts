@@ -3,7 +3,7 @@ import express from 'express';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { accessCodeRequired, accessCodeValid, actionOf, allowed, createLimiter, hashKey, isKeyToken, needFor, verifySession, type Principal, type Role } from './srv/auth.js';
-import { houseMemberPortal, PORTAL_RANGES, PortalError, type PortalRange } from './srv/house-member-portal.js';
+import { houseMemberPortal, PORTAL_RANGES, PortalError, validateHouseMember, type PortalRange } from './srv/house-member-portal.js';
 
 /**
  * Access layer for /api/v1 (demo, not real authentication): resolves the caller from "Authorization: Bearer <token>"
@@ -64,8 +64,8 @@ cds.on('bootstrap', (app: express.Express) => {
     if (req.method === 'GET' && req.path.startsWith('/ProducerRegistrations') && !principal) {
       return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to read producer registrations.');
     }
-    if (req.method === 'GET' && req.path === '/house-member-portal' && !principal) {
-      return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to read house-member portal data.');
+    if (req.method === 'GET' && ['/house-member-portal','/validate-house-member'].includes(req.path) && !principal) {
+      return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to access house-member data.');
     }
 
     if (req.method === 'POST') {
@@ -97,6 +97,11 @@ cds.on('bootstrap', (app: express.Express) => {
     if(!PORTAL_RANGES.includes(range)) return reject(res,400,'INVALID_RANGE',`range must be one of ${PORTAL_RANGES.join(', ')}.`,{ranges:PORTAL_RANGES});
     try{return res.json(await houseMemberPortal(malo,range,building));}
     catch(e){return e instanceof PortalError?reject(res,e.status,e.code,e.message,e.details):reject(res,500,'PORTAL_ERROR',e instanceof Error?e.message:String(e));}
+  });
+
+  app.get('/api/v1/validate-house-member',async(req,res)=>{
+    const malo=String(req.query.malo??'').trim(),houseNumber=String(req.query.houseNumber??'').trim();
+    return res.json(await validateHouseMember(malo,houseNumber));
   });
 
   /** External Registration MVP contract. It only records onboarding; it never mutates the Ruhendstellung process. */

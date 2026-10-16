@@ -27,3 +27,12 @@ Member local energy is allocated in proportion to each member's hourly consumpti
 A Bearer session or API key is required. Recommended for another MVP: a backend-only `VIEWER` key. Never expose it in browser JavaScript.
 
 Errors: `400 MALO_REQUIRED`, `400 INVALID_RANGE`, `401 AUTH_REQUIRED`, `404 MALO_NOT_FOUND`, `409 AMBIGUOUS_MALO`, and `422 ENERGY_DATA_UNAVAILABLE`.
+
+## Minimal member validation
+
+```http
+GET /api/v1/validate-house-member?malo=50539603888&houseNumber=21
+Authorization: Bearer rk_...
+```
+
+The response is only the JSON boolean `true` or `false`. It returns `false` for missing, unknown, mismatched, ambiguous, excluded, or nonparticipating records. The check is read-only and does not disclose an address or explain which input was wrong.
