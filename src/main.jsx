@@ -4,12 +4,12 @@ import './styles.css';
 import Globe from './Globe.jsx';
 
 const initialRecords = [
-  { id: 'B-FRA-01', city: 'Frankfurt am Main', producer: 'Jan Koller', type: 'Solar', participants: 5, status: 'Aktiv', contractStart: '2026-10-01', contractEnd: '2027-10-01', date: '15.10.2026', lat: 50.11, lon: 8.68 },
-  { id: 'B-CGN-01', city: 'Köln', producer: 'Roman Weidenfeller', type: 'Wind', participants: 4, status: 'Aktiv', contractStart: '2026-09-14', contractEnd: '2027-12-20', date: '14.10.2026', lat: 50.94, lon: 6.96 },
-  { id: 'B-MUL-01', city: 'Mülheim an der Ruhr', producer: 'Jan Koller', type: 'Solar', participants: 8, status: 'Aktiv', contractStart: '2026-08-01', contractEnd: '2027-11-05', date: '12.10.2026', lat: 51.43, lon: 6.88 },
-  { id: 'B-DTM-01', city: 'Dortmund', producer: 'Netzgebiet Dortmund', type: 'Wind', participants: 6, status: 'Aktiv', contractStart: '2026-01-01', contractEnd: '2027-10-10', date: '10.10.2026', lat: 51.51, lon: 7.46 },
-  { id: 'B-HAM-01', city: 'Hamburg', producer: 'Netzgebiet Hamburg', type: 'Solar', participants: 3, status: 'Aktiv', contractStart: '2026-01-01', contractEnd: '2027-09-30', date: '09.10.2026', lat: 53.55, lon: 10.00 },
-  { id: 'B-MUC-01', city: 'München', producer: 'Netzgebiet München', type: 'Solar', participants: 7, status: 'Aktiv', contractStart: '2026-02-08', contractEnd: '2028-02-08', date: '08.10.2026', lat: 48.14, lon: 11.58 }
+  { id: 'B-FRA-01', ownerUsername: 'frankfurt_VNB', city: 'Frankfurt am Main', producer: 'Jan Koller', type: 'Solar', participants: 5, status: 'Aktiv', contractStart: '2026-10-01', contractEnd: '2027-10-01', date: '15.10.2026', lat: 50.11, lon: 8.68 },
+  { id: 'B-CGN-01', ownerUsername: 'köln_VNB', city: 'Köln', producer: 'Roman Weidenfeller', type: 'Solar', participants: 4, status: 'Aktiv', contractStart: '2026-09-14', contractEnd: '2027-12-20', date: '14.10.2026', lat: 50.94, lon: 6.96 },
+  { id: 'B-MUL-01', ownerUsername: 'mülheim_VNB', city: 'Mülheim an der Ruhr', producer: 'Jan Koller', type: 'Solar', participants: 8, status: 'Aktiv', contractStart: '2026-08-01', contractEnd: '2027-11-05', date: '12.10.2026', lat: 51.43, lon: 6.88 },
+  { id: 'B-DTM-01', ownerUsername: 'dortmund_VNB', city: 'Dortmund', producer: 'Netzgebiet Dortmund', type: 'Wind', participants: 6, status: 'Aktiv', contractStart: '2026-01-01', contractEnd: '2027-10-10', date: '10.10.2026', lat: 51.51, lon: 7.46 },
+  { id: 'B-HAM-01', ownerUsername: 'hamburg_VNB', city: 'Hamburg', producer: 'Netzgebiet Hamburg', type: 'Solar', participants: 3, status: 'Aktiv', contractStart: '2026-01-01', contractEnd: '2027-09-30', date: '09.10.2026', lat: 53.55, lon: 10.00 },
+  { id: 'B-MUC-01', ownerUsername: 'münchen_VNB', city: 'München', producer: 'Netzgebiet München', type: 'Solar', participants: 7, status: 'Aktiv', contractStart: '2026-02-08', contractEnd: '2028-02-08', date: '08.10.2026', lat: 48.14, lon: 11.58 }
 ];
 
 const vnbUsers = [
@@ -30,12 +30,16 @@ const splitAddress = value => {
 };
 const toVerificationPayload = (form, constructType) => {
   const address = splitAddress(form.street);
+  const firstGenerator = form.units?.find(unit => unit.kind === 'generator' && unit.generator_melo);
+  const firstUnit = form.units?.find(unit => unit.kind !== 'generator' && unit.melo);
+  const verificationMelo = constructType === 'building' ? (firstGenerator?.generator_melo || firstUnit?.melo) : form.melo;
+  const verificationMalo = constructType === 'building' ? (firstGenerator?.generator_malo || form.malo) : form.malo;
   return {
     first_name: form.first.trim(), last_name: form.last.trim(), email: form.email.trim(), is_business: true, is_reverse_charge: false,
     deliv_address_street: address.street, deliv_address_house_number: address.houseNumber, deliv_address_zipcode: form.postalCode.trim(), deliv_address_city: form.city.trim(),
     subscription_reason: constructType === 'building' ? 'E02' : 'E01', construct_type: constructType === 'building' ? 'BUILDING' : 'FEED_IN',
-    production_type: form.type, plant_capacity_kw: form.type === 'Keine' ? 0 : Number(form.capacity), plant_specifics: { latitude: form.lat, longitude: form.lon },
-    market_location_identifier: form.malo.trim(), contract_start_utc: `${form.contractStart}T00:00:00Z`, contract_end_utc: `${form.contractEnd}T00:00:00Z`, building_id: form.id || `B-${form.city.slice(0, 3).toUpperCase()}-NEW`
+    production_type: constructType === 'building' ? 'Keine' : form.type, plant_capacity_kw: constructType === 'building' ? 0 : form.type === 'Keine' ? 0 : Number(form.capacity), plant_specifics: { latitude: form.lat, longitude: form.lon },
+    market_location_identifier: verificationMelo?.trim() || null, market_location_malo: verificationMalo?.trim() || form.malo.trim(), building_market_location_malo: constructType === 'building' ? form.malo.trim() : null, units: constructType === 'building' ? form.units : undefined, contract_start_utc: `${form.contractStart}T00:00:00Z`, contract_end_utc: `${form.contractEnd}T00:00:00Z`, building_id: form.id || `B-${form.city.slice(0, 3).toUpperCase()}-NEW`
   };
 };
 async function verifyWithBackend(form, constructType) {
@@ -58,11 +62,6 @@ async function verifyWithBackend(form, constructType) {
     : result;
 }
 
-const initialUnits = [
-  { id: 'DE0001815707800000101300000139372', name: 'Wohnung 1. OG links', type: 'Wohnung', malo: '50539603888', status: 'Ausstehend' },
-  { id: 'DE0001815707800000101300000131094', name: 'Wohnung 1. OG rechts', type: 'Wohnung', malo: '50539603532', status: 'Ausstehend' }
-];
-
 const participants = [
   { role: 'Solar Plant', city: 'Frankfurt am Main', id: 'DE0073325707820000000000000088943', malo: '51781123293', status: 'Ja' },
   { role: 'Solar Plant', city: 'Mülheim an der Ruhr', id: 'DE0073325707820000000000000089012', malo: '51781124001', status: 'Ja' },
@@ -76,10 +75,14 @@ function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [registering, setRegistering] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [city, setCity] = useState('');
 
   const submit = event => {
     event.preventDefault();
-    const user = vnbUsers.find(candidate => candidate.username === username && candidate.password === password);
+    const registeredUsers = JSON.parse(localStorage.getItem('vnb-registered-users') || '[]');
+    const user = [...vnbUsers, ...registeredUsers].find(candidate => candidate.username === username && candidate.password === password);
     if (!user) {
       setError('Benutzername oder Passwort ist nicht korrekt.');
       return;
@@ -88,19 +91,33 @@ function Login({ onLogin }) {
     onLogin(user);
   };
 
+  const register = event => {
+    event.preventDefault();
+    const cleanUsername = username.trim();
+    const cleanCity = city.trim();
+    const cleanName = displayName.trim();
+    if (!cleanName || !cleanUsername || !password || !cleanCity) { setError('Name, Benutzername, Passwort und Netzgebiet sind Pflichtfelder.'); return; }
+    const registeredUsers = JSON.parse(localStorage.getItem('vnb-registered-users') || '[]');
+    if ([...vnbUsers, ...registeredUsers].some(candidate => candidate.username === cleanUsername)) { setError('Dieser Benutzername ist bereits vergeben.'); return; }
+    const user = { username: cleanUsername, password, city: cleanCity, displayName: cleanName };
+    localStorage.setItem('vnb-registered-users', JSON.stringify([...registeredUsers, user]));
+    onLogin(user);
+  };
   return <main className="login-page">
     <section className="login-card">
       <div className="login-brand"><SAPLogo/><div><strong>SAP</strong><span>Konstruktportal</span></div></div>
       <div className="eyebrow">GESCHÜTZTER BEREICH</div>
-      <h1>Anmelden</h1>
-      <p className="login-intro">Melden Sie sich mit Ihrem VNB-Zugang an, um die Konstrukte Ihres Netzgebiets zu sehen.</p>
-      <form onSubmit={submit} className="login-form">
-        <label className="field"><span>Benutzername<i>*</i></span><input autoFocus value={username} onChange={event => setUsername(event.target.value)} placeholder="z. B. hamburg_VNB" autoComplete="username"/></label>
-        <label className="field"><span>Passwort<i>*</i></span><input type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Passwort eingeben" autoComplete="current-password"/></label>
+      <h1>{registering ? 'Benutzer registrieren' : 'Anmelden'}</h1>
+      <p className="login-intro">{registering ? 'Erstellen Sie einen lokalen Zugang für Ihr Netzgebiet.' : 'Melden Sie sich mit Ihrem VNB-Zugang an, um die Konstrukte Ihres Netzgebiets zu sehen.'}</p>
+      <form onSubmit={registering ? register : submit} className="login-form">
+        {registering && <><label className="field"><span>Name<i>*</i></span><input autoFocus value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder="z. B. Anna Schmidt" autoComplete="name"/></label><label className="field"><span>Netzgebiet / Stadt<i>*</i></span><input value={city} onChange={event => setCity(event.target.value)} placeholder="z. B. Hamburg"/></label></>}
+        <label className="field"><span>Benutzername<i>*</i></span><input autoFocus={!registering} value={username} onChange={event => setUsername(event.target.value)} placeholder="z. B. hamburg_VNB" autoComplete="username"/></label>
+        <label className="field"><span>Passwort<i>*</i></span><input type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="Passwort eingeben" autoComplete={registering ? 'new-password' : 'current-password'}/></label>
         {error && <div className="login-error"><Icon name="alert"/>{error}</div>}
-        <button className="primary login-submit" type="submit">Anmelden <Icon name="arrow"/></button>
+        <button className="primary login-submit" type="submit">{registering ? 'Registrieren' : 'Anmelden'} <Icon name="arrow"/></button>
       </form>
         <small className="login-hint">Testzugänge: frankfurt_VNB · hamburg_VNB · köln_VNB · dortmund_VNB · mülheim_VNB (Passwort: 123)</small>
+        <button className="login-switch" onClick={() => { setRegistering(!registering); setError(''); }}>{registering ? 'Bereits registriert? Anmelden' : 'Neuen Benutzer registrieren'}</button>
     </section>
   </main>;
 }
@@ -127,15 +144,14 @@ function Sidebar({ page, setPage, currentUser, onLogout }) {
 function Header({ setPage, currentUser }) { return <header className="topbar"><div className="crumb"><span>SAP Konstruktportal</span><b>/</b><strong>Historie &amp; Anmeldung Konstrukt · {currentUser.city}</strong></div><div className="top-actions"><button className="icon-btn" onClick={() => setPage('history')}><Icon name="search"/></button><button className="icon-btn notification"><Icon name="bell"/><i/></button><div className="divider"/><span className="env"><i/> Testumgebung</span><button className="user-menu">{currentUser.city} <span>⌄</span></button></div></header> }
 
 function Status({ children, kind = 'blue' }) { return <span className={'status ' + kind}><i/>{children}</span> }
-const backendStatusLabel = status => ({ VERIFIED: 'Aktiv', Übermittelt: 'Aktiv', VALIDATION_FAILED: 'Validierung fehlgeschlagen', REJECTED: 'Abgelehnt', NOT_VERIFIABLE: 'Aktiv', SOURCE_UNAVAILABLE: 'Aktiv' }[status] || status || 'Noch nicht geprüft');
+const backendStatusLabel = status => ({ VERIFIED: 'Akzeptiert', Akzeptiert: 'Akzeptiert', Übermittelt: 'Akzeptiert', VALIDATION_FAILED: 'Validierung fehlgeschlagen', REJECTED: 'Abgelehnt', NOT_VERIFIABLE: 'Akzeptiert', SOURCE_UNAVAILABLE: 'Akzeptiert' }[status] || status || 'Noch nicht geprüft');
 const sidelyDeliveryLabel = delivery => delivery?.status === 'DELIVERED' ? 'An Sidely übermittelt' : delivery?.status === 'NOT_CONFIGURED' ? 'Lokale Annahme – externe Übermittlung nicht konfiguriert' : delivery?.status === 'FAILED' ? 'Externe Übermittlung fehlgeschlagen' : '';
 
 function Overview({ setPage, records, allRecords, currentUser }) {
   const pendingUnits = records.reduce((sum, record) => sum + (record.units || []).filter(unit => unit.status === 'Ausstehend').length, 0);
-  return <main className="content"><div className="page-heading"><div><div className="eyebrow">WILLKOMMEN ZURÜCK, MARIA</div><h1>Guten Morgen</h1><p>Hier ist der aktuelle Überblick über Ihre Konstrukte.</p></div><button className="primary" onClick={() => setPage('new')}><Icon name="plus"/> Neues Konstrukt anmelden</button></div>
-    <section className="metrics"><Metric label="Konstrukte gesamt" value={records.length} delta="Im Datenbestand"/><Metric label="Aktive Konstrukte" value={records.filter(r => r.status === 'Aktiv' || r.status === 'VERIFIED' || r.status === 'Übermittelt').length} delta="Angenommen oder übermittelt" good/><Metric label="Abgelehnte Konstrukte" value={records.filter(r => r.status === 'REJECTED').length} delta="Nicht angenommen" warn/><Metric label="Offene Einheitenprüfungen" value={pendingUnits} delta="Unabhängig vom Konstrukt" warn/></section>
-    <div className="two-col"><section className="card process-card"><div className="card-title"><div><h2>Anmeldung Konstrukt</h2><p>Ihr MVP-Prozess im Überblick</p></div><span className="mini-tag">MVP</span></div><div className="process-line"><ProcessStep n="1" label="Daten erfassen" done/><ProcessStep n="2" label="Prüfen &amp; review" done/><ProcessStep n="3" label="Übermitteln" current/><ProcessStep n="4" label="Externe Prüfung"/></div><div className="info-callout"><div className="info-symbol">i</div><p>Die fachliche Prüfung erfolgt durch die angebundene API. Sie können den Status jederzeit in der Konstruktübersicht verfolgen.</p></div></section><HubMap records={allRecords}/></div>
-    <section className="card table-card"><div className="card-title"><div><h2>Historie</h2><p>Ihre letzten Aktivitäten und Vertragsstatus</p></div><button className="link-btn" onClick={() => setPage('history')}>Alle anzeigen <Icon name="arrow"/></button></div><ConstructTable compact records={records}/></section>
+  return <main className="content"><div className="page-heading"><div><div className="eyebrow">WILLKOMMEN ZURÜCK, {currentUser.displayName.toUpperCase()}</div><h1>Guten Morgen</h1><p>Hier ist der aktuelle Überblick über Ihre Konstrukte.</p></div><button className="primary" onClick={() => setPage('new')}><Icon name="plus"/> Neues Konstrukt anmelden</button></div>
+    <section className="metrics"><Metric label="Konstrukte gesamt" value={records.length} delta="Im Datenbestand"/><Metric label="Akzeptierte Konstrukte" value={records.filter(r => r.status === 'Aktiv' || r.status === 'VERIFIED' || r.status === 'Übermittelt' || r.status === 'Akzeptiert').length} delta="Angenommen" good/><Metric label="Abgelehnte Konstrukte" value={records.filter(r => r.status === 'REJECTED').length} delta="Nicht angenommen" warn/><Metric label="Offene Einheitenprüfungen" value={pendingUnits} delta="Unabhängig vom Konstrukt" warn/></section>
+     <section className="card table-card"><div className="card-title"><div><h2>Historie</h2><p>Ihre letzten Aktivitäten und Vertragsstatus</p></div><button className="link-btn" onClick={() => setPage('history')}>Alle anzeigen <Icon name="arrow"/></button></div><ConstructTable compact records={records}/></section>
   </main>
 }
 function Metric({ label, value, delta, good, warn }) { return <div className="metric"><span>{label}</span><strong>{value}</strong><small className={good ? 'good' : warn ? 'warn' : ''}>{good ? '↗ ' : warn ? '● ' : ''}{delta}</small></div> }
@@ -147,7 +163,7 @@ function HubMap({ records }) {
   return <section className="card hub-card"><div className="card-title"><div><h2>Hubs in Deutschland</h2><p>Interaktives Netz auf dem Globus · ziehen zum Drehen</p></div><span className="hub-count">{records.length} Hubs</span></div><div className="hub-map globe-map" onMouseLeave={() => setSelected(null)}><div className="globe-orbit orbit-one"/><div className="globe-orbit orbit-two"/><Globe points={records} routes={routes} selected={selected} onSelectPoint={(point) => setSelected(selected?.id === point.id ? null : point)} onHoverPoint={setSelected} onLeave={() => {}}/></div><div className="globe-caption"><span className="globe-live"><i/> LIVE NETZANSICHT</span><span>Deutschland · 3D-Globus · ziehbar</span></div><div className="hub-legend"><span><i className="solar-dot"/> Solar</span><span><i className="wind-dot"/> Wind</span><span className="hub-note">Ziehen zum Drehen · Klicken für Details</span></div></section>
 }
 
-function ConstructTable({ compact, records }) { return <div className="data-table"><div className="tr th"><span>Konstrukt</span><span>Erzeuger</span><span>Technologie</span><span>Vertrag bis</span><span>Status</span>{!compact && <span>Aktion</span>}</div>{records.map((r) => <div className="tr" key={r.id}><span><b>{r.id}</b><small>{r.city}</small></span><span>{r.producer}</span><span><span className={'type-dot ' + r.type.toLowerCase()}/>{r.type}</span><span>{formatDate(r.contractEnd)}</span><span><Status kind={r.status === 'REJECTED' ? 'red' : r.status === 'VERIFIED' || r.status === 'Aktiv' || r.status === 'Übermittelt' ? 'green' : 'orange'}>{backendStatusLabel(r.status)}<small className="contract-state">{contractState(r)}</small></Status></span>{!compact && <button className="row-action">Details <Icon name="arrow"/></button>}</div>)}</div> }
+function ConstructTable({ compact, records }) { return <div className="data-table"><div className="tr th"><span>Konstrukt</span><span>Erzeuger</span><span>Technologie</span><span>Vertrag bis</span><span>Status</span>{!compact && <span>Aktion</span>}</div>{records.map((r) => <div className="tr" key={r.id}><span><b>{r.id}</b><small>{r.city}</small></span><span>{r.producer}</span><span><span className={'type-dot ' + r.type.toLowerCase()}/>{r.type}</span><span>{formatDate(r.contractEnd)}</span><span><Status kind={r.status === 'REJECTED' ? 'red' : r.status === 'VERIFIED' || r.status === 'Aktiv' || r.status === 'Übermittelt' || r.status === 'Akzeptiert' ? 'green' : 'orange'}>{backendStatusLabel(r.status)}<small className="contract-state">{r.acceptedAt ? `Akzeptiert ab ${new Date(r.acceptedAt).toLocaleDateString('de-DE')}` : contractState(r)}</small></Status></span>{!compact && <button className="row-action">Details <Icon name="arrow"/></button>}</div>)}</div> }
 
 function History({ records }) {
   const [query, setQuery] = useState('');
@@ -259,7 +275,9 @@ function TypeSelection({ onSelect, settings }) {
 }
 
 function Stepper({ step, constructType }) {
-  const steps = ['Grunddaten', constructType === 'household' ? 'Standort & Vertrag' : 'Standort & Erzeugung', constructType === 'feed-in' ? 'MK7-Anlagen' : 'Einheiten', 'Review & Übermittlung'];
+  const steps = constructType === 'feed-in'
+    ? ['Grunddaten', 'Standort & Erzeugung', 'Review & Übermittlung']
+    : ['Grunddaten', 'Standort & Erzeugung', 'Einheiten', 'Review & Übermittlung'];
   return <div className="stepper"><div className="stepper-line"/>{steps.map((label, index) => <div className={'wizard-step ' + (step > index ? 'active' : '')} key={label}><b>{step > index ? '✓' : index + 1}</b><span>{label}</span></div>)}</div>;
 }
 
@@ -267,27 +285,28 @@ function NewConstruct({ setPage, onSubmitted, settings, currentUser }) {
   const [constructType, setConstructType] = useState(null);
   const [step, setStep] = useState(1);
   const defaultLocations = {
-    'Frankfurt am Main': { postalCode: '60388', street: 'Vilbeler Landstrasse 21', lat: 50.11, lon: 8.68, malo: 'DE0073325707820000000000000088943', id: 'B-FRA-01', type: 'Solar', capacity: '6' },
-    Hamburg: { postalCode: '20095', street: 'Rathausmarkt 1', lat: 53.55, lon: 10.00, malo: 'DE0073325707820000000000000090001', id: 'B-HAM-01', type: 'Solar', capacity: '6' },
-    Köln: { postalCode: '50859', street: 'Milanweg 10', lat: 50.94, lon: 6.96, malo: 'DE00733257078200000000000000880945', id: 'B-CGN-01', type: 'Wind', capacity: '7' },
-    Dortmund: { postalCode: '44135', street: 'Friedensplatz 1', lat: 51.51, lon: 7.46, malo: 'DE0073325707820000000000000090002', id: 'B-DTM-01', type: 'Wind', capacity: '6' },
-    'Mülheim an der Ruhr': { postalCode: '45470', street: 'Franz-Fischer-Strasse 24', lat: 51.43, lon: 6.88, malo: 'DE0001815707800000101300000139428', id: 'B-MUL-01', type: 'Solar', capacity: '5.5' }
+    'Frankfurt am Main': { postalCode: '60388', street: 'Vilbeler Landstrasse 21', lat: 50.11, lon: 8.68, malo: '51781123293', melo: 'DE0073325707820000000000000088943', id: 'B-FRA-01', type: 'Solar', capacity: '6', units: [['DE0001815707800000101300000139372', 'Wohnung 1. OG links'], ['DE0001815707800000101300000131094', 'Wohnung 1. OG rechts']], generator: { malo: '51781123294', melo: 'DE0073325707820000000000000088944' } },
+    Hamburg: { postalCode: '20095', street: 'Rathausmarkt 1', lat: 53.55, lon: 10.00, malo: '51781124010', melo: 'DE0073325707820000000000000090001', id: 'B-HAM-01', type: 'Solar', capacity: '6', units: [['DE0001815707800000101300000139373', 'Wohnung 1. OG links'], ['DE0001815707800000101300000131095', 'Wohnung 1. OG rechts']], generator: { malo: '51781124011', melo: 'DE0073325707820000000000000090003' } },
+    Köln: { postalCode: '50859', street: 'Milanweg 10', lat: 50.94, lon: 6.96, malo: '51781215544', melo: 'DE00733257078200000000000000880945', id: 'B-CGN-01', type: 'Wind', capacity: '7', units: [['DE0001815707800000101300000139374', 'Wohnung 1. OG links'], ['DE0001815707800000101300000131096', 'Wohnung 1. OG rechts']], generator: { malo: '51781215545', melo: 'DE00733257078200000000000000880946' } },
+    Dortmund: { postalCode: '44135', street: 'Friedensplatz 1', lat: 51.51, lon: 7.46, malo: '51781124002', melo: 'DE0073325707820000000000000090002', id: 'B-DTM-01', type: 'Wind', capacity: '6', units: [['DE0001815707800000101300000139375', 'Wohnung 1. OG links'], ['DE0001815707800000101300000131097', 'Wohnung 1. OG rechts']], generator: { malo: '51781124003', melo: 'DE0073325707820000000000000090004' } },
+    'Mülheim an der Ruhr': { postalCode: '45470', street: 'Franz-Fischer-Strasse 24', lat: 51.43, lon: 6.88, malo: '51781124001', melo: 'DE0001815707800000101300000139428', id: 'B-MUL-01', type: 'Solar', capacity: '5.5', units: [['DE0001815707800000101300000139376', 'Wohnung 1. OG links'], ['DE0001815707800000101300000131098', 'Wohnung 1. OG rechts']], generator: { malo: '51781124004', melo: 'DE0001815707800000101300000139429' } }
   };
-  const location = defaultLocations[currentUser.city];
-  const [form, setForm] = useState({ contractStart: '2026-10-01', contractEnd: '2027-10-01', postalCode: location.postalCode, city: currentUser.city, street: location.street, first: '', last: '', email: '', type: location.type, capacity: location.capacity, malo: location.malo, id: location.id, lat: location.lat, lon: location.lon });
-  const [units, setUnits] = useState(initialUnits);
+  const location = defaultLocations[currentUser.city] || defaultLocations['Frankfurt am Main'];
+  const [form, setForm] = useState({ contractStart: '2026-10-01', contractEnd: '2027-10-01', postalCode: location.postalCode, city: currentUser.city, street: location.street, first: 'Anna', last: 'Schmidt', email: `demo.${currentUser.city.toLowerCase().replace(/[^a-z]/g, '')}@example.com`, type: location.type, capacity: location.capacity, malo: location.malo, melo: location.melo, id: location.id, lat: location.lat, lon: location.lon });
+  const [units, setUnits] = useState(location.units.map(([id, name]) => ({ id, name, type: 'Wohnung', kind: 'unit', melo: id, generator_malo: '', generator_melo: '', status: 'Ausstehend' })));
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
   const update = key => value => setForm(current => ({ ...current, [key]: value }));
   const pickAddress = suggestion => setForm(current => ({ ...current, street: suggestion.street || current.street, postalCode: suggestion.postalCode || current.postalCode, city: suggestion.city || current.city, lat: suggestion.lat ?? current.lat, lon: suggestion.lon ?? current.lon }));
   const selectType = type => { setConstructType(type); setStep(1); };
-  const addUnit = () => setUnits(current => [...current, { id: `DE0001815707800000101300000${140001 + current.length}`, name: `Neue Einheit ${current.length + 1}`, type: 'Wohnung', malo: '', status: 'Ausstehend' }]);
+  const addUnit = kind => setUnits(current => [...current, { id: `DE0001815707800000101300000${140001 + current.length}`, name: kind === 'generator' ? 'Solarpanel' : `Neue Einheit ${current.length + 1}`, type: kind === 'generator' ? 'Solar' : 'Wohnung', kind, melo: '', generator_malo: kind === 'generator' ? location.generator.malo : '', generator_melo: kind === 'generator' ? location.generator.melo : '', status: 'Ausstehend' }]);
   const updateUnit = (id, key, value) => setUnits(current => current.map(unit => unit.id === id ? { ...unit, [key]: value } : unit));
   const deleteUnit = id => setUnits(current => current.filter(unit => unit.id !== id));
   const saveSubmittedRecord = verification => {
     const id = `B-${currentUser.city.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-2)}`;
-    onSubmitted?.({ id, category: constructType, city: currentUser.city, producer: form.first + ' ' + form.last, type: form.type, participants: constructType === 'feed-in' ? greenParticipants.length : units.length, units: constructType === 'feed-in' ? [] : units, status: verification.status === 'VERIFIED' ? 'Aktiv' : verification.status === 'NOT_VERIFIABLE' || verification.status === 'SOURCE_UNAVAILABLE' ? 'Übermittelt' : verification.status, verification, contractStart: form.contractStart, contractEnd: form.contractEnd, date: new Date().toLocaleDateString('de-DE'), lat: form.lat, lon: form.lon });
+    const accepted = verification.status === 'VERIFIED' || verification.status === 'NOT_VERIFIABLE' || verification.status === 'SOURCE_UNAVAILABLE';
+    onSubmitted?.({ id, ownerUsername: currentUser.username, category: constructType, city: currentUser.city, producer: form.first + ' ' + form.last, type: form.type, participants: constructType === 'feed-in' ? greenParticipants.length : units.length, units: constructType === 'feed-in' ? [] : units, status: accepted ? 'Akzeptiert' : verification.status, acceptedAt: accepted ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null, verification, contractStart: form.contractStart, contractEnd: form.contractEnd, date: new Date().toLocaleDateString('de-DE'), lat: form.lat, lon: form.lon });
     setPage('overview');
   };
   const continueToReview = async () => {
@@ -295,13 +314,13 @@ function NewConstruct({ setPage, onSubmitted, settings, currentUser }) {
     try {
       const locationError = validateLocationForm(form);
       if (locationError) { setFormError(locationError); return; }
-      const verification = await verifyWithBackend({ ...form, id: `B-${currentUser.city.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-2)}` }, constructType);
+      const verification = await verifyWithBackend(form, constructType);
       setVerificationResult(verification);
       if (verification.status === 'NOT_VERIFIABLE' || verification.status === 'SOURCE_UNAVAILABLE') {
         saveSubmittedRecord(verification);
         return;
       }
-      setStep(4);
+      setStep(constructType === 'feed-in' ? 3 : 4);
     } catch (error) { setFormError(error instanceof Error ? error.message : 'Die Validierung konnte nicht durchgeführt werden.'); }
     finally { setSubmitting(false); }
   };
@@ -310,14 +329,17 @@ function NewConstruct({ setPage, onSubmitted, settings, currentUser }) {
     if (!/^\d{5}$/.test(currentForm.postalCode)) return 'Bitte geben Sie eine gültige fünfstellige PLZ ein.';
     if (!currentForm.street.trim()) return 'Straße und Hausnummer sind Pflichtfelder.';
     if (!currentForm.contractStart || !currentForm.contractEnd || currentForm.contractEnd < currentForm.contractStart) return 'Bitte geben Sie einen gültigen Vertragszeitraum ein.';
-    if (!currentForm.malo.trim()) return 'Marktlokation (MaLo-ID) ist ein Pflichtfeld.';
-    if (currentForm.type === 'Keine' ? Number(currentForm.capacity) !== 0 : !(Number(currentForm.capacity) > 0)) return currentForm.type === 'Keine' ? 'Die Leistung muss bei „Keine“ 0 sein.' : 'Die installierte Leistung muss größer als 0 sein.';
+    if (!/^\d{11}$/.test(currentForm.malo)) return 'MaLo-ID muss genau 11 Ziffern enthalten.';
+    if (constructType === 'feed-in' && !currentForm.melo.trim()) return 'Messlokation (MeLo-ID) ist ein Pflichtfeld.';
+    if (constructType === 'feed-in' && (currentForm.type === 'Keine' ? Number(currentForm.capacity) !== 0 : !(Number(currentForm.capacity) > 0))) return currentForm.type === 'Keine' ? 'Die Leistung muss bei „Keine“ 0 sein.' : 'Die installierte Leistung muss größer als 0 sein.';
+    if (constructType === 'building' && units.some(unit => unit.kind === 'unit' && !/^DE[A-Z0-9]{10,}$/i.test(unit.melo || ''))) return 'Jede Einheit benötigt eine gültige MeLo-ID.';
+    if (constructType === 'building' && units.some(unit => unit.kind === 'generator' && (!/^\d{11}$/.test(unit.generator_malo || '') || !/^DE[A-Z0-9]{10,}$/i.test(unit.generator_melo || '')))) return 'Solarpanel benötigen gültige Erzeuger-MaLo- und Erzeuger-MeLo-IDs.';
     return '';
   };
   const submit = async () => {
     setSubmitting(true); setFormError('');
     try {
-      const verification = verificationResult || await verifyWithBackend({ ...form, id: `B-${currentUser.city.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-2)}` }, constructType);
+      const verification = verificationResult || await verifyWithBackend(form, constructType);
       saveSubmittedRecord(verification);
     } catch (error) { setFormError(error instanceof Error ? error.message : 'Die Validierung konnte nicht durchgeführt werden.'); }
     finally { setSubmitting(false); }
@@ -335,14 +357,13 @@ function NewConstruct({ setPage, onSubmitted, settings, currentUser }) {
     setStep(2);
   };
   const greenParticipants = participants.filter(p => p.city === currentUser.city && (p.role.includes('Solar') || p.role.includes('Wind')));
-  const reviewStep = 4;
+  const reviewStep = constructType === 'feed-in' ? 3 : 4;
   if (!constructType) return <main className="content"><div className="page-heading compact-heading"><div><div className="eyebrow">ANMELDUNG KONSTRUKT</div><h1>Neue Anmeldung</h1></div><button className="text-btn" onClick={() => setPage('overview')}>Abbrechen</button></div><TypeSelection onSelect={selectType} settings={settings}/></main>;
   return <main className="content form-page"><div className="page-heading compact-heading"><div><div className="eyebrow">ANMELDUNG KONSTRUKT <span className="mini-tag">{constructType === 'household' ? 'HAUSHALT' : constructType === 'feed-in' ? 'EINSPEISUNG' : 'GEBÄUDE'}</span></div><h1>{constructType === 'household' ? 'Haushaltskunde anmelden' : constructType === 'feed-in' ? 'Einspeisekonstrukt anmelden' : 'Gebäudekonstrukt anmelden'}</h1><p>Erfassen Sie die Daten für die externe Prüfung im Netzgebiet {currentUser.city}.</p></div><button className="text-btn" onClick={() => setConstructType(null)}>Typ ändern</button></div><Stepper step={step} constructType={constructType}/>
     {step === 1 && <section className="card form-card"><div className="section-title"><span className="section-number">01</span><div><h2>Kundendaten</h2><p>Kontaktinformationen des Anlagenbetreibers</p></div></div><div className="form-grid"><Input label="Vorname" value={form.first} required onChange={update('first')}/><Input label="Nachname" value={form.last} required onChange={update('last')}/><Input label="E-Mail-Adresse" value={form.email} required onChange={update('email')} wide/><label className="checkbox"><input type="checkbox" defaultChecked/><span>Gewerblicher Kunde</span></label></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><span><i>*</i> Pflichtfeld</span><button className="primary" onClick={continueFromCustomer}>Weiter <Icon name="arrow"/></button></div></section>}
-    {step === 2 && <section className="card form-card"><div className="section-title"><span className="section-number">02</span><div><h2>Standort &amp; Erzeugung</h2><p>Angaben zum Standort, Vertrag und zur Anmeldung</p></div></div><div className="scope-note"><Icon name="check"/><span>Netzgebiet: <b>{currentUser.city}</b> · Dieser Zugang kann nur Konstrukte für dieses Gebiet anmelden.</span></div><div className="form-grid"><AddressField postalCode={form.postalCode} city={form.city} onPostalCodeChange={update('postalCode')} onCityChange={() => {}} lockedCity={currentUser.city}/><AddressAutocomplete label="Straße und Hausnummer" value={form.street} city={form.city} postalCode={form.postalCode} placeholder="Adresse eingeben zum Suchen…" required onChange={update('street')} onSelect={suggestion => pickAddress({ ...suggestion, city: currentUser.city })}/><Input label="Vertragsbeginn" value={form.contractStart} required type="date" onChange={update('contractStart')}/><Input label="Vertragsende" value={form.contractEnd} required type="date" onChange={update('contractEnd')}/><Select label="Produktionstyp" value={form.type} options={constructType === 'building' ? ['Keine', ...settings.technologies] : settings.technologies} onChange={value => { update('type')(value); if (value === 'Keine') update('capacity')('0'); }}/><Input label="Installierte Leistung (kW)" value={form.capacity} required type="number" onChange={update('capacity')}/><Input label="Marktlokation (MaLo-ID)" value={form.malo} required onChange={update('malo')} wide/></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(1)}>Zurück</button><button className="primary" onClick={() => { const error = validateLocationForm(form); if (error) setFormError(error); else { setFormError(''); setStep(3); } }}>Weiter <Icon name="arrow"/></button></div></section>}
-    {constructType === 'feed-in' && step === 3 && <section className="card form-card"><div className="section-title"><span className="section-number">03</span><div><h2>Weitere grüne MK7-Teilnehmer</h2><p>Diese Anlagen werden zur Information angezeigt und nicht bearbeitet.</p></div><span className="count-badge">{greenParticipants.length} Anlagen</span></div><div className="read-only-participants">{greenParticipants.map(p => <div className="participant-row" key={p.id}><div className="person-icon"><Icon name={p.role.includes('Solar') ? 'sun' : 'wind'}/></div><div><b>{p.role}</b><small>{p.city} · MeLo {p.id}</small></div><span className="type-label">{p.role.includes('Solar') ? 'Solar' : 'Wind'}</span><Status kind="green">{p.status}</Status></div>)}</div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(2)}>Zurück</button><button className="primary" disabled={submitting} onClick={continueToReview}>{submitting ? 'Prüfung läuft…' : 'Weiter'} <Icon name="arrow"/></button></div></section>}
-    {(constructType === 'building' || constructType === 'household') && step === 3 && <section className="card form-card"><div className="section-title"><span className="section-number">03</span><div><h2>Gebäudeeinheiten</h2><p>Jede Einheit erhält eine eigene Messlokation und wird unabhängig geprüft.</p></div><span className="count-badge">{units.length} Einheiten</span></div><div className="unit-section"><div className="subsection-heading"><div><h3>Einheiten</h3><p>Jede Messlokation erhält eine eigene Prüfung.</p></div><button className="outline-add" onClick={addUnit}><Icon name="plus"/> Einheit hinzufügen</button></div><div className="unit-list">{units.map(unit => <div className="unit-row" key={unit.id}><div className="unit-fields"><Input label="Bezeichnung" value={unit.name} onChange={value => updateUnit(unit.id, 'name', value)}/><Input label="Messlokation (MeLo-ID)" value={unit.id} onChange={value => updateUnit(unit.id, 'id', value)}/><Input label="MaLo-ID" value={unit.malo} placeholder="Optional" onChange={value => updateUnit(unit.id, 'malo', value)}/></div><Status kind="orange">{unit.status}</Status><button className="row-action danger-text" onClick={() => deleteUnit(unit.id)}>Löschen</button></div>)}</div></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(2)}>Zurück</button><button className="primary" disabled={submitting} onClick={continueToReview}>{submitting ? 'Prüfung läuft…' : 'Weiter'} <Icon name="arrow"/></button></div></section>}
-    {step === reviewStep && <section className="card form-card"><div className="section-title"><span className="section-number">04</span><div><h2>Review &amp; Übermittlung</h2><p>Prüfen Sie Ihre Angaben vor der Übermittlung.</p></div></div><div className="review-grid"><Review label="Anmeldetyp" value={constructType === 'feed-in' ? 'Einspeisekonstrukt' : 'Gebäudekonstrukt'}/><Review label="Adresse" value={form.street + ', ' + form.postalCode + ' ' + form.city}/><Review label="Marktlokation (MaLo-ID)" value={form.malo}/><Review label="Vertragszeitraum" value={`${formatDate(form.contractStart)} – ${formatDate(form.contractEnd)}`}/><Review label="Produktion" value={`${form.type} · ${form.capacity} kW`}/>{constructType === 'feed-in' && <Review label="Grüne MK7-Anlagen" value={`${greenParticipants.length} Anlagen (nur Anzeige)`}/>}</div><div className="approval-preview"><div><Status kind="orange">Ausstehend</Status><b>Externe Prüfung</b><small>Die Validierungs- und Verifizierungs-API prüft Ihre Angaben.</small></div></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(3)}>Zurück</button><button className="primary" disabled={submitting} onClick={submit}><Icon name="upload"/> {submitting ? 'Prüfung läuft…' : 'Konstrukt übermitteln'}</button></div></section>}
+    {step === 2 && <section className="card form-card"><div className="section-title"><span className="section-number">02</span><div><h2>Standort &amp; Erzeugung</h2><p>Angaben zum Standort, Vertrag und zur Anmeldung</p></div></div><div className="scope-note"><Icon name="check"/><span>Netzgebiet: <b>{currentUser.city}</b> · Dieser Zugang kann nur Konstrukte für dieses Gebiet anmelden.</span></div><div className="form-grid"><AddressField postalCode={form.postalCode} city={form.city} onPostalCodeChange={update('postalCode')} onCityChange={() => {}} lockedCity={currentUser.city}/><AddressAutocomplete label="Straße und Hausnummer" value={form.street} city={form.city} postalCode={form.postalCode} placeholder="Adresse eingeben zum Suchen…" required onChange={update('street')} onSelect={suggestion => pickAddress({ ...suggestion, city: currentUser.city })}/><Input label="Vertragsbeginn" value={form.contractStart} required type="date" onChange={update('contractStart')}/><Input label="Vertragsende" value={form.contractEnd} required type="date" onChange={update('contractEnd')}/>{constructType === 'feed-in' ? <><Select label="Produktionstyp" value={form.type} options={settings.technologies} onChange={value => update('type')(value)}/><Input label="Installierte Leistung (kW)" value={form.capacity} required type="number" onChange={update('capacity')}/><Input label="Erzeuger-MaLo-ID" value={form.malo} required onChange={update('malo')} wide/><Input label="Erzeuger-MeLo-ID" value={form.melo} required onChange={update('melo')} wide/></> : <Input label="Gebäude-MaLo-ID" value={form.malo} required onChange={update('malo')} wide/>}</div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(1)}>Zurück</button><button className="primary" onClick={() => { const error = validateLocationForm(form); if (error) setFormError(error); else { setFormError(''); setStep(3); } }}>Weiter <Icon name="arrow"/></button></div></section>}
+    {(constructType === 'building' || constructType === 'household') && step === 3 && <section className="card form-card"><div className="section-title"><span className="section-number">03</span><div><h2>Gebäudeeinheiten</h2><p>Jede Einheit erhält eine eigene Messlokation und wird unabhängig geprüft.</p></div><span className="count-badge">{units.length} Einheiten</span></div><div className="unit-section"><div className="subsection-heading"><div><h3>Einheiten</h3><p>Jede Messlokation erhält eine eigene Prüfung.</p></div><div className="unit-add-actions"><button className="outline-add" onClick={() => addUnit('unit')}><Icon name="plus"/> Einheit hinzufügen</button><button className="outline-add" onClick={() => addUnit('generator')}><Icon name="sun"/> Solarpanel hinzufügen</button></div></div><div className="unit-list">{units.map(unit => <div className="unit-row" key={unit.id}><div className="unit-fields"><Input label="Bezeichnung" value={unit.name} onChange={value => updateUnit(unit.id, 'name', value)}/>{unit.kind === 'generator' ? <><Input label="Erzeuger-MaLo-ID" value={unit.generator_malo} onChange={value => updateUnit(unit.id, 'generator_malo', value)}/><Input label="Erzeuger-MeLo-ID" value={unit.generator_melo} onChange={value => updateUnit(unit.id, 'generator_melo', value)}/></> : <Input label="Einheit MeLo-ID" value={unit.melo} onChange={value => updateUnit(unit.id, 'melo', value)}/> }</div><Status kind="orange">{unit.status}</Status><button className="row-action danger-text" onClick={() => deleteUnit(unit.id)}>Löschen</button></div>)}</div></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(2)}>Zurück</button><button className="primary" disabled={submitting} onClick={continueToReview}>{submitting ? 'Prüfung läuft…' : 'Weiter'} <Icon name="arrow"/></button></div></section>}
+    {step === reviewStep && <section className="card form-card"><div className="section-title"><span className="section-number">{reviewStep}</span><div><h2>Review &amp; Übermittlung</h2><p>Prüfen Sie Ihre Angaben vor der Übermittlung.</p></div></div><div className="review-grid"><Review label="Anmeldetyp" value={constructType === 'feed-in' ? 'Virtuelles Summenzählermodell' : 'Reales Summenzählermodell'}/><Review label="Adresse" value={form.street + ', ' + form.postalCode + ' ' + form.city}/><Review label="MaLo-ID" value={form.malo}/><Review label="MeLo-ID" value={form.melo}/><Review label="Vertragszeitraum" value={`${formatDate(form.contractStart)} – ${formatDate(form.contractEnd)}`}/>{constructType === 'feed-in' && <Review label="Produktion" value={`${form.type} · ${form.capacity} kW`}/>}</div><div className="approval-preview"><div><Status kind="orange">Ausstehend</Status><b>Externe Prüfung</b><small>Die Validierungs- und Verifizierungs-API prüft Ihre Angaben.</small></div></div>{formError && <div className="form-error"><Icon name="alert"/>{formError}</div>}<div className="form-footer"><button className="secondary" onClick={() => setStep(constructType === 'feed-in' ? 2 : 3)}>Zurück</button><button className="primary" disabled={submitting} onClick={submit}><Icon name="upload"/> {submitting ? 'Prüfung läuft…' : 'Konstrukt übermitteln'}</button></div></section>}
   </main>;
 }
 
@@ -387,7 +408,7 @@ function App() {
   const [rejectionNotice, setRejectionNotice] = useState(false);
   const saveSettings = updater => setSettings(current => { const next = typeof updater === 'function' ? updater(current) : updater; localStorage.setItem('vnb-admin-settings', JSON.stringify(next)); return next; });
   if (!currentUser) return <Login onLogin={user => { sessionStorage.setItem('vnb-user', JSON.stringify(user)); setCurrentUser(user); setPage('overview'); }} />;
-  const visibleRecords = records.filter(record => record.city === currentUser.city);
+  const visibleRecords = records.filter(record => record.city === currentUser.city && record.ownerUsername === currentUser.username);
   const handleSubmitted = record => { setRecords(current => [record, ...current]); if (record.status === 'REJECTED') setRejectionNotice(true); };
   return <div className="app"><Sidebar page={page} setPage={setPage} currentUser={currentUser} onLogout={() => { sessionStorage.removeItem('vnb-user'); setCurrentUser(null); }}/><div className="main"><Header setPage={setPage} currentUser={currentUser}/>{page === 'overview' && <Overview setPage={setPage} records={visibleRecords} allRecords={records} currentUser={currentUser}/>} {page === 'history' && <History records={visibleRecords}/>} {page === 'new' && <NewConstruct setPage={setPage} settings={settings} currentUser={currentUser} onSubmitted={handleSubmitted}/>} {page === 'participants' && <ParticipantsPage currentUser={currentUser}/>} {page === 'admin' && <Administration settings={settings} setSettings={saveSettings}/>}</div>{rejectionNotice && <RejectionNotice onClose={() => setRejectionNotice(false)}/>}</div>;
 }

@@ -40,6 +40,7 @@ export type SapLocation = {
     capacity_kw: number;
   };
   building_id: string;
+  market_location_malo: string;
   valid_from: string;
   valid_to: string | null;
 };

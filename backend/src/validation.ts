@@ -55,6 +55,7 @@ export function normalize(input: ProducerInput): ProducerOnboarding {
     deliv_address_city: collapseWhitespace(input.deliv_address_city),
 
     market_location_identifier: normalizeOptionalText(input.market_location_identifier),
+    market_location_malo: normalizeOptionalText(input.market_location_malo),
     tranche: normalizeOptionalText(input.tranche),
     preferred_delivery_start: normalizeOptionalText(input.preferred_delivery_start),
     saas_customer_id: normalizeOptionalText(input.saas_customer_id),
@@ -85,6 +86,18 @@ export function validate(input: ProducerInput): LocalCheck[] {
     emailIsValid ? 'Email format is valid.' : 'Email format is invalid.',
     input.email,
   );
+  if (input.construct_type === 'BUILDING' && input.units) {
+    for (const [index, unit] of input.units.entries()) {
+      const prefix = `units.${index}`;
+      const generating = unit.kind === 'generator';
+      const unitMeloValid = generating || (unit.melo != null && MELO_PATTERN.test(unit.melo));
+      add(`${prefix}.melo`, unitMeloValid ? 'VALID' : 'INVALID', generating ? 'Generator uses its own MeLo.' : 'Unit MeLo is valid.', unit.melo);
+      const generatorMaloValid = !generating || (unit.generator_malo != null && MALO_PATTERN.test(unit.generator_malo));
+      add(`${prefix}.generator_malo`, generatorMaloValid ? 'VALID' : 'INVALID', generating ? 'Generator MaLo is valid.' : 'No generator MaLo is required.', unit.generator_malo);
+      const generatorMeloValid = !generating || (unit.generator_melo != null && MELO_PATTERN.test(unit.generator_melo));
+      add(`${prefix}.generator_melo`, generatorMeloValid ? 'VALID' : 'INVALID', generating ? 'Generator MeLo is valid.' : 'No generator MeLo is required.', unit.generator_melo);
+    }
+  }
 
   // --- Postal code ---
   const postalCodeIsValid = POSTAL_CODE_PATTERN.test(normalized.deliv_address_zipcode);
@@ -185,6 +198,27 @@ export function validate(input: ProducerInput): LocalCheck[] {
   }
 
   // --- Identifier or tranche ---
+  const maloIsSupplied = Boolean(normalized.market_location_malo);
+  const maloIsValid = !maloIsSupplied || MALO_PATTERN.test(normalized.market_location_malo ?? '');
+  add(
+    'market_location_malo',
+    maloIsValid ? 'VALID' : 'INVALID',
+    !maloIsSupplied
+      ? 'MaLo identifier will be derived from the authoritative SAP record.'
+      : maloIsValid ? 'MaLo identifier has eleven digits.' : 'MaLo identifier must contain eleven digits.',
+    input.market_location_malo,
+  );
+
+  if (input.construct_type === 'BUILDING') {
+    const buildingMalo = normalized.building_market_location_malo ?? normalized.market_location_malo;
+    const buildingMaloIsValid = Boolean(buildingMalo) && MALO_PATTERN.test(buildingMalo ?? '');
+    add(
+      'building_market_location_malo',
+      buildingMaloIsValid ? 'VALID' : 'INVALID',
+      buildingMaloIsValid ? 'Building MaLo identifier has eleven digits.' : 'A valid building MaLo identifier is required for building submissions.',
+      input.building_market_location_malo ?? input.market_location_malo,
+    );
+  }
   const hasIdentifier = Boolean(normalized.market_location_identifier);
   const hasTranche = Boolean(normalized.tranche);
 

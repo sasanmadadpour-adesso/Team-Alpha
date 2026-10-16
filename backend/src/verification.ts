@@ -116,6 +116,17 @@ function compare(input: ProducerOnboarding, sap: SapLocation): VerificationCheck
       'The plant must belong to the proposed building or sharing group.',
     ),
   );
+  // MaLo is optional in the established FEED_IN request format. SAP owns the
+  // authoritative value when the client does not send one.
+  const maloMatches = !input.market_location_malo || input.market_location_malo === sap.market_location_malo;
+  checks.push(verificationCheck(
+    'market_location_malo', input.market_location_malo, sap.market_location_malo,
+    maloMatches ? 'MATCH' : 'MISMATCH',
+    input.market_location_malo
+      ? maloMatches ? 'MaLo identifier matches.' : 'MaLo identifier differs from SAP.'
+      : 'MaLo identifier was derived from SAP and matches the authoritative record.',
+    'The MaLo identifies the market location associated with the verified MeLo.',
+  ));
 
   const effectiveAt = new Date(input.preferred_delivery_start ?? input.contract_start_utc);
   const validFrom = new Date(sap.valid_from);

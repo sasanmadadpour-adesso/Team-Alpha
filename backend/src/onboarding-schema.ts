@@ -35,6 +35,17 @@ export const producerOnboardingSchema = z
       .optional(),
 
     market_location_identifier: optionalText,
+    // Optional for backward-compatible FEED_IN requests. When omitted, the
+    // verifier derives the authoritative MaLo from the SAP MeLo record.
+    market_location_malo: optionalText,
+    building_market_location_malo: optionalText,
+    units: z.array(z.object({
+      name: requiredText,
+      kind: z.enum(['unit', 'generator']).default('unit'),
+      melo: optionalText,
+      generator_malo: optionalText,
+      generator_melo: optionalText,
+    })).optional(),
     tranche: optionalText,
     preferred_delivery_start: optionalText,
 
