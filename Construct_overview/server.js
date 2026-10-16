@@ -27,7 +27,7 @@ cds.on('bootstrap', app => {
 
   // Browser-safe live energy proxy. Credentials are read from the server environment
   // and are never sent to the Fiori client.
-  app.get('/api/live-energy', async (req, res) => {
+  const houseMemberPortal = async (req, res) => {
     const malo = String(req.query.malo || '').trim();
     const range = String(req.query.range || '7d').trim();
     let building = String(req.query.building || '').trim();
@@ -46,7 +46,10 @@ cds.on('bootstrap', app => {
     } catch (error) {
       return res.status(error.status || 502).json({ error: { code: error.code || 'HOSTED_ENERGY_ERROR', message: error.message } });
     }
-  });
+  };
+  app.get('/house-member-portal', houseMemberPortal);
+  // Backward-compatible alias for already-open browser tabs.
+  app.get('/api/live-energy', houseMemberPortal);
 });
 
 // Register member portal middleware after the webhook router. Its intentionally

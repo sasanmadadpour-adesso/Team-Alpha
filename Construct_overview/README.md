@@ -58,6 +58,11 @@ Configuration:
 | `REGISTERED_FALLBACK_API_URL` | empty | Optional fallback snapshot resource |
 | `HOUSE_MEMBER_PORTAL_API_URL` | derived from `REGISTERED_API_URL` | Hosted per-MaLo energy portal endpoint |
 | `RUHENDE_DATA_API_URL` | derived from `REGISTERED_API_URL` | Read-only hourly data fallback when the supplied key is not a hosted portal principal |
+
+The building Overview downloads its MaLo inventory from `maloOverview()`. A selected object page then requests
+`/house-member-portal?malo={malo}&range={range}` on the Overview server. The server forwards to the hosted
+house-member portal first and, for unsupported MaLo roles or rejected portal credentials, derives the same trend
+contract from the hosted hourly data service. Credentials never enter browser JavaScript.
 | `EXTERNAL_API_KEY` | empty | Credential sent to external APIs |
 | `SYNC_API_KEY` | empty | Credential required by incoming webhooks |
 | `SYNC_INTERVAL_MS` | `30000` | Polling interval |

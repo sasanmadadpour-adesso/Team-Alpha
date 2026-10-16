@@ -150,7 +150,7 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       try {
         const liveQuery = new URLSearchParams({ malo: String(malo || ""), range: this.getRange() });
         if (building) liveQuery.set("building", String(building));
-        const liveUrl = parentType === "construct" && malo ? `/api/live-energy?${liveQuery}` : null;
+        const liveUrl = parentType === "construct" && malo ? `/house-member-portal?${liveQuery}` : null;
         const response = await fetch(liveUrl || `/odata/v4/energy-overview/${entity}?$filter=${encodeURIComponent(filter)}&$orderby=bucketStart`, { signal: this._requestController.signal });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
