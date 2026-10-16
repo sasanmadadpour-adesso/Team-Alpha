@@ -68,6 +68,8 @@ POST /api/webhooks/registered
 
 The OData service exposes `PendingConstructs`, `ConstructSyncStatus`, `ConstructSyncAudit`, and the `syncConstructs` action. The UI Pending tab refreshes every 30 seconds and also provides a manual refresh button.
 
+The complete machine-readable Umstellung query and response contract is available at `contracts/umstellung-constructs-api.json`. The snapshot and detail operations use `GET`, so they intentionally have no JSON request body.
+
 The workbook is checked before each request. A changed file is validated and loaded as one new snapshot, so all raw entities and calculated projections use the same workbook version. If a modified workbook is invalid, the previous valid snapshot remains active and CAP reports the validation error.
 
 ## API areas
