@@ -18,11 +18,9 @@
   "16": "AGENTS.md",
   "17": "query.test.js",
   "18": "BuildingHouse.js",
-  "19": "ref_node_assert",
   "20": "NavHistory.js",
   "21": "._getShowDetailsButton",
-  "22": "libs",
-  "23": "overview-search.test.js",
+  "23": "ref_node_assert",
   "24": "fix-master-data.js",
   "25": "overview/Component.js",
   "26": "data-quality.js",
@@ -34,9 +32,6 @@
   "32": "switchover.js",
   "33": "app.test.js",
   "34": "i18n.test.js",
-  "35": "nav-logic.test.js",
   "36": "switchover-progress.test.js",
-  "37": "member-app.test.js",
-  "38": "odata.test.js",
-  "39": "overview-formatter.test.js"
+  "37": "member-app.test.js"
 }
