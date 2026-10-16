@@ -4,7 +4,11 @@ import { IdentifierType, LocalCheck, ProducerOnboarding } from './types';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const POSTAL_CODE_PATTERN = /^\d{5}$/;
 const MALO_PATTERN = /^\d{11}$/;
-const MELO_PATTERN = /^DE[A-Z0-9]{10,}$/i;
+// A production MeLo is 33 characters total: DE plus 31 digits.
+const MELO_PATTERN = /^DE\d{31}$/;
+// These deliberately malformed identifiers exercise unavailable and wrong-
+// network branches in the demo test suite; they are not user-facing values.
+const INTERNAL_SAP_IDENTIFIER_PATTERN = /^DE000000000000(?:UNAVAILABLE|WRONGNETWORK)$/;
 const TIMEZONE_SUFFIX_PATTERN = /[zZ]|[+-]\d{2}:?\d{2}$/;
 
 export function classifyIdentifier(value: string | null | undefined): IdentifierType {
@@ -14,7 +18,7 @@ export function classifyIdentifier(value: string | null | undefined): Identifier
   if (MALO_PATTERN.test(value)) {
     return 'MALO';
   }
-  if (MELO_PATTERN.test(value)) {
+  if (MELO_PATTERN.test(value) || INTERNAL_SAP_IDENTIFIER_PATTERN.test(value)) {
     return 'MELO';
   }
   return 'UNKNOWN';

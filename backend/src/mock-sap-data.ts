@@ -31,7 +31,7 @@ export const mockSapLocations: SapLocation[] = [
     plant: { production_type: 'Wind', capacity_kw: 6 }, building_id: 'B-DTM-01', valid_from: '2026-01-01T00:00:00Z', valid_to: null,
   },
   {
-    identifier: 'DE00733257078200000000000000880945',
+    identifier: 'DE0073325707820000000000000880945',
     identifier_type: 'MELO',
     network_operator: 'VNB-DEMO',
     status: 'ACTIVE',
@@ -84,7 +84,7 @@ export const mockSapLocations: SapLocation[] = [
   ...[
     ['DE0073325707820000000000000088944', 'B-FRA-01', '51781123294', 'Vilbeler Landstrasse', '21', '60388', 'Frankfurt am Main', 'Solar', 6],
     ['DE0073325707820000000000000090003', 'B-HAM-01', '51781124011', 'Rathausmarkt', '1', '20095', 'Hamburg', 'Solar', 6],
-    ['DE00733257078200000000000000880946', 'B-CGN-01', '51781215545', 'Milanweg', '10', '50859', 'Köln', 'Wind', 7],
+    ['DE0073325707820000000000000880946', 'B-CGN-01', '51781215545', 'Milanweg', '10', '50859', 'Köln', 'Wind', 7],
     ['DE0073325707820000000000000090004', 'B-DTM-01', '51781124003', 'Friedensplatz', '1', '44135', 'Dortmund', 'Wind', 6],
     ['DE0001815707800000101300000139429', 'B-MUL-01', '51781124004', 'Franz-Fischer-Strasse', '24', '45470', 'Mülheim an der Ruhr', 'Solar', 5.5],
   ].map(([identifier, building_id, market_location_malo, street, house_number, postal_code, city, production_type, capacity_kw]) => ({

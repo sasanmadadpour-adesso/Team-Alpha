@@ -19,7 +19,7 @@ test('all city virtual-model examples are verified', async () => {
   const examples = [
     ['DE0073325707820000000000000088943', 'Solar', 6],
     ['DE0073325707820000000000000090001', 'Solar', 6],
-    ['DE00733257078200000000000000880945', 'Wind', 7],
+    ['DE0073325707820000000000000880945', 'Wind', 7],
     ['DE0073325707820000000000000090002', 'Wind', 6],
     ['DE0001815707800000101300000139428', 'Solar', 5.5],
   ] as const;
@@ -124,7 +124,7 @@ test('capacity mismatch is rejected', async () => {
 test('unknown SAP location is not verifiable', async () => {
   const parsed = producerOnboardingSchema.parse({
     ...example,
-    market_location_identifier: 'DE99999999999',
+    market_location_identifier: 'DE9999999999999999999999999999999',
   });
   const result = await verifyProducer(parsed, validate(parsed));
 

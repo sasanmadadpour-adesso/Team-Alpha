@@ -75,7 +75,7 @@ test('SAP source failure returns HTTP 503 and SOURCE_UNAVAILABLE', async () => {
 test('unknown SAP record returns HTTP 200 and NOT_VERIFIABLE', async () => {
   const response = await postVerify({
     ...example,
-    market_location_identifier: 'DE99999999999',
+    market_location_identifier: 'DE9999999999999999999999999999999',
   });
   const body = await response.json();
 

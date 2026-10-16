@@ -17,6 +17,13 @@ test('classifies MaLo and MeLo-like identifiers', () => {
   assert.equal(classifyIdentifier('bad'), 'UNKNOWN');
 });
 
+test('requires eleven-digit MaLo and 33-character MeLo identifiers', () => {
+  assert.equal(classifyIdentifier('51781123293'), 'MALO');
+  assert.equal(classifyIdentifier('DE0073325707820000000000000880945'), 'MELO');
+  assert.equal(classifyIdentifier('DE00733257078200000000000000880945'), 'UNKNOWN');
+  assert.equal(classifyIdentifier('5178112329'), 'UNKNOWN');
+});
+
 test('requires an identifier or tranche', () => {
   const parsed = producerOnboardingSchema.parse({
     ...example,
