@@ -24,9 +24,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/manifest.json": {
-    "mtime": 1792108121.2999544,
-    "seen": 1792109587.0122297,
-    "ast_hash": "c693bcb12c001b41cb117bf24466c7a4",
+    "mtime": 1792131166.2878327,
+    "seen": 1792131345.3586721,
+    "ast_hash": "b766a0337098cb8e997a18438ef8de91",
     "semantic_hash": ""
   },
   "Construct_overview/package.json": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/vnb-projector.js": {
-    "mtime": 1792112770.8727248,
-    "seen": 1792113461.6187284,
-    "ast_hash": "bc3f88cc395e44d456fe499a125d658c",
+    "mtime": 1792131153.4699817,
+    "seen": 1792131345.3587155,
+    "ast_hash": "4523a9f9e933e03b2367f7cf12e8d8dc",
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/workbook-loader.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/test/app.test.js": {
-    "mtime": 1792113448.0350728,
-    "seen": 1792113461.6187346,
-    "ast_hash": "d58bf452b19730ba14ff98bbc3f95368",
+    "mtime": 1792131358.792539,
+    "seen": 1792131833.320534,
+    "ast_hash": "774313dfec5205aa044ad81fcd49ff89",
     "semantic_hash": ""
   },
   "Construct_overview/test/energy-calculator.test.js": {
@@ -204,9 +204,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/ext/LocationTopology.js": {
-    "mtime": 1792108271.8281674,
-    "seen": 1792109587.012221,
-    "ast_hash": "d7d4c862bc1b2b2902c94bbf53c53f91",
+    "mtime": 1792131799.0853193,
+    "seen": 1792131833.320478,
+    "ast_hash": "507ecfd3a0afc72268e44e5f7e4c08d9",
     "semantic_hash": ""
   },
   "Construct_overview/scripts/fix-master-data.js": {
@@ -228,9 +228,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/overview/controller/Overview.controller.js": {
-    "mtime": 1792112845.0127354,
-    "seen": 1792113461.6186922,
-    "ast_hash": "88ba052ff941231313f38153e64362ba",
+    "mtime": 1792131756.912817,
+    "seen": 1792131833.3204935,
+    "ast_hash": "5d2c9bbc1d012931c4fcfd1d33f521d8",
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/overview/controller/formatter.js": {

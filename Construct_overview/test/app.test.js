@@ -90,9 +90,9 @@ test('the tree shows owner, merged MK7/switch-over status and a row navigation a
   assert.match(view, /<table:rowActionTemplate>/);
   assert.match(view, /type="Navigation"/);
   assert.match(view, /<table:rowSettingsTemplate>/);
-  // The 8/8 counter is gone: progress is a bar without a value, and the step name is only shown below the last step.
-  assert.match(view, /showValue="false"/);
-  assert.doesNotMatch(view, /displayValue/);
+  // The switch-over progress is only shown on the detail page, not in the overview; only the MK7 status icon is shown.
+  assert.doesNotMatch(view, /ProgressIndicator/);
+  assert.doesNotMatch(view, /switchoverStepLabel/);
 });
 
 test('contains annotation metadata for the building overview KPIs', () => {

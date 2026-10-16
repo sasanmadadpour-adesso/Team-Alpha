@@ -48,8 +48,8 @@
            "options": { "settings": { "contextPath": "/Constructs", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "SharedMeLoTopology": { "template": "vnb.constructs.ext.Topology", "title": "{i18n>topologyTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
         },
         "BuildingsObjectPage": {
-          "type": "Component", "id": "BuildingsObjectPage", "name": "sap.fe.templates.ObjectPage",
-           "options": { "settings": { "contextPath": "/Buildings", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "BuildingSchematic": { "template": "vnb.constructs.ext.BuildingSchematic", "title": "{i18n>schematicTitle}", "position": { "placement": "After", "anchor": "Overview" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "Overview" } } } } } } }
+           "type": "Component", "id": "BuildingsObjectPage", "name": "sap.fe.templates.ObjectPage",
+            "options": { "settings": { "contextPath": "/Buildings", "editableHeaderContent": false, "content": { "header": { "actions": { "LanguageToggle": { "text": "{i18n>languageToggle}", "press": "vnb.constructs.ext.ListActions.toggleLanguage", "visible": true } } }, "body": { "sections": { "BuildingSchematic": { "template": "vnb.constructs.ext.BuildingSchematic", "title": "{i18n>schematicTitle}", "position": { "placement": "After", "anchor": "EnergySummary" } }, "EnergyTrend": { "template": "vnb.constructs.ext.EnergyTrend", "title": "{i18n>ENERGY_TREND}", "position": { "placement": "After", "anchor": "BuildingSchematic" } } } } } } }
         }
       }
     }

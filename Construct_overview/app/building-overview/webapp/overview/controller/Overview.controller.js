@@ -22,6 +22,7 @@ sap.ui.define([
       this._roots = [];
       this._flat = [];
       this._parentOf = new Map();
+      this._sort = null; // { key: "displayName", descending: false }
       this._ui = new JSONModel({
         query: "", mode: "find", matchIds: [], currentId: null, matchPos: 0, rowCount: 1,
         matchLabel: "", fuzzyHint: "", navigable: false, tableTitle: "",
@@ -84,7 +85,38 @@ sap.ui.define([
         households: households.length,
         participating: households.filter(node => node.participationCriticality !== 1).length,
         finished: households.filter(node => node.participationCriticality === 3).length
+       });
+    },
+
+    _compare: function (a, b) {
+      if (a == null) return b == null ? 0 : 1;
+      if (b == null) return -1;
+      if (typeof a === "number" && typeof b === "number") return a - b;
+      const aStr = String(a);
+      const bStr = String(b);
+      return aStr.localeCompare(bStr, undefined, { numeric: true });
+    },
+
+    _sortArray: function (arr, key, descending) {
+      if (!arr || !key) return;
+      arr.sort((a, b) => {
+        const cmp = this._compare(a[key], b[key]);
+        return descending ? -cmp : cmp;
       });
+    },
+
+    _applySorting: function (roots) {
+      if (!this._sort) return roots;
+      const sorted = roots.map(root => {
+        const copy = { ...root };
+        if (copy.children) {
+          copy.children = [...copy.children];
+          this._sortArray(copy.children, this._sort.key, this._sort.descending);
+        }
+        return copy;
+      });
+      this._sortArray(sorted, this._sort.key, this._sort.descending);
+      return sorted;
     },
 
     // Replaces the tree data. Only called when the displayed set changes (load, mode switch, filter typing),
@@ -99,6 +131,7 @@ sap.ui.define([
           .filter(root => hits.has(root.ID) || (root.children || []).some(child => hits.has(child.ID)))
           .map(root => (hits.has(root.ID) || !root.children ? root : { ...root, children: root.children.filter(child => hits.has(child.ID)) }));
       }
+      roots = this._applySorting(roots);
       this.getView().getModel("tree").setData(roots);
       this._ui.setProperty("/tableTitle", this._text("overviewTableTitle", [roots.length]));
       const table = this._table();
@@ -231,6 +264,40 @@ sap.ui.define([
       const context = event.getSource().getBindingContext("tree");
       const hash = context && context.getProperty("detailHash");
       if (hash) HashChanger.getInstance().setHash(hash.replace(/^#/, ""));
+    },
+
+    onSort: function (event) {
+      event.preventDefault();
+      const column = event.getParameter("column");
+      if (!column) return;
+      const sortProperty = column.getSortProperty();
+      if (!sortProperty) return;
+      const table = this._table();
+      
+      // Cycle through: no sort → ascending → descending → no sort
+      let newSort = null;
+      if (!this._sort || this._sort.key !== sortProperty) {
+        // Sort by this column, ascending
+        newSort = { key: sortProperty, descending: false };
+      } else if (!this._sort.descending) {
+        // Already ascending, switch to descending
+        newSort = { key: sortProperty, descending: true };
+      }
+      // else: already descending, go back to no sort (newSort stays null)
+      
+      this._sort = newSort;
+      
+      // Clear sort indicators on all columns and set on the clicked column
+      for (const col of table.getColumns()) {
+        if (col === column && newSort) {
+          col.setSorted(true);
+          col.setSortOrder(newSort.descending ? "Descending" : "Ascending");
+        } else {
+          col.setSorted(false);
+        }
+      }
+      
+      this._applyTree();
     },
 
     onToggleLanguage: function () {

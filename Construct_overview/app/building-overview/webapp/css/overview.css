@@ -37,7 +37,7 @@
 .vnbOv-stepLabel { white-space: nowrap; }
 .vnbOv-progress { width: 6rem; }
 
-.vnbOv-mk7 { font-size: 1.05rem; }
-.vnbOv-mk7-yes { color: var(--sapPositiveColor, #257a3e); }
-.vnbOv-mk7-warn { color: var(--sapCriticalColor, #e9730c); }
-.vnbOv-mk7-no { color: var(--sapNegativeColor, #b00); }
+.sapUiIcon.vnbOv-mk7 { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .85rem; }
+.sapUiIcon.vnbOv-mk7-yes { background: #e9f7ef; color: #236746; }
+.sapUiIcon.vnbOv-mk7-warn { background: #fef3e3; color: #92400e; }
+.sapUiIcon.vnbOv-mk7-no { background: #fdeaea; color: #bb0000; }

@@ -13,12 +13,6 @@
         <f:heading>
           <Title text="{i18n>appTitle}" level="H2"/>
         </f:heading>
-        <f:expandedContent>
-          <Text text="{i18n>appDescription}"/>
-        </f:expandedContent>
-        <f:snappedContent>
-          <Text text="{i18n>appDescription}"/>
-        </f:snappedContent>
         <f:actions>
           <Button text="{i18n>languageToggle}" press="onToggleLanguage" type="Transparent"/>
         </f:actions>
@@ -78,6 +72,7 @@
           selectionMode="None"
           rowActionCount="1"
           rowsUpdated="onRowsUpdated"
+          sort="onSort"
           enableColumnReordering="false"
           class="vnbOv-tree">
           <table:rowMode>
@@ -95,8 +90,8 @@
             </table:RowAction>
           </table:rowActionTemplate>
           <table:columns>
-            <table:Column width="20rem">
-              <Label text="{i18n>treeName}"/>
+           <table:Column width="20rem" sortProperty="displayName">
+             <Label text="{i18n>treeName}"/>
               <table:template>
                 <HBox alignItems="Center" class="vnbOv-nameCell">
                   <core:Icon src="{parts: ['tree>nodeType'], formatter: '.formatter.nodeIcon'}"
@@ -105,60 +100,55 @@
                 </HBox>
               </table:template>
             </table:Column>
-            <table:Column width="10rem">
-              <Label text="{i18n>ROLE}"/>
+             <table:Column width="10rem" sortProperty="roleLabel">
+               <Label text="{i18n>ROLE}"/>
               <table:template>
                 <Text text="{tree>roleLabel}"/>
               </table:template>
             </table:Column>
-            <table:Column width="10rem">
-              <Label text="{i18n>CITY}"/>
+             <table:Column width="10rem" sortProperty="city">
+               <Label text="{i18n>CITY}"/>
               <table:template>
                 <Text text="{tree>city}"/>
               </table:template>
             </table:Column>
-            <table:Column width="12rem">
-              <Label text="{i18n>treeOwner}"/>
+             <table:Column width="12rem" sortProperty="ownerName">
+               <Label text="{i18n>treeOwner}"/>
               <table:template>
                 <Text text="{tree>ownerName}"/>
               </table:template>
             </table:Column>
-            <table:Column width="17rem">
-              <Label text="{i18n>treeStatus}"/>
+             <table:Column width="17rem" sortProperty="participationCriticality">
+               <Label text="{i18n>treeStatus}"/>
               <table:template>
                 <HBox alignItems="Center" class="vnbOv-statusCell">
                   <core:Icon src="{parts: ['tree>participationCriticality'], formatter: '.formatter.mk7Icon'}"
                     class="{parts: ['tree>participationCriticality'], formatter: '.formatter.mk7Class'}"
                     visible="{parts: ['tree>nodeType'], formatter: '.formatter.isHousehold'}"
                     tooltip="{i18n>mk7Participation}"/>
-                  <Text text="{tree>switchoverStepLabel}" class="vnbOv-stepLabel"
-                    visible="{parts: ['tree>nodeType', 'tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.statusDetail'}"/>
-                  <ProgressIndicator percentValue="{parts: ['tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.progressPercent'}"
-                    showValue="false" state="Success" class="vnbOv-progress"
-                    visible="{parts: ['tree>nodeType', 'tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.statusDetail'}"/>
                 </HBox>
               </table:template>
             </table:Column>
-            <table:Column width="8rem" hAlign="End">
-              <Label text="{i18n>CONSUMPTION_KWH}"/>
+             <table:Column width="8rem" hAlign="End" sortProperty="totalConsumptionKwh">
+               <Label text="{i18n>CONSUMPTION_KWH}"/>
               <table:template>
                 <Text text="{tree>totalConsumptionKwh}"/>
               </table:template>
             </table:Column>
-            <table:Column width="8rem" hAlign="End">
-              <Label text="{i18n>GENERATION_KWH}"/>
+             <table:Column width="8rem" hAlign="End" sortProperty="totalGenerationKwh">
+               <Label text="{i18n>GENERATION_KWH}"/>
               <table:template>
                 <Text text="{tree>totalGenerationKwh}"/>
               </table:template>
             </table:Column>
-            <table:Column width="8rem" hAlign="End">
-              <Label text="{i18n>LOCAL_ENERGY_KWH}"/>
+             <table:Column width="8rem" hAlign="End" sortProperty="localEnergyKwh">
+               <Label text="{i18n>LOCAL_ENERGY_KWH}"/>
               <table:template>
                 <Text text="{tree>localEnergyKwh}"/>
               </table:template>
             </table:Column>
-            <table:Column width="6rem" hAlign="Center">
-              <Label text="{i18n>DATA_QUALITY}"/>
+             <table:Column width="6rem" hAlign="Center" sortProperty="hasDataWarning">
+               <Label text="{i18n>DATA_QUALITY}"/>
               <table:template>
                 <core:Icon src="sap-icon://alert" class="vnbOv-mk7-warn" visible="{tree>hasDataWarning}" tooltip="{i18n>DATA_QUALITY}"/>
               </table:template>

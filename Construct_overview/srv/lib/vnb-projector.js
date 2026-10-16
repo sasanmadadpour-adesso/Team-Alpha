@@ -121,7 +121,7 @@ function project(snapshot) {
       sharedMeterConstructID: sharedMeter?.ID || '',
       isSharedMeter: isSharedMeterRole,
       counterKpiHidden: isSharedMeterRole,
-      switchoverHidden: !isHouseholdRole || participant.switchoverStep >= TOTAL_STEPS,
+       switchoverHidden: !isHouseholdRole || participant.participation !== 'Ja' || participant.switchoverStep >= TOTAL_STEPS,
       switchoverStepLabel: stepLabel(participant.switchoverStep, 'en'),
       buildingMemberCount: snapshot.participants.filter(row => row.buildingId === participant.buildingId && row.role === 'Household Consumption').length,
       ID: participant.ID,
@@ -253,7 +253,7 @@ function project(snapshot) {
     ID: row.ID, buildingID: row.buildingID, meLo: row.meLo, importMaLo: row.importMaLo, exportMaLo: row.exportMaLo,
     participationCode: row.participationCode, participationLabel: row.participationLabel, participationMark: '', participationCriticality: row.participationCriticality, isEligible: row.isEligible,
     switchoverStep: row.switchoverStep || null, switchoverTotalSteps: TOTAL_STEPS, switchoverComplete: row.switchoverComplete,
-    switchoverStepLabel: stepLabel(row.switchoverStep, 'en'), switchoverHidden: Boolean(row.switchoverComplete),
+    switchoverStepLabel: stepLabel(row.switchoverStep, 'en'), switchoverHidden: Boolean(row.switchoverComplete) || row.participationCode !== 'YES',
     totalConsumptionKwh: row.totalConsumptionKwh, localEnergyKwh: row.localEnergyKwh, residualGridKwh: row.residualGridKwh,
     localEnergySharePercent: row.totalConsumptionKwh ? round(row.localEnergyKwh / row.totalConsumptionKwh * 100, 1) : 0,
     targetConstructID: row.ID

@@ -121,7 +121,7 @@ annotate service.Buildings with @(
   UI.FieldGroup #BuildingSummary: { Data: [
     { Value: ID, Label: '{i18n>BUILDING}' }, { Value: city, Label: '{i18n>CITY}' },
     { Value: streetAddress, Label: '{i18n>ADDRESS}' }, { Value: operatorName, Label: '{i18n>OPERATOR}' },
-    { Value: ownerFirstName, Label: '{i18n>OWNER_FIRST_NAME}' }, { Value: ownerLastName, Label: '{i18n>OWNER_LAST_NAME}' },
+    { Value: ownerName, Label: '{i18n>OWNER}' },
     { Value: productionTypes, Label: '{i18n>PRODUCTION}' }, { Value: installedCapacityKw, Label: '{i18n>CAPACITY_KW}' }
   ] },
   UI.FieldGroup #EnergySummary: { Data: [

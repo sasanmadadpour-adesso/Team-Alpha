@@ -68,13 +68,13 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
     _template: function (c) {
       const t = key => escape(this._text(key));
       const roles = { HOUSEHOLD: "roleHousehold", GENERATION: "rolePlant", BIDIRECTIONAL: "rolePlant", RESIDUAL: "roleCounter" };
-      const participant = `
-        <section class="vnbLt-card vnbLt-own">
-          <h4>${t(roles[c.roleCode] || "roleHousehold")}</h4>
-          ${this._row("meLoLabel", c.meLo)}
-          ${this._row("importMaLoLabel", c.importMaLo)}
-          ${this._row("exportMaLoLabel", c.exportMaLo)}
-        </section>`;
+       const participant = `
+         <section class="vnbLt-card vnbLt-own">
+           <h4>${t(roles[c.roleCode] || "roleHousehold")}</h4>
+           ${this._row("importMaLoLabel", c.importMaLo)}
+           ${this._row("exportMaLoLabel", c.exportMaLo)}
+           ${this._row("meLoLabel", c.meLo)}
+         </section>`;
       const wire = `<div class="vnbLt-wire" aria-hidden="true"></div>`;
       const grid = `<section class="vnbLt-card vnbLt-grid"><h4>${t("gridNode")}</h4><p>${t("gridNodeHint")}</p></section>`;
 
