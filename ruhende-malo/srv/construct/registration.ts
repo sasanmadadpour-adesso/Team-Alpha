@@ -162,8 +162,20 @@ export async function registerProducerPipeline(tx: cds.Service, input: ProducerP
       streetAddress: input.streetAddress, maloConflict: false, unverifiedSourceAttributes: '{}',
       sourceData: JSON.stringify({ source: 'producer-onboardings', meloId: input.meloId, generationFeedInMaloId: input.generationFeedInMaloId }),
     };
-    await tx.run(INSERT.into(ns('ParticipantSourceRows')).entries({ ...row, constructId: input.buildingId, excluded: false, imsysStatus: 'UNKNOWN', deregistrationStatus: 'UNKNOWN', mcmStatus: 'UNKNOWN' }));
-    await tx.run(UPSERT.into(ns('MarketLocations')).entries({ maloId: row.maloId, primaryRole: row.role, participates: true, businessState: 'ACTIVE', assignmentCount: 1, conflictingAssignment: false, assignmentSummary: `${row.buildingId}:${row.meloId}` }));
+    const construct = await tx.run(SELECT.one.from(ns('Constructs')).columns('constructId').where({ constructId: input.buildingId })) as { constructId: string } | undefined;
+    if (!construct) {
+      // A new producer building must enter through the canonical registration
+      // path so Buildings, Constructs, checklist, audit and process state are
+      // created together. Previously only the participant row was inserted,
+      // causing continueProcessing() to fail with CONSTRUCT_NOT_FOUND.
+      await registerConstructs(tx, [row], { file: 'producer-onboardings', actor }, { stichtag: row.supplyStartUtc });
+    } else {
+      // Do not replace an existing workbook/API construct just to append a
+      // producer. Its generation row joins the existing canonical process.
+      await tx.run(INSERT.into(ns('ParticipantSourceRows')).entries({ ...row, constructId: input.buildingId, excluded: false, imsysStatus: 'UNKNOWN', deregistrationStatus: 'UNKNOWN', mcmStatus: 'UNKNOWN' }));
+      await tx.run(UPSERT.into(ns('MarketLocations')).entries({ maloId: row.maloId, primaryRole: row.role, participates: true, businessState: 'ACTIVE', assignmentCount: 1, conflictingAssignment: false, assignmentSummary: `${row.buildingId}:${row.meloId}` }));
+      await refreshConstructs(tx);
+    }
   }
   const results = await continueProcessing(tx, [input.buildingId], actor);
   return results[0];

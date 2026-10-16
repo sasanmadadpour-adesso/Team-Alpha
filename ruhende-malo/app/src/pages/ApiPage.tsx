@@ -119,7 +119,7 @@ export function ApiPage() {
   useEffect(() => { if (route.endsWith('/access')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
 
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); toast(t('api.copied')); } catch { toast(text); } };
-  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.id === 'producerOnboarding' ? ' \\\n  -H "Idempotency-Key: registration-demo-001"' : ''}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
+  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.id === 'producerOnboarding' ? ' \\\n  -H "Idempotency-Key: registration-demo-$(date +%s)"' : ''}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
 
   const send = async () => {
     if (ep.method === 'POST') { try { JSON.parse(body || '{}'); } catch { setBodyErr(true); return; } }
