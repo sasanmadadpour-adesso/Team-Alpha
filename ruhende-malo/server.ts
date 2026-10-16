@@ -15,6 +15,20 @@ const ns = (n: string) => `mk7.controlcenter.${n}`;
 const reject = (res: express.Response, status: number, code: string, message: string, params: object = {}) =>
   res.status(status).json({ error: { code, message, args: [JSON.stringify(params)] } });
 
+/**
+ * NAS/container-friendly structured logging. Never log authorization headers,
+ * request bodies, query values, or response bodies: correlation_id is the
+ * trace handle for support without leaking credentials or customer data.
+ */
+const apiLog = (event: string, fields: Record<string, unknown>) => {
+  console.info(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    service: 'mk7-control-center',
+    event,
+    ...fields,
+  }));
+};
+
 async function principalOf(header: string | undefined): Promise<Principal | undefined> {
   const token = /^Bearer\s+(\S+)$/i.exec(header ?? '')?.[1];
   if (!token) return undefined;
@@ -57,8 +71,29 @@ cds.on('bootstrap', (app: express.Express) => {
   app.use('/api/v1', express.json({ limit: '25mb' }), async (req, res, next) => {
     const started = Date.now();
     const correlationId=String(req.headers['x-correlation-id']??cds.utils.uuid()); res.setHeader('x-correlation-id',correlationId);
-    delete req.headers['x-ruhend-actor']; delete req.headers['x-ruhend-role']; delete req.headers['x-ruhend-via'];
     let principal: Principal | undefined;
+    // Register this before any auth/validation return so rejected requests are
+    // visible in NAS logs as well.
+    res.on('finish', () => {
+      const fields = {
+        correlation_id: correlationId,
+        method: req.method,
+        path: req.originalUrl.split('?')[0].slice(0, 200),
+        status: res.statusCode,
+        duration_ms: Date.now() - started,
+        actor: principal?.actor ?? 'anonymous',
+        via: principal?.via ?? '-',
+        role: principal?.role ?? 'NONE',
+      };
+      apiLog('api_response', fields);
+      if (req.method !== 'GET' && req.path !== '/login') {
+        void cds.db.run(INSERT.into(ns('ApiCalls')).entries({ at: new Date().toISOString(), actor: fields.actor, via: fields.via, method: req.method, path: fields.path, status: res.statusCode, durationMs: fields.duration_ms })).catch((error: unknown) => {
+          apiLog('api_log_persist_failed', { correlation_id: correlationId, error: error instanceof Error ? error.message : String(error) });
+        });
+      }
+    });
+    apiLog('api_request', { correlation_id: correlationId, method: req.method, path: req.originalUrl.split('?')[0].slice(0, 200) });
+    delete req.headers['x-ruhend-actor']; delete req.headers['x-ruhend-role']; delete req.headers['x-ruhend-via'];
     try { principal = await principalOf(req.headers.authorization); } catch { principal = undefined; }
     if (principal) { req.headers['x-ruhend-actor'] = principal.actor; req.headers['x-ruhend-role'] = principal.role; req.headers['x-ruhend-via'] = principal.via; }
 
@@ -82,11 +117,6 @@ cds.on('bootstrap', (app: express.Express) => {
         return principal
           ? reject(res, 403, 'FORBIDDEN', `Role ${principal.role} may not call ${action}.`, { role: principal.role, action })
           : reject(res, 401, 'AUTH_REQUIRED', `Sign in or send an API key to call ${action}.`, { action });
-      }
-      if (action !== 'login') {
-        res.on('finish', () => {
-          void cds.db.run(INSERT.into(ns('ApiCalls')).entries({ at: new Date().toISOString(), actor: principal?.actor ?? 'anonymous', via: principal?.via ?? '-', method: req.method, path: req.originalUrl.split('?')[0].slice(0, 200), status: res.statusCode, durationMs: Date.now() - started })).catch(() => undefined);
-        });
       }
     }
     next();
