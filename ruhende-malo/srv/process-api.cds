@@ -68,7 +68,7 @@ service ProcessApi {
   type Session { token: String; expiresAt: Timestamp; user: Persona; }
   type Principal { authenticated: Boolean; id: String; name: String; role: String; via: String; }
   type NewApiKey { ID: UUID; name: String; role: String; prefix: String; token: String; }
-  type Health { status: String; mode: String; sapConnection: String; version: String; }
+  type Health { status: String; mode: String; sapConnection: String; version: String; accessCode: Boolean; publicUrl: String; }
 
   /* ------------------------------------------------------------ resources */
 
@@ -119,7 +119,7 @@ service ProcessApi {
 
   function health() returns Health;
   /** Demo sign-in: pick a persona, receive a Bearer token (12 h). Not real authentication. */
-  action login(user: String) returns Session;
+  action login(user: String, code: String) returns Session;
   function personas() returns many Persona;
   /** The caller as the API sees them (from the Bearer token). */
   function me() returns Principal;

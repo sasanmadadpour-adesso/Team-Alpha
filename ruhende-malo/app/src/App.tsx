@@ -7,7 +7,7 @@ import { Banner } from '@/components/app/patterns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { I18nContext, translate, type Key, type Lang } from './i18n';
-import { AppContext, errorText, navigate, openItems, useRoute, useToasts } from './ui';
+import { AppContext, errorText, navigate, openItems, useLinkInterceptor, useRoute, useToasts } from './ui';
 import { ConfirmHost, confirmDialog } from './confirm';
 import { OverviewPage } from './pages/Overview';
 import { ConstructPage } from './pages/Construct';
@@ -29,6 +29,7 @@ export default function App() {
   const [who, setWho] = useState<Who | null | undefined>(undefined);   // undefined = checking the stored session, null = signed out
   const [expired, setExpired] = useState(false);
   const route = useRoute();
+  useLinkInterceptor();
   const toasts = useToasts();
   const file = useRef<HTMLInputElement>(null);
 
@@ -36,7 +37,7 @@ export default function App() {
   const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   useEffect(() => {
-    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/api') ? t('nav.api') : route.startsWith('/protokoll') ? t('nav.log') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
+    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/schnittstelle') ? t('nav.api') : route.startsWith('/protokoll') ? t('nav.log') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
     document.title = `${page} · Ruhend — ${t('app.subtitle')} (${t('top.simulation.short')})`;
     document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'));
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', t('app.description'));
@@ -106,7 +107,7 @@ export default function App() {
   };
 
   useEffect(() => { setCaseId(undefined); }, [route]);   // a case drawer never outlives the page it was opened on
-  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/api') ? 'api' : route.startsWith('/ablauf') ? 'stages' : 'overview';
+  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/schnittstelle') ? 'api' : route.startsWith('/ablauf') ? 'stages' : 'overview';
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
   const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
 

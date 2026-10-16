@@ -22,17 +22,49 @@ export interface AppCtx {
 export const AppContext = createContext<AppCtx | null>(null);
 export const useApp = () => useContext(AppContext)!;
 
-/* ---------------- Hash router ---------------- */
+/* ---------------- Router (clean URLs, History API) ---------------- */
+const NAV = 'ruhend:nav';
+const LEGACY: Record<string, string> = { '/api': '/schnittstelle', '/api#keys': '/schnittstelle/zugang' };
+/** Old bookmarks like /#/klaerfaelle keep working: they are rewritten to /klaerfaelle once. */
+function normalizeLegacy() {
+  if (!location.hash.startsWith('#/')) return;
+  const old = location.hash.slice(1);
+  history.replaceState(null, '', LEGACY[old] ?? old);
+}
+const current = () => location.pathname + location.search;
+
 export function useRoute(): string {
-  const [route, setRoute] = useState(() => location.hash.replace(/^#/, '') || '/');
+  const [route, setRoute] = useState(() => { normalizeLegacy(); return current(); });
   useEffect(() => {
-    const on = () => setRoute(location.hash.replace(/^#/, '') || '/');
-    window.addEventListener('hashchange', on);
-    return () => window.removeEventListener('hashchange', on);
+    const on = () => setRoute(current());
+    window.addEventListener('popstate', on);
+    window.addEventListener(NAV, on);
+    return () => { window.removeEventListener('popstate', on); window.removeEventListener(NAV, on); };
   }, []);
   return route;
 }
-export const navigate = (path: string) => { if (location.hash !== `#${path}`) location.hash = path; window.scrollTo({ top: 0 }); };
+export const navigate = (path: string) => {
+  if (current() !== path) history.pushState(null, '', path);
+  window.dispatchEvent(new Event(NAV));
+  window.scrollTo({ top: 0 });
+};
+export const NAV_EVENT = NAV;
+
+/** Plain <a href="/..."> links navigate inside the app without a page load (Cmd/Ctrl-click and external links are left alone). */
+export function useLinkInterceptor() {
+  useEffect(() => {
+    const on = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element).closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!a || a.target || a.hasAttribute('download') || a.origin !== location.origin) return;
+      if (a.pathname.startsWith('/api/') || a.pathname.startsWith('/odata/') || /\.\w+$/.test(a.pathname)) return;   // API and files: normal browser behaviour
+      e.preventDefault();
+      navigate(a.pathname + a.search);
+    };
+    document.addEventListener('click', on);
+    return () => document.removeEventListener('click', on);
+  }, []);
+}
 
 /* ---------------- Brand ---------------- */
 /** The logo. Calm motion: the teal node sends one soft ripple on load and once per hover (a signal, not a spinner). */

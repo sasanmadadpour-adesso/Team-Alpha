@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MK7 Control Center — local SAP CAP simulation",
+  "description": "MK7 Control Center \u2014 local SAP CAP simulation",
   "workspaces": [
     "app"
   ],
@@ -44,6 +44,9 @@
         "credentials": {
           "url": "db.sqlite"
         }
+      },
+      "auth": {
+        "kind": "dummy"
       }
     }
   },

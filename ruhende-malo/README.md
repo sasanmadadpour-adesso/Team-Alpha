@@ -142,3 +142,7 @@ See `docs/PROCESS_STAGES.md` for exactly what happens in each of the six stages,
 ## UI stack
 
 React 19 + Vite, **Tailwind CSS v4 and shadcn/ui**. See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for tokens, components and conventions.
+
+## Docker
+
+One image, one port. Build, push, NAS and Cloudflare steps: [docs/DEPLOY.md](docs/DEPLOY.md).

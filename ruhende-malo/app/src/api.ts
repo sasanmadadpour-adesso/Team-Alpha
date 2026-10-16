@@ -91,7 +91,8 @@ export interface Session { token: string; expiresAt: string; user: Persona }
 export interface Me { authenticated: boolean; name: string | null; role: Persona['role'] | 'NONE'; via: string | null }
 export interface NewApiKey { ID: string; name: string; role: string; prefix: string; token: string }
 export const loadPersonas = () => http<Persona[]>('personas()');
-export const login = (user: string) => http<Session>('login', { user });
+export const login = (user: string, code?: string) => http<Session>('login', { user, code });
+export const loadHealth = () => http<{ status: string; mode: string; accessCode: boolean; publicUrl: string | null }>('health()');
 export const whoAmI = () => http<Me>('me()');
 export const loadApiKeys = () => http<ApiKey[]>('ApiKeys?$orderby=createdAt desc');
 export const createApiKey = (name: string, role: string) => http<NewApiKey>('createApiKey', { name, role });

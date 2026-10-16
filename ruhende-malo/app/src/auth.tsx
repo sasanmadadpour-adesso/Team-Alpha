@@ -3,8 +3,9 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, Banner } from '@/components/app/patterns';
-import { loadPersonas, login } from './api';
+import { Avatar, Banner, Field } from '@/components/app/patterns';
+import { Input } from '@/components/ui/input';
+import { loadHealth, loadPersonas, login } from './api';
 import { useI18n } from './i18n';
 import { SIGNED_OUT, canAdmin, canWrite, setToken, type Persona, type Role } from './session';
 import { BrandMark, SimTag, errorText } from './ui';
@@ -32,10 +33,13 @@ export function SignIn({ onSignedIn, expired }: { onSignedIn: (w: Who) => void; 
   const [personas, setPersonas] = useState<Persona[]>();
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
+  const [needCode, setNeedCode] = useState(false);
+  const [code, setCode] = useState('');
+  useEffect(() => { loadHealth().then((h) => setNeedCode(!!h.accessCode)).catch(() => undefined); }, []);
   useEffect(() => { loadPersonas().then(setPersonas).catch((e) => setError(errorText(t, e))); }, [t]);
   const go = async (p: Persona) => {
     setBusy(p.id); setError(undefined);
-    try { const s = await login(p.id); setToken(s.token); onSignedIn({ name: s.user.name, role: s.user.role }); }
+    try { const s = await login(p.id, code); setToken(s.token); onSignedIn({ name: s.user.name, role: s.user.role }); }
     catch (e) { setError(errorText(t, e)); setBusy(undefined); }
   };
   return (
@@ -49,10 +53,11 @@ export function SignIn({ onSignedIn, expired }: { onSignedIn: (w: Who) => void; 
         <p className="text-muted-foreground">{t('auth.sub')}</p>
         {expired && <Banner tone="wait" className="mb-0">{t('auth.expired')}</Banner>}
         {error && <Banner tone="err" className="mb-0">{error}</Banner>}
+        {needCode && <Field label={t('auth.code')}><Input type="password" autoComplete="off" autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder={t('auth.code.ph')} /></Field>}
         <div className="grid gap-2.5">
           {!personas && !error && <Skeleton className="h-[76px]" />}
           {personas?.map((p, i) => (
-            <button key={p.id} disabled={!!busy} onClick={() => void go(p)} aria-label={t('auth.signin', { name: p.name })} style={{ animationDelay: `${i * 70 + 120}ms` }}
+            <button key={p.id} disabled={!!busy || (needCode && !code)} onClick={() => void go(p)} aria-label={t('auth.signin', { name: p.name })} style={{ animationDelay: `${i * 70 + 120}ms` }}
               className="flex animate-rise items-center gap-3 rounded-xl border bg-card p-3.5 text-left transition hover:-translate-y-px hover:border-teal hover:shadow-[0_0_0_3px_var(--secondary)] disabled:opacity-60">
               <Avatar name={p.name} size="lg" />
               <span className="grid min-w-0 flex-1 gap-0.5"><b className="font-semibold">{p.name}</b><Badge variant="secondary" className="justify-self-start">{t(`role.${p.role}`)}</Badge><small className="text-[12.5px] leading-snug text-muted-foreground">{t(`role.${p.role}.d`)}</small></span>

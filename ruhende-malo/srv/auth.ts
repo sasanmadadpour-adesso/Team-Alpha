@@ -15,7 +15,9 @@ export const PERSONAS: Persona[] = [
 export const ROLES: Role[] = ['VIEWER', 'MAINTAINER', 'PIPELINE'];
 export const SESSION_HOURS = 12;
 
-const SECRET = process.env.RUHEND_SESSION_SECRET ?? createHash('sha256').update(`ruhend-demo-sessions:${process.cwd()}`).digest('hex');
+/** Production (Docker): set RUHEND_SESSION_SECRET; without it a random secret is used and sessions end on restart. Dev: a stable local value. */
+const SECRET = process.env.RUHEND_SESSION_SECRET
+  ?? (process.env.NODE_ENV === 'production' ? randomBytes(32).toString('hex') : createHash('sha256').update(`ruhend-demo-sessions:${process.cwd()}`).digest('hex'));
 const sign = (payload: string) => createHmac('sha256', SECRET).update(payload).digest('base64url');
 
 export function signSession(personaId: string, now = Date.now()): { token: string; expiresAt: string } {
@@ -54,4 +56,28 @@ export function allowed(role: Role | undefined, need: Need): boolean {
   if (need === 'ANY') return true;
   if (need === 'WRITE') return role === 'MAINTAINER' || role === 'PIPELINE';
   return role === 'MAINTAINER';
+}
+
+/**
+ * Optional access code for a publicly reachable demo (RUHEND_ACCESS_CODE). When set, signing in needs it.
+ * Compared in constant time. This is a shared secret for a demo, not user authentication.
+ */
+export const accessCodeRequired = () => !!process.env.RUHEND_ACCESS_CODE;
+export function accessCodeValid(code: string | undefined): boolean {
+  const expected = process.env.RUHEND_ACCESS_CODE;
+  if (!expected) return true;
+  const a = createHash('sha256').update(code ?? '').digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
+/** Sliding-window limiter for failed sign-ins (per client address). */
+export function createLimiter(max: number, windowMs: number) {
+  const hits = new Map<string, number[]>();
+  const recent = (key: string, now: number) => (hits.get(key) ?? []).filter((t) => now - t < windowMs);
+  return {
+    blocked: (key: string, now = Date.now()) => recent(key, now).length >= max,
+    fail: (key: string, now = Date.now()) => { hits.set(key, [...recent(key, now), now]); },
+    reset: (key: string) => { hits.delete(key); },
+  };
 }

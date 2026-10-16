@@ -4,7 +4,7 @@ import type { Snapshot } from './api';
 import { useAuth } from './auth';
 import { Avatar } from '@/components/app/patterns';
 import { relTime, useI18n, type Lang } from './i18n';
-import { BrandMark, SimTag, navigate } from './ui';
+import { BrandMark, NAV_EVENT, SimTag, navigate } from './ui';
 import { buildFeed, eventSubject } from './pages/Protokoll';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export function ActivityPanel({ data, onClose }: { data: Snapshot; onClose: () =
           ))}
         </ul>
       </ScrollArea>
-      <footer className="border-t px-4 py-2.5 text-[13.5px] font-medium"><a href="#/protokoll" onClick={onClose}>{t('feed.all')} →</a></footer>
+      <footer className="border-t px-4 py-2.5 text-[13.5px] font-medium"><a href="/protokoll" onClick={onClose}>{t('feed.all')} →</a></footer>
     </div>
   );
 }
@@ -67,7 +67,7 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
   const [feedOpen, setFeedOpen] = useState(false);
   const newest = useMemo(() => (data ? buildFeed(data)[0]?.at : undefined), [data]);
   const unseen = useUnseen(newest, feedOpen);
-  useEffect(() => { const off = () => setFeedOpen(false); window.addEventListener('hashchange', off); return () => window.removeEventListener('hashchange', off); }, []);
+  useEffect(() => { const off = () => setFeedOpen(false); window.addEventListener(NAV_EVENT, off); window.addEventListener('popstate', off); return () => { window.removeEventListener(NAV_EVENT, off); window.removeEventListener('popstate', off); }; }, []);
 
   const link = (href: string, on: boolean, label: string, extra?: React.ReactNode) => (
     <a href={href} className={cn("relative inline-flex h-full items-center gap-2 px-3 font-medium text-muted-foreground transition-colors hover:text-foreground after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:origin-left after:scale-x-0 after:rounded-sm after:bg-teal after:transition-transform after:duration-200 max-[820px]:px-2", on && 'text-primary after:scale-x-100')}>{label}{extra}</a>
@@ -75,7 +75,7 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-7 border-b bg-white/85 px-6 backdrop-blur-md backdrop-saturate-150 max-[640px]:gap-2 max-[640px]:px-2.5">
-      <a href="#/" aria-label="Ruhend" className="group/brand flex min-w-0 items-center gap-2.5 text-foreground no-underline">
+      <a href="/" aria-label="Ruhend" className="group/brand flex min-w-0 items-center gap-2.5 text-foreground no-underline">
         <BrandMark />
         <span className="grid min-w-0 gap-px leading-tight">
           <span className="flex items-center gap-2"><span className="text-[16.5px] font-semibold tracking-tight">Ruhend</span><span className="max-[640px]:hidden"><SimTag /></span></span>
@@ -83,9 +83,9 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
         </span>
       </a>
       <nav className="flex h-full gap-1" aria-label={t('nav.main')}>
-        {link('#/', section === 'overview', t('nav.overview'))}
-        {link('#/klaerfaelle', section === 'cases', t('nav.cases'), openCount > 0 && <Badge variant="secondary" className={cn('min-w-5 px-1.5', bump && 'animate-pop')}>{openCount}</Badge>)}
-        {link('#/api', section === 'api', t('nav.api'))}
+        {link('/', section === 'overview', t('nav.overview'))}
+        {link('/klaerfaelle', section === 'cases', t('nav.cases'), openCount > 0 && <Badge variant="secondary" className={cn('min-w-5 px-1.5', bump && 'animate-pop')}>{openCount}</Badge>)}
+        {link('/schnittstelle', section === 'api', t('nav.api'))}
       </nav>
       <div className="ml-auto flex items-center gap-2.5">
         <div role="group" aria-label={t('lang.label')} className="inline-flex rounded-lg bg-muted p-0.5 max-[640px]:hidden">
@@ -114,7 +114,7 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
           <DropdownMenuContent align="end" sideOffset={8} className="w-72">
             <div className="flex items-center gap-2.5 px-2 pt-2 pb-1"><Avatar name={auth.who.name} size="lg" /><div><b className="block leading-tight font-semibold">{auth.who.name}</b><small className="text-[12.5px] text-muted-foreground">{t(`role.${auth.who.role}`)} · Demo</small></div></div>
             <p className="px-2 pb-2 text-[12.5px] leading-snug text-muted-foreground">{t(`role.${auth.who.role}.d`)}</p>
-            <DropdownMenuItem onSelect={() => navigate('/api#keys')}><KeyRound />{t('auth.keys')}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate('/schnittstelle/zugang')}><KeyRound />{t('auth.keys')}</DropdownMenuItem>
             {auth.admin && (
               <>
                 <DropdownMenuSeparator />

@@ -12,7 +12,7 @@ import { continueProcessing, listCases } from './construct/cases.js';
 import { SAP_VALUES, updateSapState, type SapAttribute } from './construct/sap-state.js';
 import { executeLifecycle, planLifecycle } from './construct/lifecycle-ops.js';
 import type { LifecyclePlan } from './domain/lifecycle.js';
-import { PERSONAS, ROLES, hashKey, newKeyToken, signSession, type Role } from './auth.js';
+import { PERSONAS, ROLES, accessCodeRequired, hashKey, newKeyToken, signSession, type Role } from './auth.js';
 
 /**
  * REST facade (/api/v1). Transport only: input validation, error mapping and DTO shaping.
@@ -81,7 +81,7 @@ export default class ProcessApi extends cds.ApplicationService {
       return true;
     }));
 
-    this.on('health', () => ({ status: 'OK', mode: 'SIMULATION', sapConnection: 'NOT_CONFIGURED', version: 'v1' }));
+    this.on('health', () => ({ status: 'OK', mode: 'SIMULATION', sapConnection: 'NOT_CONFIGURED', version: 'v1', accessCode: accessCodeRequired(), publicUrl: process.env.RUHEND_PUBLIC_URL?.replace(/\/+$/, '') || null }));
 
     /* ---------------- S1 Anmeldung */
     this.on('registerConstruct', guard(async (req) => {

@@ -8,3 +8,6 @@ coverage/
 *.sqlite-wal
 .DS_Store
 *.log
+app/vite.config.js
+app/vite.config.d.ts
+*.tsbuildinfo

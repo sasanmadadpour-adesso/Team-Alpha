@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Copy, Download, KeyRound, Loader2, Play, Trash2 } from 'lucide-react';
-import { type ApiKey, type Snapshot, createApiKey, loadApiKeys, loadSnapshot, revokeApiKey } from '../api';
+import { type ApiKey, type Snapshot, createApiKey, loadApiKeys, loadHealth, loadSnapshot, revokeApiKey } from '../api';
 import { Gate, useAuth } from '../auth';
 import { confirmDialog } from '../confirm';
 import { relTime, useI18n } from '../i18n';
 import { getToken } from '../session';
-import { errorText, openItems, useApp } from '../ui';
+import { errorText, openItems, useApp, useRoute } from '../ui';
 import { Banner, Field, PageHeader } from '@/components/app/patterns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -94,6 +94,9 @@ export function ApiPage() {
   const [sent, setSent] = useState<Sent>();
   const [done, setDone] = useState<number[]>([]);
   const [step, setStep] = useState<number>();
+  // The address other systems call: RUHEND_PUBLIC_URL when set (your domain), otherwise the address this page is served from.
+  const [base, setBase] = useState(location.origin);
+  useEffect(() => { loadHealth().then((h) => { if (h.publicUrl) setBase(h.publicUrl); }).catch(() => undefined); }, []);
 
   const select = (id: string, override?: { path?: string; body?: object }, recipeStep?: number) => {
     setStep(recipeStep);
@@ -101,10 +104,11 @@ export function ApiPage() {
     setEpId(id); setPath(override?.path ?? fill(next.path, ctx));
     setBody(override?.body ? pretty(override.body) : next.body ? pretty(next.body(ctx)) : ''); setBodyErr(false); setSent(undefined);
   };
-  useEffect(() => { if (location.hash.endsWith('#keys')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, []);
+  const route = useRoute();
+  useEffect(() => { if (route.endsWith('/zugang')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
 
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); toast(t('api.copied')); } catch { toast(text); } };
-  const curl = `curl -X ${ep.method} "http://localhost:4004/api/v1${encodeURI(path)}"${ep.need === 'READ' || ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
+  const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'READ' || ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
 
   const send = async () => {
     if (ep.method === 'POST') { try { JSON.parse(body || '{}'); } catch { setBodyErr(true); return; } }
@@ -135,7 +139,7 @@ export function ApiPage() {
     <>
       <PageHeader
         title={t('api.title')} badge={<Badge variant="info">v1</Badge>}
-        description={<>{t('api.sub')} <span className="font-mono text-[0.86em]">http://localhost:4004/api/v1</span></>}
+        description={<>{t('api.sub')} <span className="font-mono text-[0.86em]">{base}/api/v1</span></>}
         actions={<>
           <Button variant="outline" onClick={() => void copy(getToken() ?? '')}><Copy />{t('api.keys.token')}</Button>
           <Button variant="outline" asChild><a href="/openapi.json" download><Download />{t('api.spec')}</a></Button>
