@@ -1,3 +1,5 @@
+node_modules/
+dist/
 # Local editor and office lock files
 .~lock.*#
 .DS_Store
