@@ -5,8 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:all": "concurrently -k -n frontend,backend -c blue,green \"npm run dev\" \"npm run backend:dev\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend:install": "npm --prefix backend install",
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:build": "npm --prefix backend run build",
+    "backend:test": "npm --prefix backend test"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -17,5 +22,8 @@
     "typescript": "latest",
     "vite": "latest",
     "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
