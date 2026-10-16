@@ -1,102 +1,129 @@
-import { confirmDialog, ConfirmHost } from './confirm';
-import { useCallback, useEffect, useState } from 'react';
-import { type Snapshot, loadSnapshot, resetDemo, runSelfCheck } from './api';
-import { ProcessPage } from './pages/Process';
-import { KorrekturPage } from './pages/Korrektur';
-import { ManualPage } from './pages/Manual';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlaskConical, MoreHorizontal, RotateCcw, Upload } from 'lucide-react';
+import { type Snapshot, importWorkbook, loadSnapshot, resetDemo, runSelfCheck } from './api';
+import { I18nContext, translate, type Key, type Lang } from './i18n';
+import { AppContext, BrandMark, errorText, navigate, openItems, useRoute, useToasts } from './ui';
+import { ConfirmHost, confirmDialog } from './confirm';
+import { OverviewPage } from './pages/Overview';
+import { ConstructPage } from './pages/Construct';
+import { CasesPage } from './pages/Cases';
 import { ApiPage } from './pages/ApiPage';
+import { ProtokollPage } from './pages/Protokoll';
+import { CaseDrawer } from './pages/CaseDrawer';
 import './styles.css';
 
-export type Tab = 'process' | 'korrektur' | 'manual' | 'api';
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'process', label: 'Process' },
-  { id: 'korrektur', label: 'Korrektur' },
-  { id: 'manual', label: 'MaLo' },
-  { id: 'api', label: 'API' },
-];
-
-export interface PageProps {
-  data: Snapshot;
-  refresh: () => Promise<void>;
-  notify: (message: string) => void;
-  openMalo: (maloId: string) => void;
-  go: (tab: Tab) => void;
+function readLang(): Lang {
+  try { return localStorage.getItem('ruhend.lang') === 'en' ? 'en' : 'de'; } catch { return 'de'; }
 }
 
 export default function App() {
-  const initial = location.hash.slice(1) as Tab;
-  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === initial) ? initial : 'process');
+  const [lang, setLangState] = useState<Lang>(readLang);
   const [data, setData] = useState<Snapshot>();
   const [error, setError] = useState<string>();
-  const [toast, setToast] = useState<string>();
-  const [check, setCheck] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const [focusMalo, setFocusMalo] = useState<string>();
+  const [caseId, setCaseId] = useState<string>();
+  const [menu, setMenu] = useState(false);
+  const route = useRoute();
+  const toasts = useToasts();
+  const file = useRef<HTMLInputElement>(null);
+
+  const t = useCallback((k: Key | string, p?: Record<string, string | number>) => translate(lang, k, p), [lang]);
+  const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
   const refresh = useCallback(async () => {
-    try { setData(await loadSnapshot()); setError(undefined); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    try { const s = await loadSnapshot(); setData(s); setError(undefined); return s; }
+    catch (e) { setError(errorText((k) => translate(readLang(), k), e)); return undefined; }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
-  useEffect(() => { location.hash = tab; }, [tab]);
-  useEffect(() => {
-    const onHash = () => { const next = location.hash.slice(1) as Tab; if (TABS.some((t) => t.id === next)) setTab(next); };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(undefined), 4000); return () => clearTimeout(t); }, [toast]);
+  useEffect(() => { if (!menu) return; const close = () => setMenu(false); window.addEventListener('click', close); return () => window.removeEventListener('click', close); }, [menu]);
+
+  const openCount = data ? openItems(data.cases).length : 0;
+  const lastCount = useRef(openCount);
+  const [bump, setBump] = useState(false);
+  useEffect(() => { if (lastCount.current !== openCount) { setBump(true); lastCount.current = openCount; const id = setTimeout(() => setBump(false), 450); return () => clearTimeout(id); } }, [openCount]);
+
+  const ctx = useMemo(() => data && { data, refresh, openCase: setCaseId, toast: toasts.push, go: navigate }, [data, refresh, toasts.push]);
+  const i18n = useMemo(() => ({ lang, t, setLang }), [lang, t]);
 
   const reset = async () => {
-    if (!(await confirmDialog('Reset the demo?\n\nThe workbook is re-registered and all simulated changes and history are cleared. The workbook file itself is not changed.'))) return;
-    setBusy(true);
-    try { await resetDemo(); setCheck(undefined); setToast('Demo reset to the workbook baseline'); await refresh(); }
-    catch (e) { setToast(e instanceof Error ? e.message : String(e)); }
-    setBusy(false);
+    if (!(await confirmDialog(`${t('confirm.reset')}\n\n${t('confirm.reset.d')}`, t))) return;
+    try { await resetDemo(); setCaseId(undefined); await refresh(); toasts.push(t('toast.reset')); navigate('/'); } catch (e) { toasts.push(errorText(t, e), 'err'); }
   };
   const selfCheck = async () => {
-    setBusy(true);
-    try {
-      const r = await runSelfCheck();
-      setCheck(`${r.passed}/${r.passed + r.failed}`);
-      const failed = (JSON.parse(r.results) as { id: string; title: string; passed: boolean }[]).filter((x) => !x.passed);
-      setToast(failed.length ? `Failed: ${failed.map((f) => f.id).join(', ')}` : `All ${r.passed} business scenarios passed`);
-    } catch (e) { setCheck(undefined); setToast(e instanceof Error ? e.message : 'Self-check failed'); }
-    setBusy(false);
+    try { const r = await runSelfCheck(); toasts.push(t('toast.selfcheck', { p: r.passed, t: r.passed + r.failed }), r.failed ? 'err' : 'ok'); } catch (e) { toasts.push(errorText(t, e), 'err'); }
   };
-  const openMalo = (maloId: string) => { setFocusMalo(maloId); setTab('manual'); };
-  const openIssues = data?.issues.filter((i) => i.status === 'OPEN' && i.affects !== '[]').length ?? 0;
-  const props = data && { data, refresh, notify: setToast, openMalo, go: setTab };
+  const onFile = async (f?: File) => {
+    if (!f) return;
+    if (await confirmDialog(`${t('confirm.import', { f: f.name })}\n\n${t('confirm.import.d')}`, t)) {
+      try {
+        const bytes = new Uint8Array(await f.arrayBuffer());
+        let bin = ''; bytes.forEach((b) => { bin += String.fromCharCode(b); });
+        const r = await importWorkbook(f.name, btoa(bin));
+        await refresh(); toasts.push(t('toast.imported', { n: r.rows }));
+      } catch (e) { toasts.push(errorText(t, e), 'err'); }
+    }
+    if (file.current) file.current.value = '';
+  };
+
+  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/api') ? 'api' : 'overview';
+  const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
+  const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
 
   return (
-    <div className="page">
-      <header className="top">
-        <div className="brand"><span className="logo">R</span><div><b>Ruhend</b><small>Umstellung auf ruhende MaLo · MK7</small></div></div>
-        <nav className="tabs">
-          {TABS.map((t) => (
-            <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
-              {t.label}{t.id === 'korrektur' && openIssues > 0 && <span className="badge">{openIssues}</span>}
-            </button>
-          ))}
+    <I18nContext.Provider value={i18n}>
+      <header className="topbar">
+        <a className="brand" href="#/" aria-label="Ruhend">
+          <BrandMark />
+          <span className="brand-name">Ruhend</span>
+          <span className="brand-sub">{t('app.subtitle')}</span>
+        </a>
+        <nav className="nav" aria-label="main">
+          <a href="#/" className={section === 'overview' ? 'on' : ''}>{t('nav.overview')}</a>
+          <a href="#/klaerfaelle" className={section === 'cases' ? 'on' : ''}>{t('nav.cases')}{openCount > 0 && <span className={`count ${bump ? 'pop' : ''}`}>{openCount}</span>}</a>
+          <a href="#/protokoll" className={section === 'log' ? 'on' : ''}>{t('nav.log')}</a>
+          <a href="#/api" className={section === 'api' ? 'on' : ''}>{t('nav.api')}</a>
         </nav>
-        <div className="right">
-          <span className="sim" title="Everything is simulated in a local SQLite database. Nothing is sent to SAP IS-U.">Simulation · no SAP</span>
-          <button className="ghost" onClick={selfCheck} disabled={busy}>{check ? `Self-check ${check} ✓` : 'Self-check'}</button>
-          <button className="ghost" onClick={reset} disabled={busy}>Reset</button>
+        <div className="top-right">
+          <span className="sim" title={t('top.simulation')}><i /><span>{t('top.simulation')}</span></span>
+          <div className="lang" role="group" aria-label="Language">
+            <button className={lang === 'de' ? 'on' : ''} onClick={() => setLang('de')}>DE</button>
+            <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>EN</button>
+          </div>
+          <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
+            <button className="icon-btn" aria-label={t('menu.title')} aria-expanded={menu} onClick={() => setMenu((m) => !m)}><MoreHorizontal size={18} /></button>
+            {menu && (
+              <div className="menu" role="menu">
+                <div className="menu-title">{t('menu.title')}</div>
+                <button role="menuitem" onClick={() => { setMenu(false); void selfCheck(); }}><FlaskConical size={16} />{t('menu.selfcheck')}</button>
+                <button role="menuitem" onClick={() => { setMenu(false); file.current?.click(); }}><Upload size={16} />{t('menu.import')}</button>
+                <hr />
+                <button role="menuitem" onClick={() => { setMenu(false); void reset(); }}><RotateCcw size={16} />{t('menu.reset')}</button>
+              </div>
+            )}
+          </div>
+          <input ref={file} type="file" accept=".xlsx" hidden onChange={(e) => onFile(e.target.files?.[0])} />
         </div>
       </header>
 
-      {error && <div className="banner error">Backend not reachable: {error}</div>}
-      {!data && !error && <div className="loading">Loading…</div>}
-      {props && tab === 'process' && <ProcessPage {...props} />}
-      {props && tab === 'korrektur' && <KorrekturPage {...props} />}
-      {props && tab === 'manual' && <ManualPage {...props} focusMalo={focusMalo} />}
-      {tab === 'api' && <ApiPage />}
-
-      {toast && <div className="toast">{toast}</div>}
+      <main className="page">
+        {error && !data && <div className="banner err">{error}</div>}
+        {!data && !error && <div className="skeleton" style={{ height: 320 }} />}
+        {ctx && (
+          <AppContext.Provider value={ctx}>
+            {error && <div className="banner err">{error}</div>}
+            <div key={route} className="page-enter">
+              {section === 'overview' && !constructId && <OverviewPage />}
+              {constructId && <ConstructPage constructId={decodeURIComponent(constructId)} />}
+              {section === 'cases' && <CasesPage />}
+              {section === 'log' && <ProtokollPage initialConstruct={logConstruct} />}
+              {section === 'api' && <ApiPage />}
+            </div>
+            {caseId && <CaseDrawer caseId={caseId} onClose={() => setCaseId(undefined)} />}
+          </AppContext.Provider>
+        )}
+      </main>
+      {toasts.view}
       <ConfirmHost />
-    </div>
+    </I18nContext.Provider>
   );
-}
-
-export function Chip({ tone, children, title }: { tone: string; children: React.ReactNode; title?: string }) {
-  return <span className={`chip ${tone}`} title={title}>{children}</span>;
 }

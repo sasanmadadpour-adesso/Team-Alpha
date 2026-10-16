@@ -8,6 +8,7 @@ import {
 import { RULES, type Resolution } from './construct/rules.js';
 import type { SwitchItem, SwitchPlan } from './construct/switch-plan.js';
 import { runScenarios } from './construct/scenario-runner.js';
+import { continueProcessing, listCases } from './construct/cases.js';
 import { SAP_VALUES, loadSapFixture, updateSapState, type SapAttribute } from './construct/sap-state.js';
 import { executeLifecycle, planLifecycle } from './construct/lifecycle-ops.js';
 import type { LifecyclePlan } from './domain/lifecycle.js';
@@ -42,6 +43,8 @@ export default class ProcessApi extends cds.ApplicationService {
       try { return await fn(req); } catch (e) { return e instanceof ProcessError ? req.reject(e.status, e.message) : req.reject(500, e instanceof Error ? e.message : String(e)); }
     };
 
+    this.on('cases', guard(async (req) => listCases(cds.tx(req))));
+
     this.on('health', () => ({ status: 'OK', mode: 'SIMULATION', sapConnection: 'NOT_CONFIGURED', version: 'v1' }));
 
     /* ---------------- S1 Anmeldung */
@@ -53,7 +56,7 @@ export default class ProcessApi extends cds.ApplicationService {
       if (missing >= 0) throw new ProcessError(400, `participants[${missing}]: role, maloId and meloId are required.`);
       const tx = cds.tx(req);
       const result = await registerConstructs(tx, rowsFromRegistration(input), { file: 'API', actor: actorOf(req) }, { stichtag: input.stichtag });
-      await validateAll(tx, actorOf(req));
+      await continueProcessing(tx, result.constructIds, actorOf(req)); // Anmeldung is an event: process at once
       return result;
     }));
     this.on('importWorkbook', guard(async (req) => {
@@ -76,7 +79,9 @@ export default class ProcessApi extends cds.ApplicationService {
       const tx = cds.tx(req);
       const updated = await updateSapState(tx, d.attribute, d.objectId, d.value, actorOf(req));
       if (!updated) throw new ProcessError(404, `No participant found for ${d.attribute} ${d.objectId} (imsys: MeLo, abmeldung: MaLo, mcm: Einspeise-MaLo).`);
-      await validateAll(tx, actorOf(req));
+      const field = d.attribute === 'imsys' ? 'meloId' : d.attribute === 'mcm' ? 'generationFeedInMaloId' : 'maloId';
+      const affected = await tx.run(SELECT.from('mk7.controlcenter.ParticipantSourceRows').columns('constructId').where({ [field]: d.objectId })) as { constructId: string }[];
+      await continueProcessing(tx, affected.map((a) => a.constructId), actorOf(req));
       return validationReport(tx);
     }));
 
@@ -89,21 +94,32 @@ export default class ProcessApi extends cds.ApplicationService {
     this.on('resolve', 'Issues', guard(async (req) => {
       const d = req.data as { resolution: Resolution; value?: string; reason?: string };
       if (!RESOLUTIONS.includes(d.resolution)) throw new ProcessError(400, `resolution must be one of ${RESOLUTIONS.join(', ')}.`);
-      return resolveIssue(cds.tx(req), keyOf(req), d.resolution, d.value, d.reason, actorOf(req));
+      const tx = cds.tx(req);
+      const report = await resolveIssue(tx, keyOf(req), d.resolution, d.value, d.reason, actorOf(req));
+      await continueProcessing(tx, report.issues.flatMap((i) => i.constructIds.split(',')), actorOf(req));
+      return validationReport(tx, report.constructId ?? undefined);
     }));
     this.on('resolveIssues', guard(async (req) => {
       const d = req.data as { ids?: string[]; resolution: Resolution; value?: string; reason?: string };
       if (!d.ids?.length) throw new ProcessError(400, 'ids must not be empty.');
       const tx = cds.tx(req);
       let report;
-      for (const id of d.ids) report = await resolveIssue(tx, id, d.resolution, d.value, d.reason, actorOf(req));
+      const constructs = new Set<string>();
+      for (const id of d.ids) {
+        report = await resolveIssue(tx, id, d.resolution, d.value, d.reason, actorOf(req));
+        report.issues.filter((i) => i.ID === id).forEach((i) => i.constructIds.split(',').forEach((c) => constructs.add(c)));
+      }
+      await continueProcessing(tx, [...constructs], actorOf(req));
       return report;
     }));
 
     /* ---------------- S5 vSZ gate */
     this.on('confirmVsz', 'Constructs', guard(async (req) => {
       const d = req.data as { itemCodes?: string[]; evidence?: string };
-      return confirmVsz(cds.tx(req), keyOf(req), d.itemCodes, d.evidence, actorOf(req));
+      const tx = cds.tx(req);
+      const items = await confirmVsz(tx, keyOf(req), d.itemCodes, d.evidence, actorOf(req));
+      await continueProcessing(tx, [keyOf(req)], actorOf(req));
+      return items;
     }));
     this.on('setStichtag', 'Constructs', guard(async (req) => {
       const stichtag = (req.data as { stichtag?: string }).stichtag;

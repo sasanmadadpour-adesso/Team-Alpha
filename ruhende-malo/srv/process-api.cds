@@ -101,7 +101,18 @@ service ProcessApi {
 
   /* ------------------------------------------------------------ operations */
 
+  type CaseIssue { ID: UUID; ruleId: String; severity: String; checkGroup: String; message: String; allowedResolutions: String; field: String; constructIds: String; createdAt: Timestamp; }
+  type CaseView {
+    caseId: String; constructId: String; city: String; maloId: String; meloId: String; role: String; kind: String;
+    status: String;   // NEW | DONE | READY | WAITING | DECISION | CORRECTION | EXCLUDED | NOT_PARTICIPATING | REACTIVATED
+    category: String; // STATUS | VSZ | DECISION | CORRECTION
+    code: String; message: String; businessState: String; steps: many Step; issues: many CaseIssue; since: Timestamp;
+    feedInMaloId: String; reststromMaloId: String; exclusionReason: String;
+  }
+
   function health() returns Health;
+  /** One case per participant: the single, live status every client shows. */
+  function cases() returns many CaseView;
   /** S1 Anmeldung Konstrukt (JSON). Re-registering a building replaces its source rows and process state. */
   action registerConstruct(construct: Registration, actor: String) returns RegistrationResult;
   /** S1 Anmeldung via workbook upload (sheet "MK7 Teilnehmer", base64). Replaces all constructs. */

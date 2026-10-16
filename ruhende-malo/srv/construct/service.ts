@@ -24,7 +24,7 @@ export interface Context {
 export async function loadContext(tx: cds.Service): Promise<Context> {
   const [constructs, rows, periods, issues, checklist, relationships, locations, requests] = await Promise.all([
     tx.run(SELECT.from(ns('Constructs')).columns('constructId', 'stichtag', 'reststromMaloId', 'validatedAt').orderBy('constructId')),
-    tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'constructId', 'role', 'participationRaw', 'participates', 'maloId', 'meloId', 'generationFeedInMaloId', 'reststromMaloId', 'excluded', 'imsysStatus', 'deregistrationStatus', 'mcmStatus').orderBy('sourceRowNumber')),
+    tx.run(SELECT.from(ns('ParticipantSourceRows')).columns('sourceId', 'constructId', 'role', 'participationRaw', 'participates', 'maloId', 'meloId', 'generationFeedInMaloId', 'reststromMaloId', 'excluded', 'exclusionReason', 'imsysStatus', 'deregistrationStatus', 'mcmStatus').orderBy('sourceRowNumber')),
     tx.run(SELECT.from(ns('LifecyclePeriods')).columns('ID', 'maloId', 'businessState', 'validFrom', 'validToExclusive')),
     tx.run(SELECT.from(ns('ValidationIssues'))),
     tx.run(SELECT.from(ns('VszChecklistItems')).columns('constructId', 'itemCode', 'status')),
@@ -164,7 +164,7 @@ export async function previewSwitch(tx: cds.Service, constructId: string, onlyMa
   return planFor(ctx, constructId, onlyMaloId);
 }
 
-function planFor(ctx: Context, constructId: string, onlyMaloId?: string): SwitchPlan {
+export function planFor(ctx: Context, constructId: string, onlyMaloId?: string): SwitchPlan {
   const construct = ctx.constructs.find((c) => c.constructId === constructId);
   if (!construct) throw new ProcessError(404, `Construct ${constructId} not found.`);
   const checklist = ctx.checklist.filter((c) => c.constructId === constructId);

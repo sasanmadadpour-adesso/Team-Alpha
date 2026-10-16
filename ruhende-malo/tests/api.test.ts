@@ -52,6 +52,13 @@ describe('REST API v1 — construct process', () => {
     expect(mul).toMatchObject({ reststromMaloId: '50539603639', stichtag: '2026-10-01', eligibleCount: 3 });
   });
 
+  it('cases(): before the first check every participant is NEW, the non-participant is NOT_PARTICIPATING', async () => {
+    const cases = await get('cases()');
+    expect(cases.length).toBe(14); // 17 rows minus 3 Reststrom anchors
+    expect(cases.filter((c) => c.status === 'NEW').length).toBe(13);
+    expect(cases.find((c) => c.maloId === '50539603604')?.status).toBe('NOT_PARTICIPATING');
+  });
+
   it('preview never writes', async () => {
     const before = (await get('ProcessRequests')).length;
     const plan = await post('Constructs/B-MUL-01/previewSwitch');
@@ -64,6 +71,8 @@ describe('REST API v1 — construct process', () => {
     expect(run.body.success).toBe(6);
     for (const m of ['50539603921', '50539603000', '50539603944', '50539603532', '50539603234', '50539603873']) expect(await state(m)).toBe('RUHEND');
     for (const m of ['50539603888', '50539603876', '50539603103', '50539603604']) expect(await state(m)).toBe('ACTIVE');
+    const statuses = (await get('cases()')).reduce((acc: Json, c) => ({ ...acc, [c.status]: (acc[c.status] ?? 0) + 1 }), {});
+    expect(statuses).toMatchObject({ DONE: 6, WAITING: 2, NOT_PARTICIPATING: 1 });
     const held = run.body.constructs.flatMap((c: Json) => c.items).find((i: Json) => i.maloId === '50539603876');
     expect(held.steps.map((s: Json) => s.state)).toEqual(['OK', 'OK', 'WAIT', 'SKIP', 'SKIP', 'SKIP', 'SKIP']);
     const rels = await get('Constructs/B-MUL-01/relationshipList()');
@@ -80,8 +89,10 @@ describe('REST API v1 — construct process', () => {
     expect((await post('updateSapState', { attribute: 'abmeldung', objectId: '50539603876', value: 'MAYBE' })).status).toBe(400);
     expect((await post('updateSapState', { attribute: 'abmeldung', objectId: '59999999999', value: 'CONFIRMED' })).status).toBe(404);
     expect((await post('updateSapState', { attribute: 'abmeldung', objectId: '50539603876', value: 'CONFIRMED', actor: 'MAKO_GATEWAY' })).status).toBe(200);
-    await post('processAll');
+    // Event-driven: no manual run needed — the status input continues the construct automatically.
     expect(await state('50539603876')).toBe('RUHEND');
+    const c = (await get('cases()')).find((x) => x.maloId === '50539603876');
+    expect(c).toMatchObject({ status: 'DONE', category: null });
   });
 
   it('S3 rejects a Korrektur without reason (422) and an unknown resolution (400)', async () => {
@@ -93,15 +104,15 @@ describe('REST API v1 — construct process', () => {
   it('manual override with reason (iMSys confirmed) lets the next run finish the MaLo', async () => {
     const [id] = await openIssues('V10');
     expect((await post(`Issues/${id}/resolve`, { resolution: 'CONFIRM_ASSUMPTION', reason: 'iMSys installed per MSB note 12.10.' })).status).toBe(200);
-    await post('processAll');
-    expect(await state('50539603103')).toBe('RUHEND');
+    expect(await state('50539603103')).toBe('RUHEND'); // continued automatically
   });
 
   it('Korrektur CHOOSE_BUILDING clears V05; next run switches 50539603888 in Köln', async () => {
     const [v05] = await openIssues('V05');
     expect((await post(`Issues/${v05}/resolve`, { resolution: 'CHOOSE_BUILDING', value: 'B-CGN-01', reason: 'Tenant lives in Köln' })).status).toBe(200);
-    await post('processAll');
-    expect(await state('50539603888')).toBe('RUHEND');
+    expect(await state('50539603888')).toBe('RUHEND'); // continued automatically
+    const cases = (await get('cases()')).filter((x) => x.maloId === '50539603888');
+    expect(cases.map((x) => `${x.constructId}:${x.status}`).sort()).toEqual(['B-CGN-01:DONE', 'B-FRA-01:EXCLUDED']);
     const mama = await get(`Relationships?$filter=kind eq 'MAMA' and fromLocationId eq '50539603888'`);
     expect(mama.map((r) => r.toLocationId)).toEqual(['51781215999']);
   });
@@ -162,6 +173,8 @@ describe('REST API v1 — Anmeldung by JSON', () => {
     const run = await post('Constructs/B-TST-01/process');
     expect(run.body.stoppedAt).toBe('VSZ');
     expect(await state('50000000010')).toBe('ACTIVE');
+    const c = (await get('cases()')).find((x) => x.maloId === '50000000010');
+    expect(c?.status).toBe('WAITING');
   });
 
   it('rejects a registration without participants (400)', async () => {

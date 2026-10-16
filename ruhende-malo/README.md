@@ -78,14 +78,19 @@ One run processes every participant through all steps; **the pipeline never stop
 
 ## User interface
 
-| Tab | Purpose |
-| --- | --- |
-| **Process** | **Process board**: one row per participant and one column per step (Prüfung, vSZ, Voraussetzungen, MeMa §6.1, MaMa §6.2, Ruhend, Übergabe), with ✓/✕/!/○ per cell and the reason in the tooltip. **Run automatic process**, KPIs, per-construct MeMa/MaMa (§5 CSV), Aufbau vSZ checklist, process log, handover events |
-| **Korrektur** | Worklist of open findings grouped by rule: status input (e.g. *Abmeldung received*), building decision, fix value, exclude, or manual confirmation with a required reason; non-blocking notices and resolved history |
-| **MaLo** | Manual mode for one MaLo: Ruhendstellung (same engine as the process), Wiederaktivierung, Herauslösung, Korrektur, Rücknahme. **Check** never writes; the operation asks for confirmation. Shows Zeitscheiben and audit history |
-| **API** | Live documentation of the REST API with **Try it**, curl examples and the OpenAPI download |
+A web application with a fixed topbar, German / English switch (market terms stay German), self-hosted humanist fonts (Source Sans 3, IBM Plex Mono) and calm, purposeful motion (respects *reduced motion*).
 
-The header shows `Simulation · no SAP`, **Self-check** (18 business scenarios on isolated fixtures) and **Reset**.
+| Screen | Purpose |
+| --- | --- |
+| **Übersicht / Overview** | KPIs, one card per construct with the 5-stage rail of the solution map (Anmeldung → Prüfung → Aufbau vSZ → Umstellung → Übergabe) and a progress ring, recent activity in plain language. **Prozess starten** runs the automatic process. |
+| **Konstrukt** | The process exactly in PDF order: Anmeldung → Prüfung der Daten → Aufbau vSZ (checklist 1–4.7, confirm with evidence) → MeMa §6.1 → MaMa §6.2 → Einspeise-MeMa §6.3 → Ruhendstellung → Übergabe (§5 CSV). Participants sorted by *needs attention / done / other*. |
+| **Klärfälle / Cases** | One card per open finding, grouped by what to do: decide, fix data, wait for status. |
+| **Case drawer** | Opens from anywhere: what's going on (plain language), the MaLo's progress through the PDF steps, the actions (side-by-side comparison for conflicts, status input, live-validated correction, manual override with reason), master data, MeMa/MaMa, Zeitscheiben, lifecycle actions (Wiederaktivierung, Herauslösung, Korrektur, Rücknahme), history. |
+| **Schnittstelle / API** | Live API documentation with *Try it* and OpenAPI download. |
+
+**One truth, automatic continuation:** every screen reads the same live case status (`GET /cases()`). Resolving a case, a status input (`POST /updateSapState`) or a vSZ confirmation continues processing immediately; nobody has to press *Run* again. A construct registered via `POST /registerConstruct` is processed at once (event-driven). The workbook import / reset registers the baseline and waits for **Prozess starten**.
+
+The demo menu (⋯ in the topbar) offers test scenarios, workbook import and reset.
 
 ## Process API (`/api/v1`)
 

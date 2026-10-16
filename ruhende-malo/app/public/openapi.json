@@ -2834,6 +2834,47 @@
         }
       }
     },
+    "/cases": {
+      "get": {
+        "summary": "Invokes function cases",
+        "tags": [
+          "Service Operations"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Collection of CaseView",
+                  "properties": {
+                    "@count": {
+                      "$ref": "#/components/schemas/count"
+                    },
+                    "value": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ProcessApi.CaseView"
+                          }
+                        ],
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/error"
+          }
+        }
+      }
+    },
     "/execute": {
       "post": {
         "summary": "Invokes action execute",
@@ -3400,6 +3441,146 @@
             "type": "boolean",
             "nullable": true,
             "default": true
+          }
+        }
+      },
+      "ProcessApi.CaseIssue": {
+        "title": "CaseIssue",
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "01234567-89ab-cdef-0123-456789abcdef",
+            "nullable": true
+          },
+          "ruleId": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "checkGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "allowedResolutions": {
+            "type": "string",
+            "nullable": true
+          },
+          "field": {
+            "type": "string",
+            "nullable": true
+          },
+          "constructIds": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          }
+        }
+      },
+      "ProcessApi.CaseView": {
+        "title": "CaseView",
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "nullable": true
+          },
+          "constructId": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "maloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "meloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "businessState": {
+            "type": "string",
+            "nullable": true
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.Step"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ProcessApi.CaseIssue"
+                }
+              ],
+              "nullable": true
+            }
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2017-04-13T15:51:04.0000000Z",
+            "nullable": true
+          },
+          "feedInMaloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reststromMaloId": {
+            "type": "string",
+            "nullable": true
+          },
+          "exclusionReason": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
