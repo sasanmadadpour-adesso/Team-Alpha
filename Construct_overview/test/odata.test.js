@@ -15,7 +15,7 @@ async function waitForServer() {
 }
 
 test('serves VNB compatibility entities and navigation over OData', async t => {
-  const server = spawn(process.execPath, ['node_modules/@sap/cds/bin/serve.js'], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
+  const server = spawn(process.execPath, ['node_modules/@sap/cds/bin/serve.js'], { env: { ...process.env, PORT: String(port), WHITE_LABEL_ONLY: 'false' }, stdio: 'ignore' });
   t.after(() => server.kill());
   await waitForServer();
   const constructs = await (await fetch(`${base}/Constructs`)).json();

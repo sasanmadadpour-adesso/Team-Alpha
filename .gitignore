@@ -9,3 +9,8 @@ graphify-out/cost.json
 # Runtime dependencies and local tooling
 node_modules/
 .venv/
+
+# Local API credentials
+.env
+.env.*
+!.env.example
