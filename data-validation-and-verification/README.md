@@ -10,6 +10,9 @@ record representing SAP, and returns a complete result in the same HTTP
 response. There is no database, queue, or polling — everything happens
 synchronously in one request/response cycle.
 
+> For a plain-language walkthrough of every check performed and what each
+> possible response means, see [`OVERVIEW.md`](./OVERVIEW.md).
+
 ## 1. What This Demo Does
 
 ```text
