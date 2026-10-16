@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/source-sans-3/wght.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/*
+ * Ruhend design system — Tailwind v4 + shadcn/ui.
+ * Identity: primary = Deep Ocean Blue (#073B70), secondary = Electric Teal (#13B8B4).
+ * Status colors (ok / wait / act / err) are semantic and used only to show the state of a process.
+ */
+:root {
+  --radius: 0.5rem;
+  --background: #f5f6f8;
+  --foreground: #18202b;
+  --card: #ffffff;
+  --card-foreground: #18202b;
+  --popover: #ffffff;
+  --popover-foreground: #18202b;
+  --primary: #073b70;
+  --primary-foreground: #ffffff;
+  --secondary: #e3f7f6;
+  --secondary-foreground: #0a6f6c;
+  --muted: #f0f2f5;
+  --muted-foreground: #5b6676;
+  --accent: #e8f0f8;
+  --accent-foreground: #052c55;
+  --destructive: #b42318;
+  --border: #e4e7ec;
+  --input: #d3d9e1;
+  --ring: #13b8b4;
+
+  --teal: #13b8b4;
+  --teal-ink: #0a6f6c;
+  --primary-soft: #e8f0f8;
+  --primary-line: #bcd1e8;
+
+  --ok: #157a5f;      --ok-soft: #e7f5ef;   --ok-line: #bfe3d3;
+  --wait: #9a5b00;    --wait-soft: #fff5e3; --wait-line: #f3d9a4;
+  --act: #6440d0;     --act-soft: #f2eefd;  --act-line: #d8cdf7;
+  --err: #b42318;     --err-soft: #fdeceb;  --err-line: #f5c6c2;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: cubic-bezier(0.32, 1.32, 0.6, 1);
+  --top: 56px;
+}
+
+@theme inline {
+  --font-sans: 'Source Sans 3 Variable', 'Source Sans 3', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-teal: var(--teal);
+  --color-teal-ink: var(--teal-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-line: var(--primary-line);
+  --color-ok: var(--ok);     --color-ok-soft: var(--ok-soft);     --color-ok-line: var(--ok-line);
+  --color-wait: var(--wait); --color-wait-soft: var(--wait-soft); --color-wait-line: var(--wait-line);
+  --color-act: var(--act);   --color-act-soft: var(--act-soft);   --color-act-line: var(--act-line);
+  --color-err: var(--err);   --color-err-soft: var(--err-soft);   --color-err-line: var(--err-line);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-lift: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --shadow-float: 0 16px 40px -12px rgba(16, 24, 40, 0.22), 0 4px 10px rgba(16, 24, 40, 0.06);
+
+  --animate-rise: rise 240ms var(--ease) both;
+  --animate-pop: pop 380ms var(--spring);
+  --animate-breathe: breathe 2.4s ease-in-out infinite;
+  --animate-ring: ring 1.4s ease-out infinite;
+  --animate-indet: indet 1.2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-ripple: ripple 1.6s var(--ease) 0.4s 1;
+  --animate-ripple2: ripple2 1.2s var(--ease) 1;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html, body { @apply bg-background text-foreground; }
+  body { @apply font-sans text-[15px] leading-normal antialiased; font-feature-settings: 'tnum' 1; min-height: 100vh; }
+  h1 { @apply text-[26px] font-semibold leading-tight tracking-tight; }
+  h2 { @apply text-lg font-semibold tracking-tight; }
+  h3 { @apply text-[15px] font-semibold; }
+  a { @apply text-primary; }
+  button { @apply cursor-pointer; }
+  button:disabled { @apply cursor-default; }
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pop { 0% { transform: scale(0.92); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes breathe { 50% { opacity: 0.35; } }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(19, 184, 180, 0.35); } 100% { box-shadow: 0 0 0 10px rgba(19, 184, 180, 0); } }
+@keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes ripple2 { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(4.2); opacity: 0; } }
+@keyframes ripple { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(4.2); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }

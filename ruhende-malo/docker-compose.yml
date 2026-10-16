@@ -1,0 +1,18 @@
+# Deploy on the NAS:  cp .env.example .env  (edit it), then  docker compose up -d
+services:
+  ruhend:
+    image: ${DOCKERHUB_USER:-your-dockerhub-user}/ruhend:${RUHEND_TAG:-latest}
+    container_name: ruhend
+    restart: unless-stopped
+    ports:
+      - "${RUHEND_PORT:-4004}:4004"
+    environment:
+      RUHEND_ACCESS_CODE: ${RUHEND_ACCESS_CODE:?set RUHEND_ACCESS_CODE in .env}
+      RUHEND_SESSION_SECRET: ${RUHEND_SESSION_SECRET:-}
+      RUHEND_PUBLIC_URL: ${RUHEND_PUBLIC_URL:-}
+    volumes:
+      - ruhend-data:/data        # simulation database (SQLite); survives updates
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  ruhend-data:
