@@ -89,7 +89,9 @@ entity ProducerRegistrationRequests : cuid, managed {
   plantCapacityKw : Decimal(15,6); latitude : Decimal(12,8); longitude : Decimal(12,8); marketLocationId : String(80);
   tranche : String(120); preferredDeliveryStart : Timestamp; saasCustomerId : String(120); saasContractId : String(120);
   productName : String(160); consumerSaasContractId : String(120); controlResource : String(200); technicalResources : String(500);
-  contractStartUtc : Timestamp; contractEndUtc : Timestamp; buildingId : String(40); submittedBy : String(80); payload : LargeString;
+  contractStartUtc : Timestamp; contractEndUtc : Timestamp; buildingId : String(40);
+  meteringLocationId : String(80); generationFeedInMaloId : String(40); buildingMarketLocationMalo : String(40);
+  submittedBy : String(80); payload : LargeString;
 }
 
 entity HourlyConsumption {

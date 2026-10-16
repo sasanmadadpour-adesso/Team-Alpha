@@ -23,7 +23,8 @@ export interface RegistrationResult { constructIds: string[]; rows: number; hous
  * normal validation pipeline will stop it with a review/blocking finding. */
 export interface ProducerPipelineInput {
   buildingId: string;
-  marketLocationId: string;
+  meloId: string;
+  generationFeedInMaloId: string;
   productionType: string;
   preferredDeliveryStart?: string;
   city?: string;
@@ -149,19 +150,21 @@ export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[]
  * generation construct whose missing MeLo is validated by the normal rules.
  */
 export async function registerProducerPipeline(tx: cds.Service, input: ProducerPipelineInput, actor: string) {
-  const construct = await tx.run(SELECT.one.from(ns('Constructs')).columns('constructId').where({ constructId: input.buildingId })) as { constructId: string } | undefined;
-  if (!construct) {
+  const sourceId = `PRODUCER_API:${input.buildingId}:${input.meloId}`;
+  const existingRow = await tx.run(SELECT.one.from(ns('ParticipantSourceRows')).columns('sourceId').where({ sourceId })) as { sourceId: string } | undefined;
+  if (!existingRow) {
     const row: ParticipantRow = {
-      sourceId: `PRODUCER_API:${input.buildingId}:${input.marketLocationId}`,
+      sourceId,
       sourceFile: 'producer-onboardings', sourceSheet: 'producer-onboardings', sourceRowNumber: 1,
       buildingId: input.buildingId, role: producerRole(input.productionType), participationRaw: 'Ja', participates: true,
-      meloId: '', maloId: input.marketLocationId, generationFeedInMaloId: input.marketLocationId,
+      meloId: input.meloId, maloId: input.generationFeedInMaloId, generationFeedInMaloId: input.generationFeedInMaloId,
       supplyStartUtc: input.preferredDeliveryStart?.slice(0, 10), city: input.city, operator: input.operator,
       streetAddress: input.streetAddress, maloConflict: false, unverifiedSourceAttributes: '{}',
-      sourceData: JSON.stringify({ source: 'producer-onboardings', marketLocationId: input.marketLocationId }),
+      sourceData: JSON.stringify({ source: 'producer-onboardings', meloId: input.meloId, generationFeedInMaloId: input.generationFeedInMaloId }),
     };
-    await registerConstructs(tx, [row], { file: 'producer-onboardings', actor }, { stichtag: input.preferredDeliveryStart?.slice(0, 10) });
+    await tx.run(INSERT.into(ns('ParticipantSourceRows')).entries({ ...row, constructId: input.buildingId, excluded: false, imsysStatus: 'UNKNOWN', deregistrationStatus: 'UNKNOWN', mcmStatus: 'UNKNOWN' }));
+    await tx.run(UPSERT.into(ns('MarketLocations')).entries({ maloId: row.maloId, primaryRole: row.role, participates: true, businessState: 'ACTIVE', assignmentCount: 1, conflictingAssignment: false, assignmentSummary: `${row.buildingId}:${row.meloId}` }));
   }
-  await continueProcessing(tx, [input.buildingId], actor);
-  return input.buildingId;
+  const results = await continueProcessing(tx, [input.buildingId], actor);
+  return results[0];
 }

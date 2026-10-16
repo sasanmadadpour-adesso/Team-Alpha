@@ -110,7 +110,7 @@ cds.on('bootstrap', (app: express.Express) => {
     const body = req.body as Record<string, unknown>;
     const actor = String(req.headers['x-ruhend-actor'] ?? 'API_CLIENT');
     const fail = (status:number,code:string,message:string,details:object[]=[])=>(res.status(status).json({error:{code,message,details,correlation_id:res.getHeader('x-correlation-id')}}));
-    const required=['first_name','last_name','email','construct_type','production_type','plant_capacity_kw','market_location_identifier','preferred_delivery_start','contract_start_utc','contract_end_utc','building_id'];
+    const required=['first_name','last_name','email','construct_type','production_type','plant_capacity_kw','market_location_identifier','market_location_malo','preferred_delivery_start','contract_start_utc','contract_end_utc','building_id'];
     const missing=required.filter((field)=>body[field]===null||body[field]===undefined||String(body[field]).trim()==='');
     if(missing.length) return fail(400,'VALIDATION_FAILED','Required fields are missing.',missing.map(field=>({field,code:'REQUIRED'})));
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) return fail(400,'VALIDATION_FAILED','The email address is invalid.',[{field:'email',code:'INVALID_EMAIL'}]);
@@ -118,30 +118,32 @@ cds.on('bootstrap', (app: express.Express) => {
     const plant=body.plant_specifics as Record<string,unknown>|undefined, lat=Number(plant?.latitude), lon=Number(plant?.longitude), capacity=Number(body.plant_capacity_kw);
     if(!Number.isFinite(capacity)||capacity<=0) return fail(400,'VALIDATION_FAILED','plant_capacity_kw must be positive.',[{field:'plant_capacity_kw',code:'INVALID_NUMBER'}]);
     if(!Number.isFinite(lat)||lat < -90||lat > 90||!Number.isFinite(lon)||lon < -180||lon > 180) return fail(400,'VALIDATION_FAILED','Valid plant coordinates are required.',[{field:'plant_specifics',code:'INVALID_COORDINATES'}]);
+    if(!/^DE[0-9A-Z]{31}$/.test(String(body.market_location_identifier))) return fail(400,'VALIDATION_FAILED','market_location_identifier must be a valid MeLo ID.',[{field:'market_location_identifier',code:'INVALID_MELO'}]);
+    if(!/^\d{11}$/.test(String(body.market_location_malo))) return fail(400,'VALIDATION_FAILED','market_location_malo must be an 11-digit MaLo ID.',[{field:'market_location_malo',code:'INVALID_MALO'}]);
     const dates=['preferred_delivery_start','contract_start_utc','contract_end_utc'] as const;
     if(dates.some(k=>typeof body[k]!=='string'||!/[zZ]|[+-]\d\d:\d\d$/.test(String(body[k]))||Number.isNaN(Date.parse(String(body[k]))))) return fail(400,'VALIDATION_FAILED','UTC timestamps with a timezone are required.',[{field:'timestamps',code:'INVALID_TIMESTAMP'}]);
     if(Date.parse(String(body.contract_end_utc))<=Date.parse(String(body.contract_start_utc))) return fail(400,'VALIDATION_FAILED','contract_end_utc must be later than contract_start_utc.',[{field:'contract_end_utc',code:'INVALID_DATE_RANGE'}]);
     const idempotencyKey=String(req.headers['idempotency-key']??'').trim();
     if(!idempotencyKey) return fail(400,'IDEMPOTENCY_KEY_REQUIRED','Send an Idempotency-Key header.');
     const entity=ns('ProducerRegistrationRequests');
-    const existing=await cds.db.run(SELECT.one.from(entity).where({idempotencyKey})) as {ID:string;status:string;buildingId:string;marketLocationId:string;createdAt:string;payload:string}|undefined;
+    const existing=await cds.db.run(SELECT.one.from(entity).where({idempotencyKey})) as {ID:string;status:string;buildingId:string;marketLocationId:string;meteringLocationId?:string;generationFeedInMaloId?:string;createdAt:string;payload:string}|undefined;
     if(existing){
       if(existing.payload!==JSON.stringify(body)) return fail(409,'IDEMPOTENCY_CONFLICT','This Idempotency-Key was already used with a different payload.');
-      return res.status(200).json({id:existing.ID,status:existing.status,building_id:existing.buildingId,market_location_identifier:existing.marketLocationId,created_at:existing.createdAt,simulation:true,sap_connection:'NOT_CONFIGURED',idempotent_replay:true});
+      return res.status(200).json({id:existing.ID,status:existing.status,building_id:existing.buildingId,market_location_identifier:existing.meteringLocationId ?? existing.marketLocationId,market_location_malo:existing.generationFeedInMaloId ?? existing.marketLocationId,created_at:existing.createdAt,simulation:true,sap_connection:'NOT_CONFIGURED',idempotent_replay:true});
     }
     const ID=cds.utils.uuid(), now=new Date().toISOString();
     await cds.db.tx(async tx=>{
-      await tx.run(INSERT.into(entity).entries({ID,idempotencyKey,status:'ACCEPTED',constructType:body.construct_type,firstName:body.first_name,lastName:body.last_name,email:body.email,salutation:body.salutation,isBusiness:body.is_business,isReverseCharge:body.is_reverse_charge,deliveryStreet:body.deliv_address_street,deliveryHouseNumber:String(body.deliv_address_house_number??''),deliveryZipcode:String(body.deliv_address_zipcode??''),deliveryCity:body.deliv_address_city,subscriptionReason:body.subscription_reason,productionType:body.production_type,plantCapacityKw:capacity,latitude:lat,longitude:lon,marketLocationId:String(body.market_location_identifier),tranche:body.tranche,preferredDeliveryStart:new Date(String(body.preferred_delivery_start)).toISOString(),saasCustomerId:body.saas_customer_id,saasContractId:body.saas_contract_id,productName:body.product_name,consumerSaasContractId:body.consumer_saas_contract_id,controlResource:body.control_resource,technicalResources:body.technical_resources?JSON.stringify(body.technical_resources):null,contractStartUtc:new Date(String(body.contract_start_utc)).toISOString(),contractEndUtc:new Date(String(body.contract_end_utc)).toISOString(),buildingId:body.building_id,submittedBy:actor,payload:JSON.stringify(body)}));
-       await tx.run(INSERT.into(ns('AuditEvents')).entries({operation:'PRODUCER_ONBOARDING_CREATED',maloId:String(body.market_location_identifier),actor,eventTime:now,afterValue:JSON.stringify({ID,buildingId:body.building_id,status:'ACCEPTED'}),simulated:true}));
+      await tx.run(INSERT.into(entity).entries({ID,idempotencyKey,status:'ACCEPTED',constructType:body.construct_type,firstName:body.first_name,lastName:body.last_name,email:body.email,salutation:body.salutation,isBusiness:body.is_business,isReverseCharge:body.is_reverse_charge,deliveryStreet:body.deliv_address_street,deliveryHouseNumber:String(body.deliv_address_house_number??''),deliveryZipcode:String(body.deliv_address_zipcode??''),deliveryCity:body.deliv_address_city,subscriptionReason:body.subscription_reason,productionType:body.production_type,plantCapacityKw:capacity,latitude:lat,longitude:lon,marketLocationId:String(body.market_location_malo),meteringLocationId:String(body.market_location_identifier),generationFeedInMaloId:String(body.market_location_malo),buildingMarketLocationMalo:body.building_market_location_malo ? String(body.building_market_location_malo) : null,tranche:body.tranche,preferredDeliveryStart:new Date(String(body.preferred_delivery_start)).toISOString(),saasCustomerId:body.saas_customer_id,saasContractId:body.saas_contract_id,productName:body.product_name,consumerSaasContractId:body.consumer_saas_contract_id,controlResource:body.control_resource,technicalResources:body.technical_resources?JSON.stringify(body.technical_resources):null,contractStartUtc:new Date(String(body.contract_start_utc)).toISOString(),contractEndUtc:new Date(String(body.contract_end_utc)).toISOString(),buildingId:body.building_id,submittedBy:actor,payload:JSON.stringify(body)}));
+        await tx.run(INSERT.into(ns('AuditEvents')).entries({operation:'PRODUCER_ONBOARDING_CREATED',maloId:String(body.market_location_malo),actor,eventTime:now,afterValue:JSON.stringify({ID,buildingId:body.building_id,status:'ACCEPTED'}),simulated:true}));
        await registerProducerPipeline(tx, {
-         buildingId: String(body.building_id), marketLocationId: String(body.market_location_identifier),
+          buildingId: String(body.building_id), meloId: String(body.market_location_identifier), generationFeedInMaloId: String(body.market_location_malo),
          productionType: String(body.production_type), preferredDeliveryStart: String(body.preferred_delivery_start),
          city: body.deliv_address_city ? String(body.deliv_address_city) : undefined,
          streetAddress: [body.deliv_address_street, body.deliv_address_house_number].filter(Boolean).join(' ') || undefined,
        }, actor);
      });
     res.location(`/api/v1/ProducerRegistrations/${ID}`);
-    return res.status(201).json({id:ID,status:'ACCEPTED',building_id:body.building_id,market_location_identifier:body.market_location_identifier,created_at:now,simulation:true,sap_connection:'NOT_CONFIGURED',links:{self:`/api/v1/ProducerRegistrations/${ID}`}});
+    return res.status(201).json({id:ID,status:'SIMULATED_VERIFIED',verified:true,onboarding_action:'CONTINUE',building_id:body.building_id,market_location_identifier:body.market_location_identifier,market_location_malo:body.market_location_malo,created_at:now,simulation:true,verification_source:'SAP_MOCK_FIXTURE',sap_connection:'NOT_CONFIGURED',links:{self:`/api/v1/ProducerRegistrations/${ID}`}});
   });
 });
 
