@@ -11,4 +11,4 @@ The source assigns MaLo `50539603888` to both Frankfurt and Köln. For the clean
 - The Köln participant row and all 8,760 matching hourly-consumption rows are changed together.
 - `50539603891` is unique and has a valid check digit under the project’s BDEW validation algorithm.
 
-This is a **synthetic demo correction**, not a SAP-verified identifier. Future onboarding data comes through `POST /api/v1/producer-onboardings` and does not rewrite either workbook.
+This is a **synthetic demo correction**, not a SAP-verified identifier. Future onboarding data comes through `POST /api/v1/producer-onboardings` and does not rewrite either workbook. Producer onboarding must provide two different identifiers: `market_location_identifier` is the 33-character MeLo and `market_location_malo` is the separate 11-digit MaLo. The MeLo cannot be used as the MaLo.

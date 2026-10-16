@@ -461,7 +461,7 @@ Base path: **`/api/v1`**. `{id}` denotes a construct ID; `{issue}` denotes a fin
 | GET | `/health()` · `/personas()` · `/me()` | Simulation health/configuration, available persona, caller identity. |
 | POST | `/login` | Demo session; `{ user, code? }`. |
 | POST | `/createApiKey` · `/revokeApiKey` | Key lifecycle; Maintainer only. |
-| POST | `/registerConstruct` | `{ construct: { buildingId, participants, stichtag?, ... } }`; register and continue. |
+| POST | `/registerConstruct` | `{ construct: { buildingId, participants, stichtag?, ... } }`; register and continue. This CAP action is separate from `/producer-onboardings`, which requires both `market_location_identifier` (MeLo) and `market_location_malo` (11-digit MaLo). |
 | POST | `/importWorkbook` | `{ fileName, contentBase64 }`; replace baseline data and validate. |
 | GET | `/Constructs` · `/Participants` · `/MarketLocations` | Construct and participant/master views. |
 | POST | `/Constructs/{id}/validate` | Global rule revalidation; return scoped report. |

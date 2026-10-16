@@ -13,6 +13,7 @@ import { SAP_VALUES, updateSapState, type SapAttribute } from './construct/sap-s
 import { executeLifecycle, planLifecycle } from './construct/lifecycle-ops.js';
 import type { LifecyclePlan } from './domain/lifecycle.js';
 import { PERSONAS, ROLES, accessCodeRequired, hashKey, newKeyToken, signSession, type Role } from './auth.js';
+import { listMaloOverview } from './construct/malo-overview.js';
 
 /**
  * REST facade (/api/v1). Transport only: input validation, error mapping and DTO shaping.
@@ -50,6 +51,7 @@ export default class ProcessApi extends cds.ApplicationService {
     };
 
     this.on('cases', guard(async (req) => listCases(cds.tx(req))));
+    this.on('maloOverview', guard(async (req) => listMaloOverview(cds.tx(req))));
 
     this.on('personas', () => PERSONAS);
     this.on('me', (req) => principalOf(req));

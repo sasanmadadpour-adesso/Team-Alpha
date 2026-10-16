@@ -142,7 +142,7 @@ cds.on('bootstrap', (app: express.Express) => {
     const fail = (status:number,code:string,message:string,details:object[]=[])=>(res.status(status).json({error:{code,message,details,correlation_id:res.getHeader('x-correlation-id')}}));
     const required=['first_name','last_name','email','construct_type','production_type','plant_capacity_kw','market_location_identifier','market_location_malo','preferred_delivery_start','contract_start_utc','contract_end_utc','building_id'];
     const missing=required.filter((field)=>body[field]===null||body[field]===undefined||String(body[field]).trim()==='');
-    if(missing.length) return fail(400,'VALIDATION_FAILED','Required fields are missing.',missing.map(field=>({field,code:'REQUIRED'})));
+    if(missing.length) return fail(400,'VALIDATION_FAILED',`Required fields are missing: ${missing.join(', ')}. A producer registration needs both a MeLo (market_location_identifier) and a separate 11-digit MaLo (market_location_malo).`,missing.map(field=>({field,code:'REQUIRED',expected:field==='market_location_malo'?'11-digit MaLo':field==='market_location_identifier'?'33-character MeLo':'value'})));
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) return fail(400,'VALIDATION_FAILED','The email address is invalid.',[{field:'email',code:'INVALID_EMAIL'}]);
     if(body.construct_type!=='FEED_IN') return fail(400,'VALIDATION_FAILED','construct_type must be FEED_IN.',[{field:'construct_type',code:'UNSUPPORTED_VALUE'}]);
     const plant=body.plant_specifics as Record<string,unknown>|undefined, lat=Number(plant?.latitude), lon=Number(plant?.longitude), capacity=Number(body.plant_capacity_kw);
