@@ -1,0 +1,11 @@
+# Dependencies and generated application output
+**/node_modules/
+**/dist/
+**/coverage/
+**/.cds-build/
+
+# Graphify's own generated directory
+graphify-out/
+
+# Temporary editor files
+.~lock.*#

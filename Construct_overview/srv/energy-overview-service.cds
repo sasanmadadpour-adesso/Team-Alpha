@@ -88,12 +88,20 @@ service EnergyOverviewService {
     meLo : String(50);
     city : String(100);
     streetAddress : String(255);
-    meterNumber : String(40);
+     meterNumber : String(40);
+     hasSolar : Boolean;
+     hasWind : Boolean;
+     averageConsumption24hKwh : Decimal(15,3);
+     averageSolarGeneration24hKwh : Decimal(15,3);
+     averageWindGeneration24hKwh : Decimal(15,3);
+     measurementIntervalCount24h : Integer;
+     latestMeasurementTime : Timestamp;
     roleCode : String(30);
     roleLabel : String(80);
     directionCode : String(20);
     participationCode : String(20);
     participationLabel : String(40);
+    participationMark : String(1);
     isEligible : Boolean;
     hasDualMaLo : Boolean;
     hasDataWarning : Boolean;
@@ -113,20 +121,32 @@ service EnergyOverviewService {
     contractEnd : Timestamp;
     sourceRow : Integer;
     buildingID : String(40);
+    ownerFirstName : String(100);
+    ownerLastName : String(100);
+    ownerName : String(200);
+    buildingLink : String(80);
+    address : String(300);
+    sharedMeterMaLo : String(40);
+    sharedMeterMeLo : String(50);
+    sharedMeterIsReal : Boolean;
+    sharedMeterConstructID : String(100);
+    isSharedMeter : Boolean;
+    buildingMemberCount : Integer;
+    hasBuildingLink : Boolean;
+    hasNoBuildingLink : Boolean;
     participationCriticality : Integer;
     warningCriticality : Integer;
     directionLabel : String(80);
-    isSynthetic : Boolean;
-    testScenario : String(60);
-    energyConceptCurrentStep : Integer;
-    energyConceptContactCompleted : Boolean;
-    energyConceptDataVerified : Boolean;
-    energyConceptAgreementSigned : Boolean;
-    energyConceptMeterReady : Boolean;
-    energyConceptActive : Boolean;
+    switchoverStep : Integer;
+    switchoverTotalSteps : Integer;
+    switchoverStepLabel : String(80);
+    switchoverComplete : Boolean;
+    counterKpiHidden : Boolean;
+    switchoverHidden : Boolean;
     hourlyValues : Association to many ConstructHourlyValues on hourlyValues.constructID = ID;
     payments : Association to many Payments on payments.constructID = ID;
-    sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
+     sourceIssues : Association to many DataQualityIssues on sourceIssues.constructID = ID;
+     members : Association to many MaLoConnections on members.constructID = ID;
   }
 
   @readonly entity MaLoConnections {
@@ -139,22 +159,10 @@ service EnergyOverviewService {
     validTo : Timestamp;
     supplier : String(100);
     contractReference : String(80);
-    isSynthetic : Boolean;
     hasDataWarning : Boolean;
     warningText : String(500);
-    scenarioCode : String(60);
-    constructID : String(100);
-  }
-
-  @readonly entity TestScenarios {
-    key ID : String(60);
-    title : String(160);
-    description : String(500);
-    relationshipShape : String(120);
-    roleCoverage : String(200);
-    readingCoverage : String(200);
-    warningCount : Integer;
-    isSynthetic : Boolean;
+     constructID : String(100);
+     targetConstructID : String(100);
   }
 
   @readonly entity ConstructHourlyValues {
@@ -190,9 +198,14 @@ service EnergyOverviewService {
     key ID : String(150);
     constructID : String(100);
     severityCode : String(20);
+    severityLabel : String(40);
+    issueCode : String(60);
+    title : String(120);
     fieldName : String(80);
+    fieldLabel : String(120);
     sourceValue : String(200);
-    issueText : String(500);
+    issueText : String(800);
+    recommendation : String(400);
     severityCriticality : Integer;
   }
 
@@ -200,6 +213,10 @@ service EnergyOverviewService {
     key ID : String(40);
     city : String(100);
     postalCode : String(10);
+    ownerFirstName : String(100);
+    ownerLastName : String(100);
+    ownerName : String(200);
+
     streetAddress : String(255);
     operatorName : String(100);
     latitude : Decimal(10,6);
@@ -208,17 +225,39 @@ service EnergyOverviewService {
     installedCapacityKw : Decimal(15,3);
     consumerCount : Integer;
     participatingConsumerCount : Integer;
-    activeConsumerCount : Integer;
-    averageEnergyConceptStep : Decimal(5,1);
-    totalEnergyConceptSteps : Integer;
+    switchoverFinishedCount : Integer;
+    solarGenerationKwh : Decimal(15,3);
+    windGenerationKwh : Decimal(15,3);
+    solarHidden : Boolean;
+    windHidden : Boolean;
     totalConsumptionKwh : Decimal(15,3);
     totalGenerationKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
-    exportKwh : Decimal(15,3);
-    selfSufficiencyPercent : Decimal(7,2);
-    consumers : Association to many BuildingConsumers on consumers.buildingID = ID;
-    producers : Association to many BuildingProducers on producers.buildingID = ID;
+     exportKwh : Decimal(15,3);
+     selfSufficiencyPercent : Decimal(7,2);
+     sharedMeterMaLo : String(40);
+     sharedMeterMeLo : String(50);
+     sharedMeterIsReal : Boolean;
+     sharedMeterIsVirtual : Boolean;
+     sharedMeterConstructID : String(100);
+     hasSolar : Boolean;
+     hasWind : Boolean;
+     solarProducerCount : Integer;
+     windProducerCount : Integer;
+     averageConsumption24hKwh : Decimal(15,3);
+     averageSolarGeneration24hKwh : Decimal(15,3);
+     averageWindGeneration24hKwh : Decimal(15,3);
+     averageGridImport24hKwh : Decimal(15,3);
+     averageGridExport24hKwh : Decimal(15,3);
+     consumptionIntervalCount24h : Integer;
+     solarIntervalCount24h : Integer;
+     windIntervalCount24h : Integer;
+     latestMeasurementTime : Timestamp;
+     consumers : Association to many BuildingConsumers on consumers.buildingID = ID;
+     producers : Association to many BuildingProducers on producers.buildingID = ID;
+     solarProducers : Association to many BuildingProducers on solarProducers.buildingID = ID and solarProducers.productionType = 'Solar';
+     windProducers : Association to many BuildingProducers on windProducers.buildingID = ID and windProducers.productionType = 'Wind';
     hourlyEnergy : Association to many BuildingHourlyEnergy on hourlyEnergy.buildingID = ID;
   }
 
@@ -230,18 +269,19 @@ service EnergyOverviewService {
     exportMaLo : String(40);
     participationCode : String(20);
     participationLabel : String(40);
+    participationMark : String(1);
+    participationCriticality : Integer;
     isEligible : Boolean;
-    energyConceptCurrentStep : Integer;
-    energyConceptTotalSteps : Integer;
-    energyConceptContactCompleted : Boolean;
-    energyConceptDataVerified : Boolean;
-    energyConceptAgreementSigned : Boolean;
-    energyConceptMeterReady : Boolean;
-    energyConceptActive : Boolean;
+    switchoverStep : Integer;
+    switchoverTotalSteps : Integer;
+    switchoverStepLabel : String(80);
+    switchoverComplete : Boolean;
+    switchoverHidden : Boolean;
     totalConsumptionKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
-    localEnergySharePercent : Decimal(7,1);
+     localEnergySharePercent : Decimal(7,1);
+     targetConstructID : String(100);
   }
 
   @readonly entity BuildingProducers {
@@ -253,7 +293,8 @@ service EnergyOverviewService {
     generationKwh : Decimal(15,3);
     localEnergyKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
-    localUtilizationPercent : Decimal(7,1);
+     localUtilizationPercent : Decimal(7,1);
+     targetConstructID : String(100);
   }
 
   @readonly entity BuildingHourlyEnergy {
@@ -282,6 +323,7 @@ service EnergyOverviewService {
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
+    intervalCount : Integer;
   }
 
   @readonly entity BuildingEnergyTrends {
@@ -296,5 +338,36 @@ service EnergyOverviewService {
     localEnergyKwh : Decimal(15,3);
     residualGridKwh : Decimal(15,3);
     exportKwh : Decimal(15,3);
+    intervalCount : Integer;
+  }
+
+  // Single tree used by the combined construct/building overview page: one root per building,
+  // expandable into its household consumers, producers, and shared energy counter.
+  @readonly entity ConstructTreeNodes {
+    key ID : String(150);
+    parentID : String(40);
+    nodeType : String(20);
+    displayName : String(200);
+    malo : String(40);
+    meLo : String(50);
+    roleLabel : String(80);
+    city : String(100);
+    streetAddress : String(255);
+    participationMark : String(1);
+    participationCriticality : Integer;
+    switchoverStep : Integer;
+    switchoverTotalSteps : Integer;
+    switchoverStepLabel : String(80);
+    totalConsumptionKwh : Decimal(15,3);
+    totalGenerationKwh : Decimal(15,3);
+    localEnergyKwh : Decimal(15,3);
+    residualGridKwh : Decimal(15,3);
+    exportKwh : Decimal(15,3);
+    hasDataWarning : Boolean;
+    warningCriticality : Integer;
+    detailHash : String(120);
+    ownerFirstName : String(100);
+    ownerLastName : String(100);
+    ownerName : String(200);
   }
 }

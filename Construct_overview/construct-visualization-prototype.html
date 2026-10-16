@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Construct House Visualization</title>
+  <style>
+    :root {
+      --ink: #20343a;
+      --muted: #64777d;
+      --paper: #f4f7f5;
+      --house: #fffdf8;
+      --house-line: #31545a;
+      --roof: #d8e8e5;
+      --solar: #164f6b;
+      --solar-line: #53b7ce;
+      --wind: #5e7176;
+      --wire: #526d73;
+      --sun: #e98c2d;
+      --green: #348b65;
+      --blue: #3b83a4;
+      --shadow: 0 1.2rem 3rem rgb(36 62 67 / 13%);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      padding: 2rem;
+      background: radial-gradient(circle at 8% 4%, #ffffff 0, var(--paper) 48%, #e6efec 100%);
+      color: var(--ink);
+      font: 16px/1.45 Arial, Helvetica, sans-serif;
+    }
+
+    .page { max-width: 1240px; margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 .35rem;
+      color: var(--green);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.8rem); letter-spacing: -.04em; }
+    .intro { max-width: 48rem; margin: .6rem 0 1.5rem; color: var(--muted); }
+
+    .construct {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(1rem, 3vw, 2rem);
+      border: 1px solid #cbd9d6;
+      border-radius: 1.4rem;
+      background: rgb(255 255 255 / 74%);
+      box-shadow: var(--shadow);
+    }
+    .construct-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1.7rem;
+    }
+    .construct-title { margin: 0; font-size: 1.25rem; }
+    .construct-meta { margin: .25rem 0 0; color: var(--muted); font-size: .9rem; }
+    .status {
+      padding: .35rem .7rem;
+      border: 1px solid #a8d4bd;
+      border-radius: 2rem;
+      background: #e9f7ef;
+      color: #236746;
+      font-size: .78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .scene {
+      display: grid;
+      grid-template-columns: minmax(25rem, 1fr) minmax(10rem, 15rem) minmax(15rem, .65fr);
+      align-items: center;
+      gap: clamp(1.2rem, 4vw, 4rem);
+      min-height: 32rem;
+    }
+
+    /* The house is one construct. The member cards are its floors. */
+    .house-zone { position: relative; padding-top: 5rem; }
+    .roof {
+      position: absolute;
+      top: 2rem;
+      left: 8%;
+      width: 84%;
+      height: 7rem;
+      border: .25rem solid var(--house-line);
+      border-bottom: 0;
+      border-radius: .4rem .4rem 0 0;
+      background: var(--roof);
+      transform: perspective(18rem) rotateX(12deg) rotateZ(0deg);
+      transform-origin: bottom;
+    }
+    .roof-device {
+      position: absolute;
+      z-index: 2;
+      right: 1rem;
+      top: .8rem;
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .roof-device strong { font-size: .7rem; }
+    .roof-device .malo { font-size: .62rem; }
+    .house {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 30rem);
+      margin: 0 auto;
+      padding: 1.2rem;
+      border: .28rem solid var(--house-line);
+      border-radius: .55rem .55rem 1rem 1rem;
+      background: var(--house);
+      box-shadow: .55rem .55rem 0 rgb(49 84 90 / 14%);
+    }
+    .house-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .8rem;
+      padding-bottom: .8rem;
+      border-bottom: 2px solid #dbe7e4;
+    }
+    .house-heading h2 { margin: 0; font-size: 1.05rem; }
+    .house-icon { font-size: 2rem; }
+    .floors {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      max-height: 18rem;
+      margin-top: .8rem;
+      padding-right: .35rem;
+      overflow-y: auto;
+      scrollbar-color: #7aa9a8 #eef4f2;
+      scrollbar-width: thin;
+    }
+    .floor {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      min-height: 2.75rem;
+      padding: .45rem .7rem;
+      border: 1px solid #c9d9d5;
+      border-left: .3rem solid #77a8a4;
+      border-radius: .35rem;
+      background: #f5faf8;
+    }
+    .floor-number { color: var(--muted); font-size: .75rem; font-weight: 700; }
+    .malo { color: var(--ink); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .78rem; }
+    .malo.link { color: #176e99; font-weight: 700; text-decoration: underline; text-underline-offset: .18rem; }
+    .malo.link:hover, .malo.link:focus-visible { color: #0b4564; }
+    .member-state { color: var(--muted); font-size: .72rem; white-space: nowrap; }
+    .house-foot { margin: .7rem 0 0; color: var(--muted); font-size: .75rem; }
+
+    .wire-zone { position: relative; display: grid; place-items: center; min-height: 20rem; }
+    .wire {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--wire);
+      box-shadow: 0 0 0 1px rgb(255 255 255 / 65%);
+    }
+    .wire::after {
+      content: "";
+      position: absolute;
+      left: -.1rem;
+      top: -.3rem;
+      border-top: .45rem solid transparent;
+      border-bottom: .45rem solid transparent;
+      border-right: .7rem solid var(--wire);
+    }
+    .wire-solar { top: 24%; background: var(--sun); }
+    .wire-solar::after { border-right-color: var(--sun); }
+    .wire-wind { top: 76%; background: var(--blue); }
+    .wire-wind::after { border-right-color: var(--blue); }
+    .wire-label {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      padding: .25rem .5rem;
+      border: 1px solid #d3dfdc;
+      border-radius: .3rem;
+      background: #fff;
+      box-shadow: 0 .2rem .5rem rgb(32 52 58 / 10%);
+      color: var(--ink);
+      font-size: .74rem;
+      font-weight: 700;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+    }
+    .wire-label.solar { top: 24%; }
+    .wire-label.wind { top: 76%; }
+    .sources { display: grid; gap: 2rem; justify-items: center; }
+    .source { position: relative; display: grid; justify-items: center; gap: .4rem; min-width: 9rem; text-align: center; }
+    .source h3 { margin: 0; font-size: .9rem; }
+    .source p { margin: 0; color: var(--muted); font-size: .75rem; }
+    .source-members {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      width: 100%;
+      max-height: 10rem;
+      margin-top: .25rem;
+      padding: .35rem;
+      overflow-y: auto;
+      border: 1px solid #d5e0dd;
+      border-radius: .45rem;
+      background: rgb(255 255 255 / 72%);
+      scrollbar-color: #7aa9a8 #eef4f2;
+      scrollbar-width: thin;
+    }
+    .source-member {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .45rem;
+      min-height: 2rem;
+      padding: .3rem .45rem;
+      border: 1px solid #d5e0dd;
+      border-left: .25rem solid currentColor;
+      border-radius: .3rem;
+      background: #fff;
+      text-align: left;
+    }
+    .source-member .malo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .67rem; }
+    .source-member .member-state { font-size: .65rem; }
+    .solar-source { color: var(--sun); }
+    .solar-source .panel { width: 7.5rem; height: 3.7rem; border: .2rem solid var(--solar-line); border-radius: .25rem; background: repeating-linear-gradient(90deg, var(--solar) 0 1.2rem, var(--solar-line) 1.2rem 1.35rem), repeating-linear-gradient(0deg, transparent 0 .8rem, var(--solar-line) .8rem .95rem); transform: skewY(-10deg); box-shadow: .4rem .4rem 0 rgb(22 79 107 / 20%); }
+    .wind-source { color: var(--wind); }
+    .turbine { position: relative; width: 8rem; height: 8.5rem; }
+    .tower { position: absolute; bottom: 0; left: 3.8rem; width: .45rem; height: 5.8rem; border-radius: 1rem; background: linear-gradient(90deg, #aebdc0, var(--wind)); transform: skewX(-5deg); }
+    .hub { position: absolute; top: 1.7rem; left: 3.3rem; z-index: 1; width: 1.3rem; height: 1.3rem; border: .2rem solid #344a50; border-radius: 50%; background: #e9f0ee; }
+    .blade { position: absolute; top: 2.2rem; left: 3.9rem; width: 3.8rem; height: .35rem; border-radius: 1rem; background: var(--wind); transform-origin: left center; }
+    .blade.one { transform: rotate(-25deg); } .blade.two { transform: rotate(95deg); } .blade.three { transform: rotate(215deg); }
+
+    .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem 1.4rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #d8e4e1; color: var(--muted); font-size: .78rem; }
+    .legend span { display: inline-flex; align-items: center; gap: .35rem; }
+    .legend i { width: .7rem; height: .18rem; background: var(--wire); }
+    .legend .solar-key i { background: var(--sun); } .legend .wind-key i { background: var(--blue); }
+
+    @media (max-width: 850px) {
+      body { padding: 1rem; }
+      .scene { grid-template-columns: 1fr; gap: 1rem; }
+      .house-zone { padding-top: 4rem; }
+      .wire-zone { min-height: 15rem; }
+      .wire { left: 25%; right: 25%; }
+      .wire-label { left: 50%; }
+      .sources { grid-template-columns: repeat(2, minmax(8rem, 1fr)); gap: 1rem; }
+    }
+    @media (max-width: 480px) {
+      .construct-header { flex-direction: column; }
+      .house { width: 100%; }
+      .sources { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Construct visualization prototype</p>
+    <h1>One construct, many members</h1>
+    <p class="intro">The house is the construct. Its floors are the connected members. Energy sources and the shared counting device sit outside the house and are connected by annotated wires.</p>
+
+    <section class="construct" aria-labelledby="construct-heading">
+      <header class="construct-header">
+        <div>
+          <h2 class="construct-title" id="construct-heading">Construct C-2048 · Lindenhof</h2>
+          <p class="construct-meta">7 members · latest complete 24-hour window · values are average kWh per hourly interval</p>
+        </div>
+        <span class="status">Solar + wind active</span>
+      </header>
+
+      <div class="scene">
+        <div class="house-zone">
+          <div class="roof" aria-label="Construct-specific energy counting device on the roof">
+            <div class="roof-device"><strong>Energy meter</strong><span class="malo">DE0000000000000002048</span></div>
+          </div>
+          <section class="house" aria-labelledby="house-heading">
+            <div class="house-heading">
+              <h2 id="house-heading">Construct house</h2>
+              <span class="house-icon" aria-hidden="true">⌂</span>
+            </div>
+            <div class="floors" aria-label="Construct members">
+              <div class="floor"><span class="floor-number">Floor 07</span><a class="malo link" href="#member-07">DE000000000000000007</a><span class="member-state">detail</span></div>
+              <div class="floor"><span class="floor-number">Floor 06</span><a class="malo link" href="#member-06">DE000000000000000006</a><span class="member-state">detail</span></div>
+              <div class="floor"><span class="floor-number">Floor 05</span><span class="malo">DE000000000000000005</span><span class="member-state">member</span></div>
+              <div class="floor"><span class="floor-number">Floor 04</span><a class="malo link" href="#member-04">DE000000000000000004</a><span class="member-state">detail</span></div>
+              <div class="floor"><span class="floor-number">Floor 03</span><span class="malo">DE000000000000000003</span><span class="member-state">member</span></div>
+              <div class="floor"><span class="floor-number">Floor 02</span><a class="malo link" href="#member-02">DE000000000000000002</a><span class="member-state">detail</span></div>
+              <div class="floor"><span class="floor-number">Floor 01</span><span class="malo">DE000000000000000001</span><span class="member-state">member</span></div>
+            </div>
+            <p class="house-foot">Scroll inside the house to see all 7 construct members</p>
+          </section>
+        </div>
+
+        <div class="wire-zone" aria-label="Average solar and wind energy flows toward the construct house">
+          <div class="wire wire-solar"></div><span class="wire-label solar">Solar 18.4 kWh</span>
+          <div class="wire wire-wind"></div><span class="wire-label wind">Wind 9.1 kWh</span>
+        </div>
+
+        <div class="sources" aria-label="Construct energy sources">
+          <section class="source solar-source">
+            <div class="panel" aria-hidden="true"></div>
+            <h3>Solar producers</h3>
+            <p>3 producers · average 18.4 kWh</p>
+            <div class="source-members" aria-label="Solar producer MaLos">
+              <div class="source-member"><a class="malo link" href="#solar-member-03">DE000000000000000103</a><span class="member-state">detail</span></div>
+              <div class="source-member"><a class="malo link" href="#solar-member-02">DE000000000000000102</a><span class="member-state">detail</span></div>
+              <div class="source-member"><span class="malo">DE000000000000000101</span><span class="member-state">producer</span></div>
+            </div>
+          </section>
+          <section class="source wind-source">
+            <div class="turbine" aria-hidden="true"><div class="tower"></div><div class="hub"></div><div class="blade one"></div><div class="blade two"></div><div class="blade three"></div></div>
+            <h3>Wind producers</h3>
+            <p>1 producer · average 9.1 kWh</p>
+            <div class="source-members" aria-label="Wind producer MaLos">
+              <div class="source-member"><a class="malo link" href="#wind-member-01">DE000000000000000201</a><span class="member-state">detail</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer class="legend" aria-label="Diagram legend">
+        <span class="solar-key"><i></i>combined solar generation</span>
+        <span class="wind-key"><i></i>combined wind generation</span>
+        <span>energy meter MaLo is mounted on the roof</span>
+        <span>underlined MaLo = existing detail page</span>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

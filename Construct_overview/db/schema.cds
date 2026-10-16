@@ -56,12 +56,7 @@ entity ProducerOnboardings {
   contractStartUtc : UtcTimestamp;
   contractEndUtc : UtcTimestamp;
   buildingId : String(40);
-  energyConceptCurrentStep : Integer;
-  energyConceptContactCompleted : Boolean;
-  energyConceptDataVerified : Boolean;
-  energyConceptAgreementSigned : Boolean;
-  energyConceptMeterReady : Boolean;
-  energyConceptActive : Boolean;
+  switchoverStep : Integer;
 }
 
 @readonly
