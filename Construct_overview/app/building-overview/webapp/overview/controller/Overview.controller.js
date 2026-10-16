@@ -25,17 +25,12 @@ sap.ui.define([
       this._sort = null; // { key: "displayName", descending: false }
       this._ui = new JSONModel({
         query: "", mode: "find", matchIds: [], currentId: null, matchPos: 0, rowCount: 1,
-        matchLabel: "", fuzzyHint: "", navigable: false, tableTitle: "", syncBusy: false, combinedWarning: "",
+        matchLabel: "", fuzzyHint: "", navigable: false, tableTitle: "",
         stats: { buildings: 0, households: 0, participating: 0, finished: 0 }
       });
       this.getView().setModel(this._ui, "ui");
       this.getView().setModel(new JSONModel([]), "tree");
-      this._loadLiveData();
-      this._refreshTimer = setInterval(() => this._loadLiveData(), 30000);
-    },
-
-    onExit: function () {
-      if (this._refreshTimer) clearInterval(this._refreshTimer);
+      this._load();
     },
 
     _text: function (key, args) {
@@ -52,34 +47,12 @@ sap.ui.define([
         const response = await fetch(`${ODATA}/ConstructTreeNodes`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const body = await response.json();
-        const nextNodes = body.value || [];
-        const signature = JSON.stringify(nextNodes);
-        if (signature === this._nodesSignature) return;
-        this._nodesSignature = signature;
-        this._nodes = nextNodes;
-        this._ui.setProperty("/combinedWarning", nextNodes.some(node => node.syncState === "STALE") ? this._text("combinedDataStale") : "");
+        this._nodes = body.value || [];
         this._buildTree();
         this._setStats();
         this._applyTree();
       } catch (error) {
         MessageToast.show(this._text("trendUnavailable", [error.message]));
-      }
-    },
-
-    _loadLiveData: async function () {
-      await this._load();
-    },
-
-    onRefreshLiveData: async function () {
-      this._ui.setProperty("/syncBusy", true);
-      try {
-        const response = await fetch(`${ODATA}/syncConstructs`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        await this._loadLiveData();
-      } catch (error) {
-        MessageToast.show(this._text("pendingUnavailable", [error.message]));
-      } finally {
-        this._ui.setProperty("/syncBusy", false);
       }
     },
 

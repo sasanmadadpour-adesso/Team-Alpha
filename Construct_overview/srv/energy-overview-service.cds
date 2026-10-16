@@ -149,67 +149,6 @@ service EnergyOverviewService {
      members : Association to many MaLoConnections on members.constructID = ID;
   }
 
-  // Live mirror from the Anmeldung application. Entries disappear after their primary
-  // MaLo is present in the authoritative Umstellung construct feed.
-  @readonly entity PendingConstructs {
-    key ID : String(150);
-    primaryMaLo : String(40);
-    meLo : String(50);
-    displayName : String(200);
-    roleCode : String(80);
-    roleLabel : String(100);
-    directionCode : String(40);
-    city : String(100);
-    streetAddress : String(255);
-    receivedAt : Timestamp;
-    sourceSystem : String(20);
-    syncState : String(20);
-    lastSyncedAt : Timestamp;
-    rawPayload : LargeString;
-  }
-
-  // Reconciled lifecycle view: all Umstellung constructs and only those Anmeldung
-  // constructs whose primary MaLo has not yet appeared in Umstellung.
-  @readonly entity ConstructLifecycleView {
-    key ID : String(150);
-    primaryMaLo : String(40);
-    meLo : String(50);
-    displayName : String(200);
-    roleLabel : String(100);
-    directionCode : String(40);
-    city : String(100);
-    streetAddress : String(255);
-    lifecycleStatus : String(20);
-    lifecycleCriticality : Integer;
-    sourceSystem : String(20);
-    receivedAt : Timestamp;
-    lastSyncedAt : Timestamp;
-    syncState : String(20);
-    detailHash : String(200);
-  }
-
-  @readonly entity ConstructSyncStatus {
-    key ID : String(20);
-    source : String(20);
-    lastAttemptAt : Timestamp;
-    lastSuccessAt : Timestamp;
-    stale : Boolean;
-    error : String(1000);
-    itemCount : Integer;
-  }
-
-  @readonly entity ConstructSyncAudit {
-    key ID : String(40);
-    source : String(20);
-    primaryMaLo : String(40);
-    eventType : String(40);
-    reason : String(80);
-    payload : LargeString;
-    createdAt : Timestamp;
-  }
-
-  action syncConstructs() returns array of ConstructSyncStatus;
-
   @readonly entity MaLoConnections {
     key ID : String(150);
     malo : String(40);
@@ -430,9 +369,5 @@ service EnergyOverviewService {
     ownerFirstName : String(100);
     ownerLastName : String(100);
     ownerName : String(200);
-    lifecycleStatus : String(20);
-    lifecycleCriticality : Integer;
-    sourceSystem : String(20);
-    syncState : String(20);
   }
 }

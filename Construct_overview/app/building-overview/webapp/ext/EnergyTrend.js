@@ -131,9 +131,7 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       if (!context) { this._setStatus(this._text("trendLoading")); return; }
       const id = context.getProperty("ID");
       const parentType = context.getPath().startsWith("/Buildings") ? "building" : "construct";
-      const malo = context.getProperty("primaryMaLo") || context.getProperty("malo");
-      const building = context.getProperty("buildingID") || context.getProperty("buildingId");
-      const requestKey = `${parentType}:${id}:${malo || ""}:${this.getRange()}`;
+      const requestKey = `${parentType}:${id}:${this.getRange()}`;
       if (!force && this._requestKey === requestKey) return;
       this._requestKey = requestKey;
       this._requestController?.abort();
@@ -148,12 +146,7 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const filter = `parentID eq '${String(id).replace(/'/g, "''")}' and bucketStart ge ${start.toISOString()} and bucketStart lt ${end.toISOString()}`;
       this._setStatus(this._text("trendLoading"));
       try {
-        const liveQuery = new URLSearchParams({ malo: String(malo || ""), range: this.getRange() });
-        if (building) liveQuery.set("building", String(building));
-        const liveUrl = parentType === "building"
-          ? `/building-energy?${new URLSearchParams({ building: String(id), range: this.getRange() })}`
-          : malo ? `/house-member-portal?${liveQuery}` : null;
-        const response = await fetch(liveUrl || `/odata/v4/energy-overview/${entity}?$filter=${encodeURIComponent(filter)}&$orderby=bucketStart`, { signal: this._requestController.signal });
+        const response = await fetch(`/odata/v4/energy-overview/${entity}?$filter=${encodeURIComponent(filter)}&$orderby=bucketStart`, { signal: this._requestController.signal });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
         this.renderChart(payload.value || []);

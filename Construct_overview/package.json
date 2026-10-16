@@ -4,7 +4,7 @@
   "private": true,
   "description": "SAP CAP backend simulator for Mieterstrom network constellations",
   "scripts": {
-    "start": "cds serve",
+    "start": "cds-serve",
     "watch": "cds watch",
     "test": "node --test test/**/*.test.js",
     "test:app": "node --test test/app.test.js",
