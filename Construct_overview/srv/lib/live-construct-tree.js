@@ -26,7 +26,7 @@ function externalTreeNodes(constructs, syncState = 'CURRENT') {
           exportKwh: null,
           hasDataWarning: false,
           warningCriticality: 3,
-          detailHash: null,
+          detailHash: `#/Buildings('${encodeURIComponent(buildingID)}')`,
           ownerFirstName: null,
           ownerLastName: null,
           ownerName: null,
@@ -69,4 +69,37 @@ function externalTreeNodes(constructs, syncState = 'CURRENT') {
   return [...roots.values(), ...members];
 }
 
-module.exports = { externalTreeNodes };
+function externalBuildings(constructs) {
+  const buildings = new Map();
+  for (const row of constructs) {
+    const ID = String(row.buildingID || row.buildingId || '').trim();
+    if (!ID) continue;
+    const current = buildings.get(ID) || {
+      ID, city: row.city || null, streetAddress: row.streetAddress || row.address || null,
+      operatorName: row.operator || row.mk7Operator || null, consumerCount: 0,
+      participatingConsumerCount: 0, switchoverFinishedCount: 0,
+      totalConsumptionKwh: 0, totalGenerationKwh: 0, localEnergyKwh: 0,
+      residualGridKwh: 0, exportKwh: 0, hasSolar: false, hasWind: false,
+      solarProducerCount: 0, windProducerCount: 0
+    };
+    if (row.roleCode === 'HOUSEHOLD') {
+      current.consumerCount += 1;
+      if (row.isEligible || row.participates) current.participatingConsumerCount += 1;
+      if (row.switchoverComplete) current.switchoverFinishedCount += 1;
+    }
+    if (row.roleCode === 'GENERATION') {
+      const wind = /wind/i.test(`${row.roleLabel || ''} ${row.productionType || ''}`);
+      current.hasWind ||= wind;
+      current.hasSolar ||= !wind;
+      if (wind) current.windProducerCount += 1;
+      else current.solarProducerCount += 1;
+    }
+    for (const field of ['totalConsumptionKwh', 'totalGenerationKwh', 'localEnergyKwh', 'residualGridKwh', 'exportKwh']) {
+      current[field] += Number(row[field] || 0);
+    }
+    buildings.set(ID, current);
+  }
+  return [...buildings.values()];
+}
+
+module.exports = { externalBuildings, externalTreeNodes };

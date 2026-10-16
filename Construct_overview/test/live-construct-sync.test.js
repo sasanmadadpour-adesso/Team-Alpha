@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { LiveSyncStore } = require('../srv/lib/live-sync-store');
 const { LiveConstructSync, normalizeItem, registeredParticipant, unwrap } = require('../srv/lib/live-construct-sync');
-const { externalTreeNodes } = require('../srv/lib/live-construct-tree');
+const { externalBuildings, externalTreeNodes } = require('../srv/lib/live-construct-tree');
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, status, json: async () => body };
@@ -127,7 +127,17 @@ test('builds the expandable Overview hierarchy from a flat Ruhende-MaLo feed', (
   assert.equal(tree.find(row => row.ID === 'row-1').parentID, 'external-building-B-1');
   assert.equal(tree.find(row => row.ID === 'row-2').parentID, 'external-building-B-1');
   assert.equal(tree.find(row => row.ID === 'row-3').parentID, 'external-building-B-2');
+  assert.equal(tree.find(row => row.ID === 'external-building-B-1').detailHash, "#/Buildings('B-1')");
   assert.equal(tree.every(row => row.syncState === 'CURRENT'), true);
+});
+
+test('builds link targets for external building roots', () => {
+  const buildings = externalBuildings([
+    { buildingID: 'B-1', roleCode: 'HOUSEHOLD', participates: true, city: 'Berlin' },
+    { buildingID: 'B-1', roleCode: 'GENERATION', roleLabel: 'Solaranlage' }
+  ]);
+  assert.deepEqual(buildings.map(row => ({ ID: row.ID, city: row.city, consumers: row.consumerCount, solar: row.hasSolar })),
+    [{ ID: 'B-1', city: 'Berlin', consumers: 1, solar: true }]);
 });
 
 test('external member links use URL-safe source IDs', () => {

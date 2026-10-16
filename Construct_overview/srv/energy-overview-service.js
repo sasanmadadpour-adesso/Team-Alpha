@@ -1,5 +1,5 @@
 const cds = require('@sap/cds');
-const { externalTreeNodes } = require('./lib/live-construct-tree');
+const { externalBuildings, externalTreeNodes } = require('./lib/live-construct-tree');
 const { createWorkbookRepository } = require('./lib/workbook-loader');
 const { calculate } = require('./lib/energy-calculator');
 const { project } = require('./lib/vnb-projector');
@@ -250,6 +250,7 @@ module.exports = cds.service.impl(function () {
          }
           const registeredSyncState = liveSync.statuses().find(status => status.ID === 'registered')?.stale ? 'STALE' : 'CURRENT';
           const externalTree = externalTreeNodes(registeredConstructs, registeredSyncState);
+          const registeredBuildings = liveSync.registeredIsAuthoritative() ? externalBuildings(registeredConstructs) : data.buildings;
          const registeredMaLos = new Set(registeredConstructs.map(row => row.primaryMaLo));
          const registeredTree = (liveSync.registeredIsAuthoritative() ? externalTree : data.treeNodes).map(row => ({
            ...row,
@@ -289,7 +290,7 @@ module.exports = cds.service.impl(function () {
              syncState: row.syncState
            }));
          const combinedTree = [...registeredTree, ...pendingTree];
-         const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : nav === 'members' ? data.connections : nav === 'consumers' ? data.consumers : nav === 'solarProducers' ? data.producers.filter(row => row.productionType === 'Solar') : nav === 'windProducers' ? data.producers.filter(row => row.productionType === 'Wind') : nav === 'producers' ? data.producers : nav === 'hourlyEnergy' ? data.buildingHourlyEnergy : entity === 'Constructs' ? registeredConstructs : entity === 'ConstructTreeNodes' ? combinedTree : data[property];
+          const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : nav === 'members' ? data.connections : nav === 'consumers' ? data.consumers : nav === 'solarProducers' ? data.producers.filter(row => row.productionType === 'Solar') : nav === 'windProducers' ? data.producers.filter(row => row.productionType === 'Wind') : nav === 'producers' ? data.producers : nav === 'hourlyEnergy' ? data.buildingHourlyEnergy : entity === 'Constructs' ? registeredConstructs : entity === 'Buildings' ? registeredBuildings : entity === 'ConstructTreeNodes' ? combinedTree : data[property];
        const parentId = parentKey(req);
        const childEntity = ['BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy'].includes(entity);
        let rows = parentId ? source.filter(row => row.constructID === parentId || row.buildingID === parentId || row.ID === parentId) : source;
