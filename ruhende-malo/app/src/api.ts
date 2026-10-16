@@ -97,3 +97,61 @@ export const whoAmI = () => http<Me>('me()');
 export const loadApiKeys = () => http<ApiKey[]>('ApiKeys?$orderby=createdAt desc');
 export const createApiKey = (name: string, role: string) => http<NewApiKey>('createApiKey', { name, role });
 export const revokeApiKey = (id: string) => http<boolean>('revokeApiKey', { id });
+
+/* ---------------- Database explorer (read-only) ---------------- */
+export interface DbColumn { name: string; type: string; key: boolean; unique: boolean; defaultValue: string | null; redacted: boolean }
+export interface DbTable { name: string; group: string; rows: number; columns: DbColumn[]; links: { column: string; tables: string[] }[] }
+export interface DbCatalog { kind: string; file: string | null; sizeBytes: number | null; tables: DbTable[]; services: { name: string; path: string; entities: number }[]; generatedAt: string }
+export interface DbRowPage { table: string; total: number; top: number; skip: number; rows: Record<string, unknown>[]; redacted: string[] }
+export type DbOp = 'SELECT' | 'INSERT' | 'UPSERT' | 'UPDATE' | 'DELETE';
+export interface DbOpCount { table: string; op: DbOp; n: number }
+export type DbLane = 'ProcessApi' | 'OData' | 'Custom';
+export type DbClient = 'SESSION' | 'KEY' | '-';
+export type DbEvent =
+  | { type: 'start'; id: string; method: string; path: string; lane: DbLane; client: DbClient; at: string }
+  | { type: 'end'; id: string; method: string; path: string; lane: DbLane; status: number; ms: number; via: DbClient; actor: string; ops: DbOpCount[]; commits: number; rollbacks: number; at: string }
+  | { type: 'db'; id: string | null; ops: DbOpCount[]; at: string };
+
+export const loadDbCatalog = () => http<DbCatalog>('db/catalog');
+export function loadDbRows(table: string, o: { top: number; skip: number; search?: string; orderBy?: string; desc?: boolean }) {
+  const p = new URLSearchParams({ top: String(o.top), skip: String(o.skip) });
+  if (o.search) p.set('search', o.search);
+  if (o.orderBy) { p.set('orderBy', o.orderBy); if (o.desc) p.set('desc', '1'); }
+  return http<DbRowPage>(`db/tables/${q(table)}/rows?${p.toString()}`);
+}
+
+/**
+ * Live monitor stream (Server-Sent Events read with fetch, so the Bearer token can be sent).
+ * Reconnects with backoff until the signal aborts; a 401 ends the session like any other call.
+ */
+export function openDbStream(onEvent: (e: DbEvent) => void, onState: (s: 'connecting' | 'live' | 'offline') => void, signal: AbortSignal) {
+  let wait = 1000;
+  const run = async () => {
+    while (!signal.aborted) {
+      onState('connecting');
+      try {
+        const res = await fetch(`${BASE}/db/stream`, { headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {}, signal });
+        if (res.status === 401) { if (getToken()) { setToken(null); window.dispatchEvent(new Event(SIGNED_OUT)); } return; }
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        onState('live'); wait = 1000;
+        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+        let buffer = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += value;
+          let cut;
+          while ((cut = buffer.indexOf('\n\n')) >= 0) {
+            const chunk = buffer.slice(0, cut); buffer = buffer.slice(cut + 2);
+            const data = chunk.split('\n').filter((l) => l.startsWith('data: ')).map((l) => l.slice(6)).join('\n');
+            if (data) { try { onEvent(JSON.parse(data) as DbEvent); } catch { /* malformed message: skip */ } }
+          }
+        }
+      } catch { if (signal.aborted) return; }
+      onState('offline');
+      await new Promise((r) => setTimeout(r, wait));
+      wait = Math.min(wait * 2, 10_000);
+    }
+  };
+  void run();
+}

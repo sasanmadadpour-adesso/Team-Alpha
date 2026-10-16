@@ -86,6 +86,7 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
         {link('/', section === 'overview', t('nav.overview'))}
         {link('/cases', section === 'cases', t('nav.cases'), openCount > 0 && <Badge variant="secondary" className={cn('min-w-5 px-1.5', bump && 'animate-pop')}>{openCount}</Badge>)}
         {link('/api-console', section === 'api', t('nav.api'))}
+        {link('/database', section === 'db', t('nav.db'))}
       </nav>
       <div className="ml-auto flex items-center gap-2.5">
         <div role="group" aria-label={t('lang.label')} className="inline-flex rounded-lg bg-muted p-0.5 max-[640px]:hidden">

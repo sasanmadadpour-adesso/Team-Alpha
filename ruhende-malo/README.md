@@ -91,6 +91,7 @@ A web application with a fixed topbar, German / English switch (market terms sta
 | **Klärfälle / Cases** | One card per open finding, grouped by what to do: decide, fix data, wait for status. |
 | **Case drawer** | Opens from anywhere: what's going on (plain language), the MaLo's progress through the PDF steps, the actions (side-by-side comparison for conflicts, status input, live-validated correction, manual override with reason), master data, MeMa/MaMa, Zeitscheiben, lifecycle actions (Wiederaktivierung, Herauslösung, Korrektur, Rücknahme), history. |
 | **Schnittstelle / API** | Live API documentation with *Try it* and OpenAPI download. |
+| **Datenbank / Database** (`/database`) | The local SQLite database made visible, read-only. A live map shows every real HTTP request as a particle travelling client → `/api/v1` access layer → CAP service → `SQL` → exactly the tables it read (blue) or wrote (teal), with request/query/commit counters and a queries-per-second sparkline. Below: the latest requests with their tables, and a browser for all tables (records paged, sortable, searchable; columns with types and keys; connections via shared business keys; full record drawer). API key hashes and producers' personal data are never sent. |
 
 **One truth, automatic continuation:** every screen reads the same live case status (`GET /cases()`). Resolving a case, a status input (`POST /updateSapState`) or a vSZ confirmation continues processing immediately; nobody has to press *Run* again. A construct registered via `POST /registerConstruct` is processed at once (event-driven). The workbook import / reset registers the baseline and waits for **Prozess starten**.
 
@@ -114,6 +115,7 @@ REST + JSON (`srv/process-api.cds`). OpenAPI: `docs/openapi.json`. The UI uses o
 | POST | `/preview` · `/execute` with `{ command: { operation, maloId, buildingId, effectiveDate, reason?, referenceOperationId? } }` | Manual MaLo operations |
 | GET | `/Relationships` · `/LifecyclePeriods` · `/ProcessRequests` · `/ProcessRuns` · `/AuditEvents` | Traceability (`$filter`, `$select`, `$orderby`, `$top`) |
 | GET / POST | `/health()` · `/runSelfCheck` · `/resetDemo` | System |
+| GET | `/db/catalog` · `/db/tables/{name}/rows?top&skip&search&orderBy&desc` · `/db/stream` (Server-Sent Events) | Database explorer: tables, records, live request monitor (read-only, token required) |
 
 Errors use HTTP 400 (invalid input), 404 (unknown object), 409 (state conflict) and 422 (rule violation, e.g. a Korrektur without a reason). Writes accept an optional `actor` for the audit log.
 
@@ -161,6 +163,7 @@ Ranges are `24h`, `7d`, `30d`, `90d`, and `1y` (hour/day/week aggregation). They
 | `srv/construct/scenario-runner.ts` | Self-check scenarios |
 | `srv/process-api.*` | REST contract and transport |
 | `srv/adapters/sap-isu-not-configured.ts` | SAP boundary, fails closed |
+| `srv/db-explorer.ts` | Read-only database catalog/rows and the in-memory request monitor behind `/database` |
 
 See `docs/PROCESS_STAGES.md` for exactly what happens in each of the six stages, `docs/ASSUMPTIONS.md` for every assumption and gap, `docs/DEMO.md` for the presenter script, and `docs/MVP_PLAN.md` for the design.
 

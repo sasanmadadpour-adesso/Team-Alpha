@@ -5,6 +5,7 @@ import path from 'node:path';
 import { accessCodeRequired, accessCodeValid, actionOf, allowed, createLimiter, hashKey, isKeyToken, needFor, verifySession, type Principal, type Role } from './srv/auth.js';
 import { houseMemberPortal, PORTAL_RANGES, PortalError, validateHouseMember, type PortalRange } from './srv/house-member-portal.js';
 import { registerProducerPipeline } from './srv/construct/registration.js';
+import { ExplorerError, catalog, installDbProbe, monitorRequests, streamEvents, tableRows } from './srv/db-explorer.js';
 
 /**
  * Access layer for /api/v1 (demo, not real authentication): resolves the caller from "Authorization: Bearer <token>"
@@ -58,6 +59,7 @@ const HTML_HEADERS: Record<string, string> = {
 
 cds.on('bootstrap', (app: express.Express) => {
   app.set('trust proxy', true);   // behind Cloudflare / a reverse proxy: req.ip is the real client
+  app.use(['/api', '/odata'], monitorRequests);   // live database view: attributes every query to its HTTP request (memory only)
 
   // The built UI is served by the same process (one port, one container). Hash routing: no history fallback needed.
   const uiDir = path.resolve(process.env.UI_DIR ?? 'app/dist');
@@ -113,6 +115,9 @@ cds.on('bootstrap', (app: express.Express) => {
     if (req.method === 'GET' && req.path.startsWith('/ProducerRegistrations') && !principal) {
       return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to read producer registrations.');
     }
+    if (req.method === 'GET' && req.path.startsWith('/db/') && !principal) {
+      return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to read the database explorer.');
+    }
     if (req.method === 'GET' && ['/house-member-portal','/validate-house-member'].includes(req.path) && !principal) {
       return reject(res, 401, 'AUTH_REQUIRED', 'A token is required to access house-member data.');
     }
@@ -134,6 +139,18 @@ cds.on('bootstrap', (app: express.Express) => {
     }
     next();
   });
+
+  /** Read-only database explorer: tables, paged rows (secrets and personal data redacted) and the live request stream. */
+  app.get('/api/v1/db/catalog', async (_req, res) => {
+    try { return res.json(await catalog()); }
+    catch (e) { return reject(res, 500, 'DB_CATALOG_FAILED', e instanceof Error ? e.message : String(e)); }
+  });
+  app.get('/api/v1/db/tables/:name/rows', async (req, res) => {
+    const q = req.query as Record<string, string | undefined>;
+    try { return res.json(await tableRows(String(req.params.name), { top: Number(q.top ?? 50), skip: Number(q.skip ?? 0), search: q.search, orderBy: q.orderBy || undefined, desc: q.desc === '1' || q.desc === 'true' })); }
+    catch (e) { return e instanceof ExplorerError ? reject(res, e.status, e.code, e.message) : reject(res, 500, 'DB_ROWS_FAILED', e instanceof Error ? e.message : String(e)); }
+  });
+  app.get('/api/v1/db/stream', streamEvents);
 
   app.get('/api/v1/house-member-portal',async(req,res)=>{
     const malo=String(req.query.malo??'').trim(),range=String(req.query.range??'').trim() as PortalRange,building=String(req.query.building??'').trim()||undefined;
@@ -189,5 +206,7 @@ cds.on('bootstrap', (app: express.Express) => {
     return res.status(201).json({id:ID,status:'SIMULATED_VERIFIED',verified:true,onboarding_action:'CONTINUE',building_id:body.building_id,market_location_identifier:body.market_location_identifier,market_location_malo:body.market_location_malo,created_at:now,simulation:true,verification_source:'SAP_MOCK_FIXTURE',sap_connection:'NOT_CONFIGURED',links:{self:`/api/v1/ProducerRegistrations/${ID}`}});
   });
 });
+
+cds.on('served', () => installDbProbe());
 
 export default cds.server;

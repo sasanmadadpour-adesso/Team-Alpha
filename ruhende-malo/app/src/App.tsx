@@ -16,6 +16,7 @@ import { AccessPage, ApiPage } from './pages/ApiPage';
 import { ProtokollPage } from './pages/Protokoll';
 import { StagesPage } from './pages/Stages';
 import { CaseDrawer } from './pages/CaseDrawer';
+import { DatabasePage } from './pages/Database';
 
 function readLang(): Lang {
   try { return localStorage.getItem('ruhend.lang') === 'en' ? 'en' : 'de'; } catch { return 'de'; }
@@ -37,7 +38,7 @@ export default function App() {
   const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   useEffect(() => {
-    const page = route.startsWith('/cases') ? t('nav.cases') : route.startsWith('/api-console') ? t('nav.api') : route.startsWith('/activity') ? t('nav.log') : route.startsWith('/constructs') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
+    const page = route.startsWith('/cases') ? t('nav.cases') : route.startsWith('/api-console') ? t('nav.api') : route.startsWith('/activity') ? t('nav.log') : route.startsWith('/database') ? t('nav.db') : route.startsWith('/constructs') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
     document.title = `${page} · Ruhend — ${t('app.subtitle')} (${t('top.simulation.short')})`;
     document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'));
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', t('app.description'));
@@ -107,7 +108,7 @@ export default function App() {
   };
 
   useEffect(() => { setCaseId(undefined); }, [route]);   // a case drawer never outlives the page it was opened on
-  const section = route.startsWith('/cases') ? 'cases' : route.startsWith('/activity') ? 'log' : route.startsWith('/api-console') ? 'api' : route.startsWith('/process') ? 'stages' : 'overview';
+  const section = route.startsWith('/cases') ? 'cases' : route.startsWith('/activity') ? 'log' : route.startsWith('/api-console') ? 'api' : route.startsWith('/process') ? 'stages' : route.startsWith('/database') ? 'db' : 'overview';
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
   const constructId = route.match(/^\/constructs\/([^/]+)/)?.[1];
 
@@ -135,6 +136,7 @@ export default function App() {
               {section === 'stages' && <StagesPage />}
               {section === 'log' && <ProtokollPage initialConstruct={logConstruct} />}
               {section === 'api' && (route.startsWith('/api-console/access') ? <AccessPage /> : <ApiPage />)}
+              {section === 'db' && <DatabasePage />}
             </div>
             {caseId && <CaseDrawer caseId={caseId} onClose={() => setCaseId(undefined)} />}
           </AppContext.Provider>
