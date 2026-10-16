@@ -282,9 +282,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/member-app/webapp/app.js": {
-    "mtime": 1792144430.1598456,
-    "seen": 1792144605.79173,
-    "ast_hash": "0efb491725f840314169881be57a078a",
+    "mtime": 1792146165.3152144,
+    "seen": 1792146199.840017,
+    "ast_hash": "f92b6f328c2bfe7539349f29af68beb8",
     "semantic_hash": ""
   },
   "Construct_overview/srv/server.js": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/test/member-app.test.js": {
-    "mtime": 1792144477.970241,
-    "seen": 1792144605.7917814,
-    "ast_hash": "adec33675770c81f9a4a22fd1394a43c",
+    "mtime": 1792146184.0106857,
+    "seen": 1792146199.8400426,
+    "ast_hash": "869a6d7e5e702bbbe6794a62e4200ec8",
     "semantic_hash": ""
   },
   "Construct_overview/test/member-auth.test.js": {
@@ -312,9 +312,39 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/member-app/webapp/index.html": {
-    "mtime": 1792142871.4917839,
-    "seen": 1792143291.0106978,
-    "ast_hash": "8e4d870aa0a968868e63e72d982d08fe",
+    "mtime": 1792146165.3132143,
+    "seen": 1792146199.8400624,
+    "ast_hash": "b6bfc8451a5f13b3157b7867bb2ad6df",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/member-app/webapp/api/portal-api.mjs": {
+    "mtime": 1792146165.3142145,
+    "seen": 1792146199.84001,
+    "ast_hash": "148ce40788bd999a8cc26bbfc5d58e9e",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/member-app/webapp/api/portal-contract.mjs": {
+    "mtime": 1792145707.7224631,
+    "seen": 1792145836.5700982,
+    "ast_hash": "dc3f17c4752fa1d4ea5ab32900a5fc17",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/member-app/webapp/api/portal-response.example.json": {
+    "mtime": 1792145683.7115586,
+    "seen": 1792145836.5701005,
+    "ast_hash": "69fb31b804bd5790bad9e83a6fa88b2f",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/member-app/webapp/api/portal-response.schema.json": {
+    "mtime": 1792145683.7125585,
+    "seen": 1792145836.5701036,
+    "ast_hash": "1c251a5bd71ffa7f58ec077bcc0e45a2",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/portal-contract.test.js": {
+    "mtime": 1792146184.0116856,
+    "seen": 1792146199.8400505,
+    "ast_hash": "562d8e366e571cacc000b30e4e8478ca",
     "semantic_hash": ""
   }
 }

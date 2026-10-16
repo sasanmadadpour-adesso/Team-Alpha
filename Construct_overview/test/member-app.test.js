@@ -16,8 +16,8 @@ test('member app provides exactly two protected content destinations', () => {
   const app = read('app/member-app/webapp/app.js');
   assert.match(app, /location\.hash = '#member'/);
   assert.match(app, /href="#building"/);
-  assert.match(app, /api\('member'\)/);
-  assert.match(app, /api\('building'\)/);
+  assert.match(app, /getPortalData\('7d'\)/);
+  assert.match(app, /result\.trends\[kind\]/);
   assert.doesNotMatch(app, /Constructs\('\$\{/);
   assert.doesNotMatch(app, /Buildings\('\$\{/);
 });
@@ -32,11 +32,11 @@ test('member app presents aggregate building data only', () => {
 test('member app uses scoped trend ranges and localized status labels', () => {
   const app = read('app/member-app/webapp/app.js');
   const server = read('srv/server.js');
-  assert.match(app, /trend\?scope=\$\{kind\}&range=\$\{range\}/);
+  assert.match(app, /getPortalData\(range\)/);
   assert.match(app, /switchoverStatus === 'COMPLETED'/);
   assert.match(app, /completed: 'Umstellung abgeschlossen'/);
   assert.match(app, /completed: 'Switch-over completed'/);
-  assert.match(app, /data\.meLo/);
+  assert.match(app, /member\.melo/);
   assert.match(app, /<br>\$\{t\('melo'\)\}/);
   assert.doesNotMatch(app, /pill/);
   assert.match(server, /row\.participation === 'Ja'/);

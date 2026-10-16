@@ -1,17 +1,17 @@
 # Graph Report - Team-Alpha  (2026-10-16)
 
 ## Corpus Check
-- 49 files · ~23,887 words
+- 54 files · ~25,496 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 20 file(s) not represented in the graph (top: .properties 6, .css 5, .xml 4)
 
 ## Summary
-- 471 nodes · 664 edges · 39 communities (29 shown, 10 thin omitted)
+- 500 nodes · 729 edges · 40 communities (30 shown, 10 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 27 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d58d678b`
+- Built from commit: `7a470eb3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,7 +21,7 @@
 - package.json
 - models
 - vnb-projector.js
-- libs
+- portal-contract.mjs
 - generate-year-data.js
 - sap.app
 - workbook-loader.js
@@ -33,7 +33,7 @@
 - BuildingHouse.js
 - ref_node_assert
 - NavHistory.js
-- nav-logic.test.js
+- libs
 - overview-search.test.js
 - fix-master-data.js
 - data-quality.js
@@ -44,24 +44,27 @@
 - switchover.js
 - app.test.js
 - i18n.test.js
-- master-data.test.js
+- nav-logic.test.js
 - switchover-progress.test.js
 - member-app.test.js
 - odata.test.js
+- overview-formatter.test.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `project()` - 20 edges
-2. `renderMember()` - 10 edges
-3. `renderBuilding()` - 10 edges
-4. `createWorkbookRepository()` - 10 edges
-5. `t()` - 9 edges
-6. `scripts` - 9 edges
-7. `sap.app` - 8 edges
-8. `api()` - 8 edges
-9. `render()` - 8 edges
-10. `consumptionProfile()` - 8 edges
+2. `renderMember()` - 12 edges
+3. `renderBuilding()` - 12 edges
+4. `validatePortalData()` - 11 edges
+5. `createWorkbookRepository()` - 10 edges
+6. `t()` - 9 edges
+7. `chart()` - 9 edges
+8. `scripts` - 9 edges
+9. `sap.app` - 8 edges
+10. `PortalContractError` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `getPortalData()` --calls--> `validatePortalData()`  [EXTRACTED]
+  Construct_overview/app/member-app/webapp/api/portal-api.mjs → Construct_overview/app/member-app/webapp/api/portal-contract.mjs
 - `filterRows()` --calls--> `apply()`  [EXTRACTED]
   Construct_overview/srv/energy-overview-service.js → Construct_overview/srv/lib/query.js
 - `project()` --calls--> `detect()`  [EXTRACTED]
@@ -70,13 +73,11 @@
   Construct_overview/srv/lib/vnb-projector.js → Construct_overview/srv/lib/data-quality.js
 - `project()` --calls--> `calculate()`  [EXTRACTED]
   Construct_overview/srv/lib/vnb-projector.js → Construct_overview/srv/lib/energy-calculator.js
-- `project()` --calls--> `stepLabel()`  [EXTRACTED]
-  Construct_overview/srv/lib/vnb-projector.js → Construct_overview/srv/lib/switchover.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (39 total, 10 thin omitted)
+## Communities (40 total, 10 thin omitted)
 
 ### Community 0 - "settings"
 Cohesion: 0.09
@@ -98,9 +99,9 @@ Nodes (20): models, name, npm, options, agent, build, plan, model (+12 more)
 Cohesion: 0.18
 Nodes (15): worstSeverity(), average(), averageGrouped(), { calculate }, { detect, summarize, worstSeverity, SEVERITY }, direction(), key(), latest24() (+7 more)
 
-### Community 6 - "libs"
-Cohesion: 0.12
-Nodes (17): libs, minUI5Version, settings, type, sap.f, sap.fe.templates, sap.m, sap.ui.core (+9 more)
+### Community 6 - "portal-contract.mjs"
+Cohesion: 0.14
+Nodes (22): PORTAL_API_BASE_URL, PORTAL_API_PATH, PortalApiError, address(), energy(), GRANULARITIES, noExtraKeys(), number() (+14 more)
 
 ### Community 7 - "generate-year-data.js"
 Cohesion: 0.19
@@ -112,7 +113,7 @@ Nodes (25): version, mainService, desktop, phone, tablet, icon, minUI5Version, s
 
 ### Community 9 - "workbook-loader.js"
 Cohesion: 0.09
-Nodes (27): { calculate }, { createWorkbookRepository }, result, snapshot, boolean(), createWorkbookRepository(), DEFAULT_WORKBOOK, fs (+19 more)
+Nodes (30): { calculate }, { createWorkbookRepository }, result, snapshot, boolean(), createWorkbookRepository(), DEFAULT_WORKBOOK, fs (+22 more)
 
 ### Community 10 - "Mieterstrom CAP Backend Simulator"
 Cohesion: 0.25
@@ -128,15 +129,15 @@ Nodes (10): filterRows(), apply(), call(), compare(), evaluate(), operand(), { a
 
 ### Community 19 - "ref_node_assert"
 Cohesion: 0.20
-Nodes (6): assert, { memberForCredentials }, test, assert, f, test
+Nodes (7): assert, { calculate }, { createWorkbookRepository }, test, assert, { memberForCredentials }, test
 
 ### Community 20 - "NavHistory.js"
 Cohesion: 0.60
 Nodes (5): bundle(), onHashChanged(), render(), text(), title()
 
-### Community 22 - "nav-logic.test.js"
-Cohesion: 0.31
-Nodes (7): describe(), describeOverview(), nextState(), parseHash(), assert, { parseHash, nextState, describe, describeOverview, normalize }, test
+### Community 22 - "libs"
+Cohesion: 0.12
+Nodes (17): libs, minUI5Version, settings, type, sap.f, sap.fe.templates, sap.m, sap.ui.core (+9 more)
 
 ### Community 23 - "overview-search.test.js"
 Cohesion: 0.27
@@ -159,8 +160,8 @@ Cohesion: 0.09
 Nodes (22): bucketStart(), granularity(), parseDate(), trends(), VALUE_FIELDS, cds, { createWorkbookRepository }, crypto (+14 more)
 
 ### Community 30 - "app.js"
-Cohesion: 0.26
-Nodes (21): api(), app, bindTrend(), cards(), chart(), dateLabel(), esc(), fmt() (+13 more)
+Cohesion: 0.24
+Nodes (23): getPortalData(), api(), app, bindTrend(), cards(), chart(), dateLabel(), esc() (+15 more)
 
 ### Community 31 - "vnb-projector.test.js"
 Cohesion: 0.20
@@ -178,9 +179,9 @@ Nodes (5): appRoot, assert, fs, path, test
 Cohesion: 0.25
 Nodes (5): assert, fs, path, root, test
 
-### Community 35 - "master-data.test.js"
-Cohesion: 0.25
-Nodes (7): assert, { createWorkbookRepository }, english, german, path, test, XLSX
+### Community 35 - "nav-logic.test.js"
+Cohesion: 0.31
+Nodes (7): describe(), describeOverview(), nextState(), parseHash(), assert, { parseHash, nextState, describe, describeOverview, normalize }, test
 
 ### Community 36 - "switchover-progress.test.js"
 Cohesion: 0.25
@@ -194,25 +195,29 @@ Nodes (5): assert, fs, path, root, test
 Cohesion: 0.29
 Nodes (3): assert, { spawn }, test
 
+### Community 39 - "overview-formatter.test.js"
+Cohesion: 0.40
+Nodes (3): assert, f, test
+
 ## Knowledge Gaps
 - **7 isolated node(s):** `minUI5Version`, `minUI5Version`, `@playwright/test`, `install`, `npx` (+2 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 277 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 290 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `xlsx` connect `switchover-progress.test.js` to `set-switchover-progress.js`, `package.json`, `master-data.test.js`, `generate-year-data.js`, `workbook-loader.js`, `fix-master-data.js`?**
-  _High betweenness centrality (0.085) - this node is a cross-community bridge._
+- **Why does `xlsx` connect `switchover-progress.test.js` to `set-switchover-progress.js`, `package.json`, `generate-year-data.js`, `workbook-loader.js`, `fix-master-data.js`?**
+  _High betweenness centrality (0.090) - this node is a cross-community bridge._
 - **What connects `minUI5Version`, `minUI5Version`, `@playwright/test` to the rest of the system?**
   _7 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `settings` be split into smaller, more focused modules?**
   _Cohesion score 0.09486166007905138 - nodes in this community are weakly interconnected._
 - **Why does `@sap/cds` connect `package.json` to `energy-overview-service.js`, `server.js`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.05555555555555555 - nodes in this community are weakly interconnected._
 - **Should `models` be split into smaller, more focused modules?**
   _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
-- **Should `libs` be split into smaller, more focused modules?**
-  _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
+- **Should `portal-contract.mjs` be split into smaller, more focused modules?**
+  _Cohesion score 0.14245014245014245 - nodes in this community are weakly interconnected._
