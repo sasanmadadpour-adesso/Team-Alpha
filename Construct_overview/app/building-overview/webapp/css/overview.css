@@ -1,0 +1,43 @@
+/* Overview page: header, card and combined tree table. */
+.vnbOv-page { min-height: 100%; background: #f5f7f8; }
+/* The page scrolls; the tree table is as tall as its rows, so no inner height limit applies. */
+
+.vnbOv-header { gap: .75rem; padding: 0 1rem .5rem; }
+.vnbOv-filterbar { gap: .5rem; }
+.vnbOv-matchLabel { color: #43545c; font-size: .875rem; min-width: 5rem; }
+.vnbOv-hint { color: #92400e; font-size: .8rem; }
+
+.vnbOv-tiles { gap: .75rem; }
+.vnbOv-tile { min-width: 9rem; padding: .6rem .9rem; border: 1px solid #d5dadd; border-radius: .6rem; background: #fff; }
+.vnbOv-tileValue { font-size: 1.5rem; font-weight: 600; color: #263238; }
+.vnbOv-tile label { color: #5b6b73; font-size: .8rem; }
+
+.vnbOv-card { margin: .5rem 1rem 1rem; border: 1px solid #d5dadd; border-radius: .75rem; background: #fff; box-shadow: 0 .125rem .35rem rgb(0 0 0 / 6%); }
+.vnbOv-toolbar { border-bottom: 1px solid #eef2f4; }
+
+/* Fewer lines: no vertical separators, only light horizontal hairlines. */
+.vnbOv-tree td, .vnbOv-tree th { border-right: 0 !important; }
+.vnbOv-tree td { border-bottom: 1px solid #f0f3f5 !important; }
+
+/* Row marking for search. */
+.vnbOv-tree .vnbOv-hit td { background: #fffbeb !important; }
+.vnbOv-tree .vnbOv-current td { background: #fff1c2 !important; }
+
+/* Names look like plain text but still navigate. */
+.vnbOv-plainLink.sapMLnk, .vnbOv-plainLink.sapMLnk:visited { color: #263238 !important; font-weight: 600; text-decoration: none; }
+.vnbOv-plainLink.sapMLnk:hover, .vnbOv-plainLink.sapMLnk:focus-visible { text-decoration: underline; }
+.vnbOv-nameCell { gap: .5rem; }
+.vnbOv-icon { font-size: 1rem; }
+.vnbOv-icon-building { color: #0f828f; }
+.vnbOv-icon-household { color: #0a6ed1; }
+.vnbOv-icon-producer { color: #e9730c; }
+.vnbOv-icon-counter { color: #53666e; }
+
+.vnbOv-statusCell { gap: .5rem; }
+.vnbOv-stepLabel { white-space: nowrap; }
+.vnbOv-progress { width: 6rem; }
+
+.vnbOv-mk7 { font-size: 1.05rem; }
+.vnbOv-mk7-yes { color: var(--sapPositiveColor, #257a3e); }
+.vnbOv-mk7-warn { color: var(--sapCriticalColor, #e9730c); }
+.vnbOv-mk7-no { color: var(--sapNegativeColor, #b00); }

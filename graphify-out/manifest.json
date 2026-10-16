@@ -24,22 +24,16 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/manifest.json": {
-    "mtime": 1792105490.7398589,
-    "seen": 1792106012.3874815,
-    "ast_hash": "84175c9686860f352b6378edf86b74ee",
+    "mtime": 1792108121.2999544,
+    "seen": 1792109587.0122297,
+    "ast_hash": "c693bcb12c001b41cb117bf24466c7a4",
     "semantic_hash": ""
   },
   "Construct_overview/package.json": {
-    "mtime": 1792105330.316829,
-    "seen": 1792106012.3874853,
-    "ast_hash": "b2d7ec8eeb210ab4e2da13631bfd5f78",
+    "mtime": 1792113448.0340726,
+    "seen": 1792113461.6187022,
+    "ast_hash": "1a55e26530d8b5aae5fe1975f4038fc8",
     "semantic_hash": ""
-  },
-  "Construct_overview/scripts/add-energy-progress.js": {
-    "mtime": 1792070797.2648296,
-    "seen": 1792095902.8412719,
-    "ast_hash": "14c53ea9ed947b718aa0c5cdcd951e87",
-    "semantic_hash": "14c53ea9ed947b718aa0c5cdcd951e87"
   },
   "Construct_overview/scripts/generate-year-data.js": {
     "mtime": 1792097893.4886363,
@@ -54,9 +48,9 @@
     "semantic_hash": "bce18586a42c8e99948e2dbdf5aa0bcd"
   },
   "Construct_overview/srv/energy-overview-service.js": {
-    "mtime": 1792101296.0677292,
-    "seen": 1792102272.6203563,
-    "ast_hash": "5ad3beb95b50d5f202baf5a66e3b6c05",
+    "mtime": 1792112761.6078436,
+    "seen": 1792113461.6187153,
+    "ast_hash": "3a776c870768a2606a94afe34d68b303",
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/energy-calculator.js": {
@@ -72,21 +66,21 @@
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/vnb-projector.js": {
-    "mtime": 1792105405.9211833,
-    "seen": 1792106012.387506,
-    "ast_hash": "e44d11b89d4988214b33e88065c2af8e",
+    "mtime": 1792112770.8727248,
+    "seen": 1792113461.6187284,
+    "ast_hash": "bc3f88cc395e44d456fe499a125d658c",
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/workbook-loader.js": {
-    "mtime": 1792070665.319085,
-    "seen": 1792095902.8412905,
-    "ast_hash": "7f280ef653fa4b245e9da209d212f68e",
-    "semantic_hash": "7f280ef653fa4b245e9da209d212f68e"
+    "mtime": 1792112761.6068437,
+    "seen": 1792113461.6187313,
+    "ast_hash": "86017ff3a77e2ed7c404ae630e8a13b6",
+    "semantic_hash": ""
   },
   "Construct_overview/test/app.test.js": {
-    "mtime": 1792105504.0752423,
-    "seen": 1792106012.387511,
-    "ast_hash": "18f3e3e8dd5a5f01d21ad50cc9823723",
+    "mtime": 1792113448.0350728,
+    "seen": 1792113461.6187346,
+    "ast_hash": "d58bf452b19730ba14ff98bbc3f95368",
     "semantic_hash": ""
   },
   "Construct_overview/test/energy-calculator.test.js": {
@@ -95,12 +89,6 @@
     "ast_hash": "2e8bdd2acfaf19c71bde6a3f9ef965ff",
     "semantic_hash": "2e8bdd2acfaf19c71bde6a3f9ef965ff"
   },
-  "Construct_overview/test/energy-progress.test.js": {
-    "mtime": 1792070812.2301009,
-    "seen": 1792095902.8412986,
-    "ast_hash": "63b0d7458ead410298bc9d62c9be35c8",
-    "semantic_hash": "63b0d7458ead410298bc9d62c9be35c8"
-  },
   "Construct_overview/test/energy-trends.test.js": {
     "mtime": 1792098055.8806992,
     "seen": 1792098775.0310397,
@@ -108,15 +96,15 @@
     "semantic_hash": ""
   },
   "Construct_overview/test/odata.test.js": {
-    "mtime": 1792101659.5683637,
-    "seen": 1792102272.6203892,
-    "ast_hash": "b3921767c9cec5e2cb20a72b2864aaa0",
+    "mtime": 1792109335.2871747,
+    "seen": 1792109587.0122938,
+    "ast_hash": "5e064ac19bba3ef64f2e49df39d25dac",
     "semantic_hash": ""
   },
   "Construct_overview/test/vnb-projector.test.js": {
-    "mtime": 1792105504.0756614,
-    "seen": 1792106012.3875296,
-    "ast_hash": "4aff1bf02852ede620235258f6d53510",
+    "mtime": 1792113448.0350728,
+    "seen": 1792113461.6187584,
+    "ast_hash": "132cb053fadefc2c0587397558db29ec",
     "semantic_hash": ""
   },
   "Construct_overview/test/workbook-loader.test.js": {
@@ -138,9 +126,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/README.md": {
-    "mtime": 1792105759.0924785,
-    "seen": 1792106012.3875372,
-    "ast_hash": "20196e1b68d5e8a682191ee0e4143846",
+    "mtime": 1792113448.0340726,
+    "seen": 1792113461.6187663,
+    "ast_hash": "0ed568761612686735a643b11e18f084",
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/index.html": {
@@ -162,27 +150,27 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/ext/BuildingHouse.js": {
-    "mtime": 1792103370.204809,
-    "seen": 1792103739.8070161,
-    "ast_hash": "42923a3b36bebc6587a1008878e80585",
+    "mtime": 1792112761.6118436,
+    "seen": 1792113461.6186738,
+    "ast_hash": "5b16829adc120f75295fb09499ce37a3",
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/ext/NavHistory.js": {
-    "mtime": 1792101447.0207,
-    "seen": 1792102272.6203377,
-    "ast_hash": "21b16e57fc5591d7b043a82b26715352",
+    "mtime": 1792108180.479252,
+    "seen": 1792109587.0122242,
+    "ast_hash": "694cadcc039bfb26e32f5b14f79c8a7d",
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/ext/navLogic.js": {
-    "mtime": 1792101447.020512,
-    "seen": 1792102272.620341,
-    "ast_hash": "5019eb72a7c915fc40005a675711bd8f",
+    "mtime": 1792108169.443383,
+    "seen": 1792109587.0122263,
+    "ast_hash": "8b8e84fa7c72c2fc469a6af653530db5",
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/data-quality.js": {
-    "mtime": 1792105422.324269,
-    "seen": 1792106012.387498,
-    "ast_hash": "a34b0b07b98b90f1a352ed53316b838f",
+    "mtime": 1792107582.993325,
+    "seen": 1792109587.0122607,
+    "ast_hash": "8b87304567a617c2365d3f41cf6131cb",
     "semantic_hash": ""
   },
   "Construct_overview/srv/lib/query.js": {
@@ -204,9 +192,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/test/nav-logic.test.js": {
-    "mtime": 1792101659.580639,
-    "seen": 1792102272.6203868,
-    "ast_hash": "1fee9d6d99d35971cac04edaa9ec0219",
+    "mtime": 1792109182.2308946,
+    "seen": 1792109587.012291,
+    "ast_hash": "fb03bb7d96a28215d325abdd559c7556",
     "semantic_hash": ""
   },
   "Construct_overview/test/query.test.js": {
@@ -216,9 +204,9 @@
     "semantic_hash": ""
   },
   "Construct_overview/app/building-overview/webapp/ext/LocationTopology.js": {
-    "mtime": 1792105490.707706,
-    "seen": 1792106012.3874738,
-    "ast_hash": "8276df0ea333f1c5591d5787c4f60d1a",
+    "mtime": 1792108271.8281674,
+    "seen": 1792109587.012221,
+    "ast_hash": "d7d4c862bc1b2b2902c94bbf53c53f91",
     "semantic_hash": ""
   },
   "Construct_overview/scripts/fix-master-data.js": {
@@ -231,6 +219,66 @@
     "mtime": 1792105579.62485,
     "seen": 1792106012.3875217,
     "ast_hash": "e5a5cd2a28b014294d1454fc84f45d89",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/overview/Component.js": {
+    "mtime": 1792108007.683302,
+    "seen": 1792109587.012233,
+    "ast_hash": "a5cd6513b724e134107798dc03a401b7",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/overview/controller/Overview.controller.js": {
+    "mtime": 1792112845.0127354,
+    "seen": 1792113461.6186922,
+    "ast_hash": "88ba052ff941231313f38153e64362ba",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/overview/controller/formatter.js": {
+    "mtime": 1792111117.2453313,
+    "seen": 1792111598.0354936,
+    "ast_hash": "32b9cc9458fa0141f2da3d2a824af251",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/overview/manifest.json": {
+    "mtime": 1792111151.4789178,
+    "seen": 1792111598.0355008,
+    "ast_hash": "c18719ca0a23838259469aed3be5a1b2",
+    "semantic_hash": ""
+  },
+  "Construct_overview/app/building-overview/webapp/overview/controller/search.js": {
+    "mtime": 1792112761.6128435,
+    "seen": 1792113461.6186974,
+    "ast_hash": "6b79f65a9aed25a792e685e28dfe7648",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/overview-formatter.test.js": {
+    "mtime": 1792111177.1956077,
+    "seen": 1792111598.0355456,
+    "ast_hash": "7f2bba44e65a44f9044045d972c4a955",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/overview-search.test.js": {
+    "mtime": 1792112761.6148436,
+    "seen": 1792113461.618751,
+    "ast_hash": "39a6e85b547f9662f5174390abcdc684",
+    "semantic_hash": ""
+  },
+  "Construct_overview/scripts/set-switchover-progress.js": {
+    "mtime": 1792112712.1614254,
+    "seen": 1792113461.6187103,
+    "ast_hash": "7c3d0ac59158282283ea8e0d0db173fd",
+    "semantic_hash": ""
+  },
+  "Construct_overview/srv/lib/switchover.js": {
+    "mtime": 1792107614.9048407,
+    "seen": 1792113461.6187255,
+    "ast_hash": "3de5249dc1efa25fcc905bcf4037da49",
+    "semantic_hash": ""
+  },
+  "Construct_overview/test/switchover-progress.test.js": {
+    "mtime": 1792112987.927484,
+    "seen": 1792113461.6187553,
+    "ast_hash": "e00d358e948ba0980019363af9b71333",
     "semantic_hash": ""
   }
 }

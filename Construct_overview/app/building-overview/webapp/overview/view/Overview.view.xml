@@ -1,0 +1,171 @@
+<mvc:View
+  controllerName="vnb.constructs.overview.controller.Overview"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.f"
+  xmlns:table="sap.ui.table"
+  xmlns:core="sap.ui.core"
+  xmlns:rowmodes="sap.ui.table.rowmodes"
+  displayBlock="true">
+  <f:DynamicPage id="overviewPage" fitContent="false" class="vnbOv-page">
+    <f:title>
+      <f:DynamicPageTitle>
+        <f:heading>
+          <Title text="{i18n>appTitle}" level="H2"/>
+        </f:heading>
+        <f:expandedContent>
+          <Text text="{i18n>appDescription}"/>
+        </f:expandedContent>
+        <f:snappedContent>
+          <Text text="{i18n>appDescription}"/>
+        </f:snappedContent>
+        <f:actions>
+          <Button text="{i18n>languageToggle}" press="onToggleLanguage" type="Transparent"/>
+        </f:actions>
+      </f:DynamicPageTitle>
+    </f:title>
+
+    <f:header>
+      <f:DynamicPageHeader pinnable="true">
+        <FlexBox direction="Column" class="vnbOv-header">
+          <FlexBox alignItems="Center" wrap="Wrap" class="vnbOv-filterbar">
+            <SearchField id="overviewSearch" width="24rem" placeholder="{i18n>searchPlaceholder}" liveChange="onSearch" search="onSearch"/>
+            <SegmentedButton id="overviewMode" selectedKey="{ui>/mode}" selectionChange="onModeChange" class="sapUiSmallMarginBegin">
+              <items>
+                <SegmentedButtonItem key="find" text="{i18n>searchModeFind}"/>
+                <SegmentedButtonItem key="filter" text="{i18n>searchModeFilter}"/>
+              </items>
+            </SegmentedButton>
+            <Button icon="sap-icon://navigation-up-arrow" tooltip="{i18n>searchPrev}" press="onPrevMatch" enabled="{ui>/navigable}" type="Transparent" class="sapUiSmallMarginBegin"/>
+            <Button icon="sap-icon://navigation-down-arrow" tooltip="{i18n>searchNext}" press="onNextMatch" enabled="{ui>/navigable}" type="Transparent"/>
+            <Text text="{ui>/matchLabel}" class="sapUiSmallMarginBegin vnbOv-matchLabel"/>
+          </FlexBox>
+          <Text text="{ui>/fuzzyHint}" visible="{= !!${ui>/fuzzyHint} }" class="vnbOv-hint"/>
+
+          <FlexBox wrap="Wrap" class="vnbOv-tiles">
+            <VBox class="vnbOv-tile">
+              <Text text="{ui>/stats/buildings}" class="vnbOv-tileValue"/>
+              <Label text="{i18n>statBuildings}"/>
+            </VBox>
+            <VBox class="vnbOv-tile">
+              <Text text="{ui>/stats/households}" class="vnbOv-tileValue"/>
+              <Label text="{i18n>statHouseholds}"/>
+            </VBox>
+            <VBox class="vnbOv-tile">
+              <Text text="{ui>/stats/participating}" class="vnbOv-tileValue"/>
+              <Label text="{i18n>statParticipating}"/>
+            </VBox>
+            <VBox class="vnbOv-tile">
+              <Text text="{ui>/stats/finished}" class="vnbOv-tileValue"/>
+              <Label text="{i18n>statFinished}"/>
+            </VBox>
+          </FlexBox>
+        </FlexBox>
+      </f:DynamicPageHeader>
+    </f:header>
+
+    <f:content>
+      <VBox class="vnbOv-card">
+        <OverflowToolbar class="vnbOv-toolbar">
+          <Title text="{ui>/tableTitle}" level="H3"/>
+          <ToolbarSpacer/>
+          <Button icon="sap-icon://expand-all" text="{i18n>treeExpandAll}" press="onExpandAll" type="Transparent"/>
+          <Button icon="sap-icon://collapse-all" text="{i18n>treeCollapseAll}" press="onCollapseAll" type="Transparent"/>
+        </OverflowToolbar>
+        <table:TreeTable
+          id="overviewTree"
+          rows="{path: 'tree>/', parameters: {arrayNames: ['children']}}"
+          selectionMode="None"
+          rowActionCount="1"
+          rowsUpdated="onRowsUpdated"
+          enableColumnReordering="false"
+          class="vnbOv-tree">
+          <table:rowMode>
+            <rowmodes:Fixed rowCount="{ui>/rowCount}"/>
+          </table:rowMode>
+          <table:rowSettingsTemplate>
+            <table:RowSettings highlight="{parts: ['tree>ID', 'ui>/matchIds', 'ui>/currentId'], formatter: '.formatter.rowHighlight'}"/>
+          </table:rowSettingsTemplate>
+          <table:rowActionTemplate>
+            <table:RowAction>
+              <table:items>
+                <table:RowActionItem type="Navigation" press="onNavigate" tooltip="{i18n>openDetail}"
+                  visible="{parts: ['tree>detailHash'], formatter: '.formatter.hasLink'}"/>
+              </table:items>
+            </table:RowAction>
+          </table:rowActionTemplate>
+          <table:columns>
+            <table:Column width="20rem">
+              <Label text="{i18n>treeName}"/>
+              <table:template>
+                <HBox alignItems="Center" class="vnbOv-nameCell">
+                  <core:Icon src="{parts: ['tree>nodeType'], formatter: '.formatter.nodeIcon'}"
+                    class="{parts: ['tree>nodeType'], formatter: '.formatter.nodeIconClass'}"/>
+                  <Link text="{tree>displayName}" href="{tree>detailHash}" enabled="{parts: ['tree>detailHash'], formatter: '.formatter.hasLink'}" class="vnbOv-plainLink"/>
+                </HBox>
+              </table:template>
+            </table:Column>
+            <table:Column width="10rem">
+              <Label text="{i18n>ROLE}"/>
+              <table:template>
+                <Text text="{tree>roleLabel}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="10rem">
+              <Label text="{i18n>CITY}"/>
+              <table:template>
+                <Text text="{tree>city}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="12rem">
+              <Label text="{i18n>treeOwner}"/>
+              <table:template>
+                <Text text="{tree>ownerName}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="17rem">
+              <Label text="{i18n>treeStatus}"/>
+              <table:template>
+                <HBox alignItems="Center" class="vnbOv-statusCell">
+                  <core:Icon src="{parts: ['tree>participationCriticality'], formatter: '.formatter.mk7Icon'}"
+                    class="{parts: ['tree>participationCriticality'], formatter: '.formatter.mk7Class'}"
+                    visible="{parts: ['tree>nodeType'], formatter: '.formatter.isHousehold'}"
+                    tooltip="{i18n>mk7Participation}"/>
+                  <Text text="{tree>switchoverStepLabel}" class="vnbOv-stepLabel"
+                    visible="{parts: ['tree>nodeType', 'tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.statusDetail'}"/>
+                  <ProgressIndicator percentValue="{parts: ['tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.progressPercent'}"
+                    showValue="false" state="Success" class="vnbOv-progress"
+                    visible="{parts: ['tree>nodeType', 'tree>switchoverStep', 'tree>switchoverTotalSteps'], formatter: '.formatter.statusDetail'}"/>
+                </HBox>
+              </table:template>
+            </table:Column>
+            <table:Column width="8rem" hAlign="End">
+              <Label text="{i18n>CONSUMPTION_KWH}"/>
+              <table:template>
+                <Text text="{tree>totalConsumptionKwh}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="8rem" hAlign="End">
+              <Label text="{i18n>GENERATION_KWH}"/>
+              <table:template>
+                <Text text="{tree>totalGenerationKwh}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="8rem" hAlign="End">
+              <Label text="{i18n>LOCAL_ENERGY_KWH}"/>
+              <table:template>
+                <Text text="{tree>localEnergyKwh}"/>
+              </table:template>
+            </table:Column>
+            <table:Column width="6rem" hAlign="Center">
+              <Label text="{i18n>DATA_QUALITY}"/>
+              <table:template>
+                <core:Icon src="sap-icon://alert" class="vnbOv-mk7-warn" visible="{tree>hasDataWarning}" tooltip="{i18n>DATA_QUALITY}"/>
+              </table:template>
+            </table:Column>
+          </table:columns>
+        </table:TreeTable>
+      </VBox>
+    </f:content>
+  </f:DynamicPage>
+</mvc:View>

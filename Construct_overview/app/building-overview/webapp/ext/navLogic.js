@@ -37,5 +37,12 @@
     return { key: "backToList", arg: null };
   }
 
-  return { normalize, parseHash, nextState, describe };
+  // A second, permanent link back to the index overview page, shown on every sub-page
+  // (building or construct) regardless of how the user got there.
+  function describeOverview(current) {
+    if (!current || current.type === "list") return null;
+    return { key: "backToOverview", arg: null };
+  }
+
+  return { normalize, parseHash, nextState, describe, describeOverview };
 });

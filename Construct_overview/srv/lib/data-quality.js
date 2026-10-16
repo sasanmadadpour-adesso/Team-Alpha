@@ -11,8 +11,7 @@ const FIELDS = {
   import_malo: { de: 'Bezugs-MaLo', en: 'Import MaLo' },
   export_malo: { de: 'Einspeise-MaLo', en: 'Export MaLo' },
   participation: { de: 'Teilnahme MK7', en: 'MK7 participation' },
-  postal_code: { de: 'Postleitzahl', en: 'Postcode' },
-  scenario: { de: 'Testszenario', en: 'Test scenario' }
+  postal_code: { de: 'Postleitzahl', en: 'Postcode' }
 };
 
 const SEVERITY_LABELS = {
@@ -80,18 +79,6 @@ const TEXTS = {
       title: 'MK7 participation not recognised',
       text: 'The value “{value}” in “MK7 participation” (row {row}, building {building}) is neither “Ja” nor “nein”. The participant is therefore treated as not participating.',
       action: 'Enter exactly “Ja” or “nein”.'
-    }
-  },
-  SYNTHETIC_EDGE_CASE: {
-    de: {
-      title: 'Testszenario mit Auffälligkeit',
-      text: 'Dieses Konstrukt gehört zum synthetischen Testszenario „{scenario}“ und enthält absichtlich auffällige Daten.',
-      action: 'Nur zu Testzwecken. Für echte Daten besteht kein Handlungsbedarf.'
-    },
-    en: {
-      title: 'Test scenario with irregular data',
-      text: 'This construct belongs to the synthetic test scenario “{scenario}” and intentionally contains irregular data.',
-      action: 'For testing only. No action is needed for real data.'
     }
   }
 };

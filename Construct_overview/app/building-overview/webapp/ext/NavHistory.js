@@ -33,9 +33,15 @@ sap.ui.define(["sap/ui/core/routing/HashChanger", "./navLogic"], function (HashC
 
   async function render() {
     const origin = history.state && history.state.vnbNav ? history.state.from : null;
+    const current = logic.parseHash(HashChanger.getInstance().getHash());
     const description = logic.describe(origin);
-    document.body.classList.toggle("vnbHasBackbar", Boolean(description));
-    if (!description) { if (bar) bar.hidden = true; return; }
+    const overviewDescription = logic.describeOverview(current);
+    // A dynamic "back to where you came from" link plus a permanent "back to overview" link on
+    // every sub-page; if the dynamic link already goes to the overview, only one link is shown.
+    const showBack = Boolean(description) && !(origin && origin.type === "list");
+    const showOverview = Boolean(overviewDescription);
+    document.body.classList.toggle("vnbHasBackbar", showBack || showOverview);
+    if (!showBack && !showOverview) { if (bar) bar.hidden = true; return; }
     if (!bar) {
       bar = document.createElement("nav");
       bar.className = "vnbBackbar";
@@ -43,19 +49,29 @@ sap.ui.define(["sap/ui/core/routing/HashChanger", "./navLogic"], function (HashC
         const link = event.target.closest("a");
         if (!link) return;
         event.preventDefault();
+        if (link.dataset.vnbOverview) { HashChanger.getInstance().setHash(""); return; }
         history.back();
       });
       document.body.prepend(bar);
     }
-    const label = description.arg ? text(description.key, [await title(origin)]) : text(description.key);
+    const backLabel = showBack && description.arg ? text(description.key, [await title(origin)]) : showBack ? text(description.key) : null;
     // The state may have changed while the title was loading.
     if (!(history.state && history.state.vnbNav && history.state.from === origin)) return;
     bar.hidden = false;
     bar.innerHTML = "";
-    const link = document.createElement("a");
-    link.href = `#${origin.hash}`;
-    link.textContent = `\u2190 ${label}`;
-    bar.appendChild(link);
+    if (showBack) {
+      const link = document.createElement("a");
+      link.href = `#${origin.hash}`;
+      link.textContent = `\u2190 ${backLabel}`;
+      bar.appendChild(link);
+    }
+    if (showOverview) {
+      const link = document.createElement("a");
+      link.href = "#";
+      link.dataset.vnbOverview = "true";
+      link.textContent = `\u2302 ${text(overviewDescription.key)}`;
+      bar.appendChild(link);
+    }
   }
 
   function onHashChanged(event) {

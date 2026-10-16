@@ -2,7 +2,7 @@
 html, body, [data-sap-ui-component], .sapUiComponentContainer, .sapUiComponentContainer > div, .sapUiComponentContainer .sapUiView, .sapUiComponentContainer .sapMNav { width: 100%; height: 100% !important; min-height: calc(100vh - var(--vnb-backbar, 0px)); }
 body { box-sizing: border-box; }
 body.vnbHasBackbar { --vnb-backbar: 2.25rem; padding-top: var(--vnb-backbar); }
-.vnbBackbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; height: var(--vnb-backbar, 2.25rem); padding: 0 1rem; border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9); background: #f5f6f7; font-size: .875rem; }
+.vnbBackbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; gap: 1.5rem; height: var(--vnb-backbar, 2.25rem); padding: 0 1rem; border-bottom: 1px solid var(--sapGroup_TitleBorderColor, #d9d9d9); background: #f5f6f7; font-size: .875rem; }
 .vnbBackbar[hidden] { display: none; }
 .vnbBackbar a { color: var(--sapLinkColor, #0a6ed1); text-decoration: none; font-weight: 600; }
 .vnbBackbar a:hover, .vnbBackbar a:focus-visible { text-decoration: underline; }

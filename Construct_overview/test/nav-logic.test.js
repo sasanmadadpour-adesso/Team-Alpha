@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseHash, nextState, describe, normalize } = require('../app/building-overview/webapp/ext/navLogic');
+const { parseHash, nextState, describe, describeOverview, normalize } = require('../app/building-overview/webapp/ext/navLogic');
 
 test('parses router hashes into page types', () => {
   assert.deepEqual(parseHash("#/Buildings('B-FRA-01')"), { type: 'building', id: 'B-FRA-01' });
@@ -34,4 +34,11 @@ test('describes the back link text key', () => {
   assert.deepEqual(describe({ type: 'construct', id: 'C1' }), { key: 'backToConstruct', arg: 'C1' });
   assert.deepEqual(describe({ type: 'list', id: null }), { key: 'backToList', arg: null });
   assert.equal(describe(null), null);
+});
+
+test('describes the permanent overview link on every sub-page, but not on the list page', () => {
+  assert.deepEqual(describeOverview({ type: 'building', id: 'B1' }), { key: 'backToOverview', arg: null });
+  assert.deepEqual(describeOverview({ type: 'construct', id: 'C1' }), { key: 'backToOverview', arg: null });
+  assert.equal(describeOverview({ type: 'list', id: null }), null);
+  assert.equal(describeOverview(null), null);
 });

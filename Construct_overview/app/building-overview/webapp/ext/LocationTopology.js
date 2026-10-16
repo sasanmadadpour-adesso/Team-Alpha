@@ -79,10 +79,9 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const grid = `<section class="vnbLt-card vnbLt-grid"><h4>${t("gridNode")}</h4><p>${t("gridNodeHint")}</p></section>`;
 
       if (c.isSharedMeter) {
-        const kind = c.sharedMeterIsReal ? "meterReal" : "meterVirtual";
         const members = `<p>${escape(c.buildingMemberCount)} ${t("householdMembers")}</p>`;
         const building = c.buildingLink ? `<a class="vnbLt-link" href="${escape(c.buildingLink)}">${escape(this._text("openBuilding", [c.buildingID]))}</a>` : "";
-        return `<div class="vnbLt-flow"><section class="vnbLt-card vnbLt-counter"><h4>${t("roleCounter")}</h4><p class="vnbLt-kind">${t(kind)}</p>${this._row("sharedMaLoLabel", c.sharedMeterMaLo)}${c.sharedMeterIsReal ? this._row("meLoLabel", c.sharedMeterMeLo) : ""}${members}${building}</section>${wire}${grid}</div>`;
+        return `<div class="vnbLt-flow"><section class="vnbLt-card vnbLt-counter"><h4>${t("roleCounter")}</h4>${this._row("sharedMaLoLabel", c.sharedMeterMaLo)}${c.sharedMeterIsReal ? this._row("meLoLabel", c.sharedMeterMeLo) : ""}${members}${building}</section>${wire}${grid}</div>`;
       }
       if (!c.sharedMeterMaLo) {
         return `<div class="vnbLt-flow">${participant}${wire}${grid}</div><p class="vnbLt-note">${t("noSharedMeter")}</p>`;
@@ -91,7 +90,6 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const counter = `
         <section class="vnbLt-card vnbLt-counter">
           <h4>${t("sharedCounter")}</h4>
-          <p class="vnbLt-kind">${t(c.sharedMeterIsReal ? "meterReal" : "meterVirtual")}</p>
           ${this._row("sharedMaLoLabel", c.sharedMeterMaLo)}
           ${c.sharedMeterIsReal ? this._row("sharedMeLoLabel", c.sharedMeterMeLo) : ""}
           ${link}

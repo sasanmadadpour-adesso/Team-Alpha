@@ -21,6 +21,7 @@
 .vnbBh-floor { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-height: 2.5rem; padding: .4rem .65rem; border: 1px solid #c9d9d5; border-left: .3rem solid #77a8a4; border-radius: .35rem; background: #f5faf8; }
 .vnbBh-mk7 { display: inline-flex; align-items: center; justify-content: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; font-size: .8rem; font-weight: 700; line-height: 1; }
 .vnbBh-mk7-yes { background: #e9f7ef; color: #236746; }
+.vnbBh-mk7-warn { background: #fef3e3; color: #92400e; }
 .vnbBh-mk7-no { background: #fdeaea; color: #bb0000; }
 .vnbBh-foot { margin: .6rem 0 0; color: #64777d; font-size: .75rem; }
 .vnbBh-malo { color: #20343a; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

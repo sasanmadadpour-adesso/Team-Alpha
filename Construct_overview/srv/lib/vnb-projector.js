@@ -1,5 +1,6 @@
 const { calculate } = require('./energy-calculator');
 const { detect, summarize, worstSeverity, SEVERITY } = require('./data-quality');
+const { TOTAL_STEPS, stepLabel } = require('./switchover');
 
 const round = (value, digits = 3) => Number((Number(value) || 0).toFixed(digits));
 const sum = (rows, field) => rows.reduce((total, row) => total + (Number(row[field]) || 0), 0);
@@ -34,41 +35,25 @@ function rowsInWindow(rows, latest) {
   const start = new Date(end.valueOf() - 23 * 60 * 60 * 1000);
   return rows.filter(row => row.startTime && new Date(row.startTime) >= start && new Date(row.startTime) <= end);
 }
-const syntheticScenarios = [
-  ['EDGE-MULTI-CONSUMER', 'Many consumer MaLos on one MeLo', 3, 0, 'Household + commercial', 'complete'],
-  ['EDGE-MULTI-DIRECTION', 'Multiple import and export MaLos', 2, 2, 'Prosumer + solar', 'complete'],
-  ['EDGE-SUPPLIER-OVERLAP', 'Overlapping supplier contracts', 2, 0, 'Household + suppliers', 'complete'],
-  ['EDGE-BATTERY', 'Battery with bidirectional metering', 1, 1, 'Battery', 'zero and negative generation'],
-  ['EDGE-WIND', 'Wind export exceeds local use', 0, 1, 'Wind', 'export-heavy'],
-  ['EDGE-COMMERCIAL', 'Commercial consumer', 4, 0, 'Commercial', 'complete'],
-  ['EDGE-MISSING-READINGS', 'Missing hourly readings', 2, 1, 'Household + solar', 'partial'],
-  ['EDGE-INVALID', 'Invalid and ambiguous source values', 3, 2, 'All roles', 'invalid timestamps and prices']
-];
 
-function syntheticData() {
-  const constructs = [], hourly = [], issues = [], connections = [], scenarios = [];
-  syntheticScenarios.forEach(([code, title, imports, exports, roles, readings], index) => {
-    const id = `TEST-${code}`;
-    const meLo = `DE999999999999999999999999${String(index + 1).padStart(4, '0')}`;
-    const malos = [];
-    for (let i = 0; i < imports; i += 1) malos.push([`599${index}1${String(i + 1).padStart(6, '0')}`, 'IMPORT']);
-    for (let i = 0; i < exports; i += 1) malos.push([`599${index}2${String(i + 1).padStart(6, '0')}`, 'EXPORT']);
-    const warning = ['EDGE-SUPPLIER-OVERLAP', 'EDGE-MISSING-READINGS', 'EDGE-INVALID'].includes(code);
-     constructs.push({ ID: id, displayName: `TEST · ${title}`, primaryMaLo: malos[0]?.[0] || '', importMaLo: malos.find(row => row[1] === 'IMPORT')?.[0] || '', exportMaLo: malos.find(row => row[1] === 'EXPORT')?.[0] || '', meLo, city: 'Teststadt', streetAddress: 'Edgeweg 1', meterNumber: `TEST-METER-${index + 1}`, hasSolar: code !== 'EDGE-WIND' && exports > 0, hasWind: code === 'EDGE-WIND', averageConsumption24hKwh: imports ? 1 : 0, averageSolarGeneration24hKwh: code !== 'EDGE-WIND' && exports > 0 ? 3 : 0, averageWindGeneration24hKwh: code === 'EDGE-WIND' ? 3 : 0, measurementIntervalCount24h: 24, latestMeasurementTime: '2026-11-01T23:00:00Z', roleCode: exports ? 'GENERATION' : 'HOUSEHOLD', roleLabel: roles, directionCode: imports && exports ? 'BIDIRECTIONAL' : exports ? 'GENERATION' : 'CONSUMPTION', participationCode: 'YES', participationLabel: 'Ja / Yes', participationMark: '', isEligible: !exports, hasDualMaLo: Boolean(imports && exports), hasDataWarning: warning, warningCode: warning ? 'SYNTHETIC_EDGE_CASE' : null, warningText: warning ? `Synthetic edge case: ${title}.` : null, totalConsumptionKwh: imports ? 24 : 2.4, totalGenerationKwh: exports ? 36 : 0, localEnergyKwh: exports ? 6 : 0, residualGridKwh: imports ? 18 : 0, exportKwh: exports ? 30 : 0, paymentBalanceEur: 0, meteringSystem: 'iMS/TF', meteringOperator: 'Synthetic Metering', mk7Operator: 'Synthetic VNB', supplyStart: '2026-11-01T00:00:00Z', contractStart: '2026-11-01T00:00:00Z', contractEnd: '2026-11-03T00:00:00Z', sourceRow: -index - 1, buildingID: 'B-EDGE-01', address: 'Edgeweg 1, Teststadt', sharedMeterMaLo: '', sharedMeterMeLo: '', sharedMeterIsReal: false, sharedMeterConstructID: '', isSharedMeter: false, buildingMemberCount: 0, buildingLink: '', hasBuildingLink: false, hasNoBuildingLink: true, participationCriticality: 3, warningCriticality: warning ? 2 : 3, directionLabel: 'Synthetic / Test', isSynthetic: true, testScenario: code });
-     malos.forEach(([malo, directionCode], maloIndex) => connections.push({ ID: `${id}-${malo}`, malo, meLo, directionCode, roleCode: constructs.at(-1).roleCode, validFrom: '2026-11-01T00:00:00Z', validTo: maloIndex === 1 && code === 'EDGE-SUPPLIER-OVERLAP' ? '2026-11-04T00:00:00Z' : '2026-11-03T00:00:00Z', supplier: `Test Supplier ${maloIndex + 1}`, contractReference: `${code}-${maloIndex + 1}`, isSynthetic: true, hasDataWarning: warning || code === 'EDGE-SUPPLIER-OVERLAP', warningText: warning ? `Synthetic edge case: ${title}.` : null, scenarioCode: code, constructID: id, targetConstructID: null }));
-    for (let hour = 0; hour < 24; hour += 1) { const missing = code === 'EDGE-MISSING-READINGS' && [5, 6, 17].includes(hour); hourly.push({ ID: `${id}-${hour}`, constructID: id, startTime: missing ? null : `2026-11-01T${String(hour).padStart(2, '0')}:00:00Z`, endTime: null, hourLabel: `${String(hour).padStart(2, '0')}:00`, consumptionKwh: missing ? null : imports ? 1 : 0, generationKwh: missing ? null : exports ? 3 : 0, localAllocationKwh: missing ? null : 1, residualGridKwh: missing ? null : 0, exportKwh: missing ? null : exports ? 2 : 0, marketPriceEurKwh: missing ? null : code === 'EDGE-INVALID' && hour === 10 ? -0.05 : 0.12 }); }
-    if (warning) issues.push({ ID: `${id}-SYNTHETIC_EDGE_CASE`, constructID: id, severityCode: 'WARNING', severityCriticality: SEVERITY.WARNING.criticality, issueCode: 'SYNTHETIC_EDGE_CASE', fieldName: 'scenario', sourceValue: code, params: { scenario: title } });
-    scenarios.push({ ID: code, title, description: `Synthetic dataset scenario: ${title}.`, relationshipShape: `${imports} import + ${exports} export MaLos → 1 MeLo`, roleCoverage: roles, readingCoverage: readings, warningCount: warning ? 1 : 0, isSynthetic: true });
-  });
-  for (const construct of constructs) {
-    const rows = hourly.filter(row => row.constructID === construct.ID);
-    construct.totalConsumptionKwh = sum(rows, 'consumptionKwh');
-    construct.totalGenerationKwh = sum(rows, 'generationKwh');
-    construct.localEnergyKwh = sum(rows, 'localAllocationKwh');
-    construct.residualGridKwh = sum(rows, 'residualGridKwh');
-    construct.exportKwh = sum(rows, 'exportKwh');
+// The building owner is the producer (plant operator) whose onboarding record belongs to the building.
+// Several producers on one building would be joined with " · "; today every building has exactly one.
+const NO_OWNER = { ownerFirstName: '', ownerLastName: '', ownerName: '' };
+function ownersByBuilding(snapshot) {
+  const groups = new Map();
+  for (const row of snapshot.producerOnboardings) {
+    if (!row.buildingId || !(row.firstName || row.lastName)) continue;
+    if (!groups.has(row.buildingId)) groups.set(row.buildingId, []);
+    groups.get(row.buildingId).push(row);
   }
-  return { constructs, hourly, issues, connections, scenarios };
+  const owners = new Map();
+  for (const [buildingId, rows] of groups) {
+    const unique = values => [...new Set(values.filter(Boolean))].join(' · ');
+    const ownerFirstName = unique(rows.map(row => row.firstName));
+    const ownerLastName = unique(rows.map(row => row.lastName));
+    owners.set(buildingId, { ownerFirstName, ownerLastName, ownerName: [ownerLastName, ownerFirstName].filter(Boolean).join(', ') });
+  }
+  return owners;
 }
 
 function direction(role) {
@@ -77,9 +62,16 @@ function direction(role) {
   return ['GENERATION', 'Erzeugung / Generation'];
 }
 
+// MK7 participation is a three-state signal: not participating (error/red), participating but the
+// eight-step energy concept is not finished yet (warning/yellow), participating and finished (success/green).
+function participationCriticality(participation, role, step) {
+  if (participation !== 'Ja') return 1;
+  if (role === 'Household Consumption' && step != null && step < TOTAL_STEPS) return 2;
+  return 3;
+}
+
 function project(snapshot) {
   const result = calculate(snapshot);
-  const synthetic = syntheticData();
   const balances = result.hourlyBalances;
   const byBuilding = new Map(result.buildingOverviews.map(row => [row.buildingId, row]));
   const participantsByBuilding = new Map();
@@ -87,6 +79,7 @@ function project(snapshot) {
     if (!participantsByBuilding.has(participant.buildingId)) participantsByBuilding.set(participant.buildingId, []);
     participantsByBuilding.get(participant.buildingId).push(participant);
   }
+  const owners = ownersByBuilding(snapshot);
   const producerByIdentifier = new Map(snapshot.producerOnboardings.map(row => [row.marketLocationIdentifier, row]));
   const participantTotals = new Map(result.participantOverviews.map(row => [row.meteringLocationId, row]));
   const consumptionByMeterTime = new Map(snapshot.consumption.map(row => [`${row.meteringLocationId}-${row.startTime}`, row]));
@@ -115,15 +108,21 @@ function project(snapshot) {
     const worst = worstSeverity(participantIssues);
     const displayName = `${participant.role} · ${participant.city || participant.buildingId}`;
     const sharedMeter = snapshot.participants.find(row => row.buildingId === participant.buildingId && row.role === 'Residual Supply Market Location');
+    const isSharedMeterRole = participant.role === 'Residual Supply Market Location';
+    const isHouseholdRole = participant.role === 'Household Consumption';
     const postalCode = participant.cityPostalCode?.match(/\b\d{5}\b/)?.[0] || '';
     const street = String(participant.streetAddress || '').replace(/\s+/g, ' ').trim();
     const construct = {
+      ...(owners.get(participant.buildingId) || NO_OWNER),
       address: [street, [postalCode, participant.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
       sharedMeterMaLo: sharedMeter?.importMarketLocationId || sharedMeter?.exportMarketLocationId || '',
       sharedMeterMeLo: sharedMeter?.meteringLocationId || '',
       sharedMeterIsReal: Boolean(sharedMeter?.meteringLocationId),
       sharedMeterConstructID: sharedMeter?.ID || '',
-      isSharedMeter: participant.role === 'Residual Supply Market Location',
+      isSharedMeter: isSharedMeterRole,
+      counterKpiHidden: isSharedMeterRole,
+      switchoverHidden: !isHouseholdRole || participant.switchoverStep >= TOTAL_STEPS,
+      switchoverStepLabel: stepLabel(participant.switchoverStep, 'en'),
       buildingMemberCount: snapshot.participants.filter(row => row.buildingId === participant.buildingId && row.role === 'Household Consumption').length,
       ID: participant.ID,
       displayName,
@@ -161,13 +160,10 @@ function project(snapshot) {
       sourceRow: participant.sourceRow,
       buildingID: participant.buildingId,
       buildingLink: `#/Buildings('${participant.buildingId}')`, hasBuildingLink: true, hasNoBuildingLink: false,
-      energyConceptCurrentStep: participant.energyConceptCurrentStep,
-      energyConceptContactCompleted: participant.energyConceptContactCompleted,
-      energyConceptDataVerified: participant.energyConceptDataVerified,
-      energyConceptAgreementSigned: participant.energyConceptAgreementSigned,
-      energyConceptMeterReady: participant.energyConceptMeterReady,
-      energyConceptActive: participant.energyConceptActive,
-      participationCriticality: participant.participation === 'Ja' ? 3 : 1,
+      switchoverStep: participant.switchoverStep,
+      switchoverTotalSteps: TOTAL_STEPS,
+      switchoverComplete: participant.switchoverStep != null && participant.switchoverStep >= TOTAL_STEPS,
+      participationCriticality: participationCriticality(participant.participation, participant.role, participant.switchoverStep),
       warningCriticality: warning ? SEVERITY[worst].criticality : 3,
       directionLabel
     };
@@ -206,7 +202,7 @@ function project(snapshot) {
     }
   }
 
-  const connections = [...synthetic.connections];
+  const connections = [];
   const plantByExportMaLo = new Map(snapshot.participants.filter(row => row.exportMarketLocationId).map(row => [row.exportMarketLocationId, row.ID]));
   for (const construct of constructById.values()) {
     const participant = snapshot.participants.find(row => row.ID === construct.ID);
@@ -220,7 +216,7 @@ function project(snapshot) {
     for (const [malo, directionCode, roleCode] of members) {
       if (seen.has(malo)) continue;
       seen.add(malo);
-      connections.push({ ID: `${key(construct.ID)}-${key(malo)}`, malo, meLo: construct.meLo, directionCode, roleCode, validFrom: construct.supplyStart, validTo: construct.contractEnd, supplier: null, contractReference: null, isSynthetic: false, hasDataWarning: construct.hasDataWarning, warningText: construct.warningText, scenarioCode: null, constructID: construct.ID, targetConstructID: plantByExportMaLo.get(malo) || null });
+      connections.push({ ID: `${key(construct.ID)}-${key(malo)}`, malo, meLo: construct.meLo, directionCode, roleCode, validFrom: construct.supplyStart, validTo: construct.contractEnd, supplier: null, contractReference: null, hasDataWarning: construct.hasDataWarning, warningText: construct.warningText, constructID: construct.ID, targetConstructID: plantByExportMaLo.get(malo) || null });
     }
     const recent = latest24(hourly.filter(row => row.constructID === construct.ID));
     const recentGeneration = latest24(snapshot.generation.filter(row => row.buildingId === construct.buildingID));
@@ -256,9 +252,8 @@ function project(snapshot) {
   const consumers = [...constructById.values()].filter(row => row.roleCode === 'HOUSEHOLD').map(row => ({
     ID: row.ID, buildingID: row.buildingID, meLo: row.meLo, importMaLo: row.importMaLo, exportMaLo: row.exportMaLo,
     participationCode: row.participationCode, participationLabel: row.participationLabel, participationMark: '', participationCriticality: row.participationCriticality, isEligible: row.isEligible,
-    energyConceptCurrentStep: row.energyConceptCurrentStep || 1, energyConceptTotalSteps: 5,
-    energyConceptContactCompleted: Boolean(row.energyConceptContactCompleted), energyConceptDataVerified: Boolean(row.energyConceptDataVerified),
-    energyConceptAgreementSigned: Boolean(row.energyConceptAgreementSigned), energyConceptMeterReady: Boolean(row.energyConceptMeterReady), energyConceptActive: Boolean(row.energyConceptActive),
+    switchoverStep: row.switchoverStep || null, switchoverTotalSteps: TOTAL_STEPS, switchoverComplete: row.switchoverComplete,
+    switchoverStepLabel: stepLabel(row.switchoverStep, 'en'), switchoverHidden: Boolean(row.switchoverComplete),
     totalConsumptionKwh: row.totalConsumptionKwh, localEnergyKwh: row.localEnergyKwh, residualGridKwh: row.residualGridKwh,
     localEnergySharePercent: row.totalConsumptionKwh ? round(row.localEnergyKwh / row.totalConsumptionKwh * 100, 1) : 0,
     targetConstructID: row.ID
@@ -287,11 +282,99 @@ function project(snapshot) {
     const balanceHours = new Set(recentBalances.map(row => row.startTime)).size;
     const averageOf = field => (balanceHours ? round(sum(recentBalances, field) / balanceHours) : 0);
     const latestIntervals = [...new Set([...recentConsumption, ...recentSolar, ...recentWind].map(row => row.startTime))].sort();
-    const progress = buildingConsumers.length ? sum(buildingConsumers, 'energyConceptCurrentStep') / buildingConsumers.length : 0;
-    return { ID: building.buildingId, city: building.city, postalCode: snapshot.participants.find(row => row.buildingId === building.buildingId)?.cityPostalCode?.match(/\b\d{5}\b/)?.[0] || null, streetAddress: building.address, operatorName: building.operator, latitude: snapshot.producerOnboardings.find(row => row.buildingId === building.buildingId)?.latitude || null, longitude: snapshot.producerOnboardings.find(row => row.buildingId === building.buildingId)?.longitude || null, productionTypes: building.productionTypes, installedCapacityKw: building.installedCapacityKw, consumerCount: buildingConsumers.length, participatingConsumerCount: buildingConsumers.filter(row => row.isEligible).length, activeConsumerCount: buildingConsumers.filter(row => row.energyConceptActive).length, averageEnergyConceptStep: round(progress, 1), totalEnergyConceptSteps: 5, totalConsumptionKwh: building.totalConsumptionKwh, totalGenerationKwh: building.totalGenerationKwh, localEnergyKwh: building.localEnergyKwh, residualGridKwh: building.residualGridEnergyKwh, exportKwh: building.exportEnergyKwh, selfSufficiencyPercent: building.selfSufficiencyPercent, sharedMeterMaLo: sharedMeter?.importMarketLocationId || sharedMeter?.exportMarketLocationId || '', sharedMeterMeLo: sharedMeter?.meteringLocationId || '', sharedMeterIsReal: Boolean(sharedMeter?.meteringLocationId), sharedMeterIsVirtual: Boolean(sharedMeter && !sharedMeter.meteringLocationId), hasSolar: producerRows.some(row => row.productionType === 'Solar'), hasWind: producerRows.some(row => row.productionType === 'Wind'), solarProducerCount: producerRows.filter(row => row.productionType === 'Solar').length, windProducerCount: producerRows.filter(row => row.productionType === 'Wind').length, averageConsumption24hKwh: averageGrouped(recentConsumption, 'consumptionKwh'), averageSolarGeneration24hKwh: averageGrouped(recentSolar, 'generationKwh'), averageWindGeneration24hKwh: averageGrouped(recentWind, 'generationKwh'), averageGridImport24hKwh: averageOf('residualGridEnergyKwh'), averageGridExport24hKwh: averageOf('exportEnergyKwh'), consumptionIntervalCount24h: new Set(recentConsumption.map(row => row.startTime)).size, solarIntervalCount24h: new Set(recentSolar.map(row => row.startTime)).size, windIntervalCount24h: new Set(recentWind.map(row => row.startTime)).size, latestMeasurementTime: latestIntervals.at(-1) || null };
+    const counterConstruct = sharedMeter && constructById.get(sharedMeter.ID);
+    if (counterConstruct) {
+      counterConstruct.residualGridKwh = round(building.residualGridEnergyKwh);
+      counterConstruct.exportKwh = round(building.exportEnergyKwh);
+    }
+    return {
+      ...(owners.get(building.buildingId) || NO_OWNER),
+      ID: building.buildingId, city: building.city, postalCode: snapshot.participants.find(row => row.buildingId === building.buildingId)?.cityPostalCode?.match(/\b\d{5}\b/)?.[0] || null,
+      streetAddress: building.address, operatorName: building.operator,
+      latitude: snapshot.producerOnboardings.find(row => row.buildingId === building.buildingId)?.latitude || null,
+      longitude: snapshot.producerOnboardings.find(row => row.buildingId === building.buildingId)?.longitude || null,
+      productionTypes: building.productionTypes, installedCapacityKw: building.installedCapacityKw,
+      consumerCount: buildingConsumers.length, participatingConsumerCount: buildingConsumers.filter(row => row.isEligible).length,
+      switchoverFinishedCount: buildingConsumers.filter(row => row.switchoverComplete).length,
+      totalConsumptionKwh: building.totalConsumptionKwh, totalGenerationKwh: building.totalGenerationKwh,
+      localEnergyKwh: building.localEnergyKwh, residualGridKwh: building.residualGridEnergyKwh, exportKwh: building.exportEnergyKwh,
+      selfSufficiencyPercent: building.selfSufficiencyPercent,
+      sharedMeterMaLo: sharedMeter?.importMarketLocationId || sharedMeter?.exportMarketLocationId || '',
+      sharedMeterMeLo: sharedMeter?.meteringLocationId || '',
+      sharedMeterIsReal: Boolean(sharedMeter?.meteringLocationId),
+      sharedMeterIsVirtual: Boolean(sharedMeter && !sharedMeter.meteringLocationId),
+      sharedMeterConstructID: sharedMeter?.ID || '',
+      solarGenerationKwh: round(sum(generationRows.filter(row => row.productionType === 'Solar'), 'generationKwh')),
+      windGenerationKwh: round(sum(generationRows.filter(row => row.productionType === 'Wind'), 'generationKwh')),
+      solarHidden: !producerRows.some(row => row.productionType === 'Solar'),
+      windHidden: !producerRows.some(row => row.productionType === 'Wind'),
+      hasSolar: producerRows.some(row => row.productionType === 'Solar'), hasWind: producerRows.some(row => row.productionType === 'Wind'),
+      solarProducerCount: producerRows.filter(row => row.productionType === 'Solar').length,
+      windProducerCount: producerRows.filter(row => row.productionType === 'Wind').length,
+      averageConsumption24hKwh: averageGrouped(recentConsumption, 'consumptionKwh'),
+      averageSolarGeneration24hKwh: averageGrouped(recentSolar, 'generationKwh'),
+      averageWindGeneration24hKwh: averageGrouped(recentWind, 'generationKwh'),
+      averageGridImport24hKwh: averageOf('residualGridEnergyKwh'), averageGridExport24hKwh: averageOf('exportEnergyKwh'),
+      consumptionIntervalCount24h: new Set(recentConsumption.map(row => row.startTime)).size,
+      solarIntervalCount24h: new Set(recentSolar.map(row => row.startTime)).size,
+      windIntervalCount24h: new Set(recentWind.map(row => row.startTime)).size,
+      latestMeasurementTime: latestIntervals.at(-1) || null
+    };
   });
-  const constructs = [...constructById.values(), ...synthetic.constructs];
-  return { constructs, hourly: [...hourly, ...synthetic.hourly], payments, issues: [...issues, ...synthetic.issues], connections, scenarios: synthetic.scenarios, buildings, consumers, producers, buildingHourlyEnergy, portfolio: [{ ID: 'ALL', buildingCount: result.portfolio[0].buildingCount, constructCount: constructs.length, eligibleMeterCount: result.portfolio[0].eligibleHouseholdCount, warningCount: issues.length + synthetic.issues.length, consumptionKwh: result.portfolio[0].totalConsumptionKwh, generationKwh: result.portfolio[0].totalGenerationKwh, localEnergyKwh: result.portfolio[0].localEnergyKwh, residualGridKwh: result.portfolio[0].residualGridEnergyKwh, exportKwh: result.portfolio[0].exportEnergyKwh, localCoveragePercent: result.portfolio[0].totalConsumptionKwh ? round(result.portfolio[0].localEnergyKwh / result.portfolio[0].totalConsumptionKwh * 100, 1) : 0 }], buildingsById: new Map(buildings.map(row => [row.ID, row])) };
+  const constructs = [...constructById.values()];
+
+  // Single tree for the combined overview page: one root per building, expandable into its
+  // household consumers, solar/wind producers, and shared energy counter.
+  const treeNodes = [];
+  for (const building of buildings) {
+    treeNodes.push({
+      ID: `BLD-${key(building.ID)}`, parentID: null, nodeType: 'BUILDING', displayName: building.ID,
+      ownerFirstName: building.ownerFirstName, ownerLastName: building.ownerLastName, ownerName: building.ownerName,
+      malo: '', meLo: '', roleLabel: 'Building', city: building.city, streetAddress: building.streetAddress,
+      participationMark: '', participationCriticality: 3,
+      switchoverStep: null, switchoverTotalSteps: TOTAL_STEPS,
+      totalConsumptionKwh: building.totalConsumptionKwh, totalGenerationKwh: building.totalGenerationKwh,
+      localEnergyKwh: building.localEnergyKwh, residualGridKwh: building.residualGridKwh, exportKwh: building.exportKwh,
+      hasDataWarning: false, warningCriticality: 3, detailHash: `#/Buildings('${building.ID}')`
+    });
+    const members = constructs.filter(row => row.buildingID === building.ID && (row.roleCode === 'HOUSEHOLD' || row.isSharedMeter));
+    for (const member of members) {
+      treeNodes.push({
+        ID: `MBR-${key(member.ID)}`, parentID: `BLD-${key(building.ID)}`,
+        nodeType: member.isSharedMeter ? 'COUNTER' : 'HOUSEHOLD', displayName: member.primaryMaLo,
+        malo: member.primaryMaLo, meLo: member.meLo, roleLabel: member.roleLabel, city: member.city, streetAddress: member.streetAddress,
+        participationMark: '', participationCriticality: member.isSharedMeter ? 3 : member.participationCriticality,
+        switchoverStep: member.isSharedMeter ? null : member.switchoverStep, switchoverTotalSteps: TOTAL_STEPS,
+        totalConsumptionKwh: member.totalConsumptionKwh, totalGenerationKwh: member.totalGenerationKwh,
+        localEnergyKwh: member.localEnergyKwh, residualGridKwh: member.residualGridKwh, exportKwh: member.exportKwh,
+        hasDataWarning: member.hasDataWarning, warningCriticality: member.warningCriticality, detailHash: `#/Constructs('${member.ID}')`
+      });
+    }
+    const buildingProducers = producers.filter(row => row.buildingID === building.ID);
+    for (const producer of buildingProducers) {
+      treeNodes.push({
+        ID: `PRD-${key(producer.ID)}`, parentID: `BLD-${key(building.ID)}`, nodeType: 'PRODUCER', displayName: producer.marketLocationIdentifier,
+        malo: producer.marketLocationIdentifier, meLo: '', roleLabel: producer.productionType, city: building.city, streetAddress: building.streetAddress,
+        participationMark: '', participationCriticality: 3,
+        switchoverStep: null, switchoverTotalSteps: TOTAL_STEPS,
+        totalConsumptionKwh: 0, totalGenerationKwh: producer.generationKwh, localEnergyKwh: producer.localEnergyKwh, residualGridKwh: 0, exportKwh: producer.exportKwh,
+        hasDataWarning: false, warningCriticality: 3, detailHash: producer.targetConstructID ? `#/Constructs('${producer.targetConstructID}')` : ''
+      });
+    }
+  }
+
+  return {
+    constructs, hourly, payments, issues, connections, buildings, consumers, producers, buildingHourlyEnergy, treeNodes,
+    portfolio: [{
+      ID: 'ALL', buildingCount: result.portfolio[0].buildingCount, constructCount: constructs.length,
+      eligibleMeterCount: result.portfolio[0].eligibleHouseholdCount, warningCount: issues.length,
+      consumptionKwh: result.portfolio[0].totalConsumptionKwh, generationKwh: result.portfolio[0].totalGenerationKwh,
+      localEnergyKwh: result.portfolio[0].localEnergyKwh, residualGridKwh: result.portfolio[0].residualGridEnergyKwh,
+      exportKwh: result.portfolio[0].exportEnergyKwh,
+      localCoveragePercent: result.portfolio[0].totalConsumptionKwh ? round(result.portfolio[0].localEnergyKwh / result.portfolio[0].totalConsumptionKwh * 100, 1) : 0
+    }],
+    buildingsById: new Map(buildings.map(row => [row.ID, row]))
+  };
 }
 
 module.exports = { project };

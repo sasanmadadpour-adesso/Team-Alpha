@@ -19,15 +19,16 @@ test('serves VNB compatibility entities and navigation over OData', async t => {
   t.after(() => server.kill());
   await waitForServer();
   const constructs = await (await fetch(`${base}/Constructs`)).json();
-  assert.equal(constructs.value.length, 25);
+  assert.equal(constructs.value.length, 17);
   const id = constructs.value[0].ID;
   const hourly = await (await fetch(`${base}/Constructs('${id}')/hourlyValues`)).json();
   const payments = await (await fetch(`${base}/Constructs('${id}')/payments`)).json();
   const countResponse = await fetch(`${base}/Constructs?$count=true&$top=2`);
   const counted = await countResponse.json();
-  assert.equal(counted['@odata.count'], 25);
+  assert.equal(counted['@odata.count'], 17);
   assert.equal(counted.value.length, 2);
   assert.equal(await (await fetch(`${base}/Buildings/$count`)).text(), '3');
+  assert.equal((await fetch(`${base}/TestScenarios`)).status, 404);
   const members = await (await fetch(`${base}/Constructs('${id}')/members`)).json();
    assert.equal(hourly.value.length, 8760);
   assert.ok(payments.value.length > 0);
@@ -60,4 +61,9 @@ test('serves VNB compatibility entities and navigation over OData', async t => {
   const constructRows = (await constructResponse.json()).value;
   assert.equal(constructRows.length, 168);
   assert.ok(constructRows.every(row => row.parentID === constructID && row.granularity === 'hour'));
+
+  const treeNodes = await (await fetch(`${base}/ConstructTreeNodes`)).json();
+  assert.equal(treeNodes.value.filter(row => row.nodeType === 'BUILDING').length, 3);
+  assert.ok(treeNodes.value.filter(row => row.nodeType === 'HOUSEHOLD').length > 0);
+  assert.ok(treeNodes.value.every(row => row.parentID !== undefined));
 });

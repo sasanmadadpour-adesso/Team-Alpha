@@ -88,11 +88,15 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
       const hasWind = Boolean(building.hasWind);
       const statusKey = hasSolar && hasWind ? "solarWindActive" : hasSolar ? "solarActive" : hasWind ? "windActive" : "noProduction";
 
-      // Participation is shown as an icon only; the text stays available as tooltip and for screen readers.
+      // Participation is a three-state icon: not participating (red cross), participating but the
+      // eight-step energy concept is not finished yet (yellow exclamation), or finished (green check).
       const floors = consumers.map(consumer => {
         const participating = consumer.participationCode === "YES";
-        const label = escape(consumer.participationLabel || "");
-        return `<div class="vnbBh-floor">${malo(consumer.importMaLo, consumer.targetConstructID)}<span class="vnbBh-mk7 ${participating ? "vnbBh-mk7-yes" : "vnbBh-mk7-no"}" role="img" title="${label}" aria-label="${escape(this._text("mk7Participation"))}: ${label}">${participating ? "&#10003;" : "&#10005;"}</span></div>`;
+        const state = !participating ? "no" : consumer.switchoverComplete ? "yes" : "warn";
+        const icon = state === "no" ? "&#10005;" : state === "warn" ? "&#9888;" : "&#10003;";
+        const labelKey = state === "no" ? "mk7No" : state === "warn" ? "mk7Unfinished" : "mk7Yes";
+        const label = escape(this._text(labelKey));
+        return `<div class="vnbBh-floor">${malo(consumer.importMaLo, consumer.targetConstructID)}<span class="vnbBh-mk7 vnbBh-mk7-${state}" role="img" title="${label}" aria-label="${escape(this._text("mk7Participation"))}: ${label}">${icon}</span></div>`;
       }).join("") || `<p class="vnbBh-note">${t("noMembers")}</p>`;
 
       const members = (rows, emptyText) => rows.length
@@ -125,6 +129,7 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
         `<span class="vnbBh-key vnbBh-key-import"><i></i>${t("gridImport")}</span>`,
         `<span class="vnbBh-key vnbBh-key-export"><i></i>${t("gridExport")}</span>`,
         `<span><b class="vnbBh-mk7 vnbBh-mk7-yes">&#10003;</b> ${t("mk7Yes")}</span>`,
+        `<span><b class="vnbBh-mk7 vnbBh-mk7-warn">&#9888;</b> ${t("mk7Unfinished")}</span>`,
         `<span><b class="vnbBh-mk7 vnbBh-mk7-no">&#10005;</b> ${t("mk7No")}</span>`,
         `<span>${t("underlinedDetail")}</span>`,
         `<span>${escape(building.consumptionIntervalCount24h ?? 0)} ${t("availableIntervals")}</span>`
@@ -152,7 +157,7 @@ sap.ui.define(["sap/ui/core/Control"], function (Control) {
           </div>
           <div class="vnbBh-zone">
             <div class="vnbBh-building">
-              <div class="vnbBh-roof"><div class="vnbBh-meter"><strong>${t("energyMeter")}</strong><span class="vnbBh-malo vnbBh-small">${escape(building.sharedMeterMaLo || "")}</span></div></div>
+              <div class="vnbBh-roof"><div class="vnbBh-meter"><strong>${t("energyMeter")}</strong>${malo(building.sharedMeterMaLo || "", building.sharedMeterConstructID, "vnbBh-small")}</div></div>
               <section class="vnbBh-house">
                 <div class="vnbBh-house-heading"><h4>${t("constructHouse")}</h4><span class="vnbBh-icon" aria-hidden="true">&#8962;</span></div>
                 <div class="vnbBh-floors">${floors}</div>

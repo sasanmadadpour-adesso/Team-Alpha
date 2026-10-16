@@ -19,6 +19,7 @@ annotate service.Constructs with @(
     { Value: roleLabel, Label: '{i18n>ROLE}' }, { Value: directionLabel, Label: '{i18n>DIRECTION}' },
     { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon },
     { Value: address, Label: '{i18n>ADDRESS}' },
+    { Value: ownerFirstName, Label: '{i18n>OWNER_FIRST_NAME}' }, { Value: ownerLastName, Label: '{i18n>OWNER_LAST_NAME}' },
     { $Type: 'UI.DataFieldWithUrl', Value: buildingID, Url: buildingLink, Label: '{i18n>BUILDING}', ![@UI.Hidden]: hasNoBuildingLink },
     { Value: buildingID, Label: '{i18n>BUILDING}', ![@UI.Hidden]: hasBuildingLink }
   ] },
@@ -37,13 +38,17 @@ annotate service.Constructs with @(
   UI.DataPoint #Residual: { Title: '{i18n>RESIDUAL_GRID_KWH}', Value: residualGridKwh },
   UI.DataPoint #Export: { Title: '{i18n>EXPORT_KWH}', Value: exportKwh },
   UI.DataPoint #Balance: { Title: '{i18n>PAYMENT_BALANCE}', Value: paymentBalanceEur },
+  UI.DataPoint #Switchover: { Title: '{i18n>SWITCHOVER}', Description: switchoverStepLabel, Value: switchoverStep, TargetValue: switchoverTotalSteps, Visualization: #Progress },
+  // On the shared energy counter the residual and export values are the whole house's grid import and export;
+  // all other energy KPIs are not meaningful there and are hidden.
   UI.HeaderFacets: [
-    { $Type: 'UI.ReferenceFacet', ID: 'ConsumptionKpi', Target: '@UI.DataPoint#Consumption' },
-    { $Type: 'UI.ReferenceFacet', ID: 'GenerationKpi', Target: '@UI.DataPoint#Generation' },
-    { $Type: 'UI.ReferenceFacet', ID: 'LocalEnergyKpi', Target: '@UI.DataPoint#LocalEnergy' },
+    { $Type: 'UI.ReferenceFacet', ID: 'ConsumptionKpi', Target: '@UI.DataPoint#Consumption', ![@UI.Hidden]: counterKpiHidden },
+    { $Type: 'UI.ReferenceFacet', ID: 'GenerationKpi', Target: '@UI.DataPoint#Generation', ![@UI.Hidden]: counterKpiHidden },
+    { $Type: 'UI.ReferenceFacet', ID: 'LocalEnergyKpi', Target: '@UI.DataPoint#LocalEnergy', ![@UI.Hidden]: counterKpiHidden },
     { $Type: 'UI.ReferenceFacet', ID: 'ResidualKpi', Target: '@UI.DataPoint#Residual' },
     { $Type: 'UI.ReferenceFacet', ID: 'ExportKpi', Target: '@UI.DataPoint#Export' },
-    { $Type: 'UI.ReferenceFacet', ID: 'BalanceKpi', Target: '@UI.DataPoint#Balance' }
+    { $Type: 'UI.ReferenceFacet', ID: 'BalanceKpi', Target: '@UI.DataPoint#Balance', ![@UI.Hidden]: counterKpiHidden },
+    { $Type: 'UI.ReferenceFacet', ID: 'SwitchoverKpi', Target: '@UI.DataPoint#Switchover', ![@UI.Hidden]: switchoverHidden }
   ],
   UI.Facets: [
     { $Type: 'UI.CollectionFacet', ID: 'Overview', Label: '{i18n>OVERVIEW}', Facets: [
@@ -93,11 +98,22 @@ annotate service.Buildings with @(
   UI.HeaderInfo: { TypeName: '{i18n>BUILDING}', TypeNamePlural: '{i18n>BUILDINGS}', Title: { Value: ID }, Description: { Value: streetAddress } },
   UI.SelectionFields: [ID, city, operatorName, productionTypes],
   UI.PresentationVariant: { SortOrder: [{ Property: city, Descending: false }], Visualizations: ['@UI.LineItem'] },
+  UI.DataPoint #Consumption: { Title: '{i18n>CONSUMPTION_KWH}', Value: totalConsumptionKwh },
+  UI.DataPoint #Residual: { Title: '{i18n>RESIDUAL_GRID_KWH}', Value: residualGridKwh },
+  UI.DataPoint #Export: { Title: '{i18n>EXPORT_KWH}', Value: exportKwh },
+  UI.DataPoint #Solar: { Title: '{i18n>SOLAR_GENERATION_KWH}', Value: solarGenerationKwh },
+  UI.DataPoint #Wind: { Title: '{i18n>WIND_GENERATION_KWH}', Value: windGenerationKwh },
+  UI.HeaderFacets: [
+    { $Type: 'UI.ReferenceFacet', ID: 'ConsumptionKpi', Target: '@UI.DataPoint#Consumption' },
+    { $Type: 'UI.ReferenceFacet', ID: 'ResidualKpi', Target: '@UI.DataPoint#Residual' },
+    { $Type: 'UI.ReferenceFacet', ID: 'ExportKpi', Target: '@UI.DataPoint#Export' },
+    { $Type: 'UI.ReferenceFacet', ID: 'SolarKpi', Target: '@UI.DataPoint#Solar', ![@UI.Hidden]: solarHidden },
+    { $Type: 'UI.ReferenceFacet', ID: 'WindKpi', Target: '@UI.DataPoint#Wind', ![@UI.Hidden]: windHidden }
+  ],
   UI.LineItem: [
     { Value: ID, Label: '{i18n>BUILDING}' }, { Value: city, Label: '{i18n>CITY}' },
     { Value: streetAddress, Label: '{i18n>ADDRESS}' }, { Value: productionTypes, Label: '{i18n>PRODUCTION}' },
     { Value: participatingConsumerCount, Label: '{i18n>PARTICIPATING_CONSUMERS}' },
-    { Value: averageEnergyConceptStep, Label: '{i18n>PROGRESS}' },
     { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
     { Value: totalGenerationKwh, Label: '{i18n>GENERATION_KWH}' },
     { Value: selfSufficiencyPercent, Label: '{i18n>SELF_SUFFICIENCY}' }
@@ -105,11 +121,12 @@ annotate service.Buildings with @(
   UI.FieldGroup #BuildingSummary: { Data: [
     { Value: ID, Label: '{i18n>BUILDING}' }, { Value: city, Label: '{i18n>CITY}' },
     { Value: streetAddress, Label: '{i18n>ADDRESS}' }, { Value: operatorName, Label: '{i18n>OPERATOR}' },
+    { Value: ownerFirstName, Label: '{i18n>OWNER_FIRST_NAME}' }, { Value: ownerLastName, Label: '{i18n>OWNER_LAST_NAME}' },
     { Value: productionTypes, Label: '{i18n>PRODUCTION}' }, { Value: installedCapacityKw, Label: '{i18n>CAPACITY_KW}' }
   ] },
   UI.FieldGroup #EnergySummary: { Data: [
     { Value: consumerCount, Label: '{i18n>CONSUMERS}' }, { Value: participatingConsumerCount, Label: '{i18n>PARTICIPATING_CONSUMERS}' },
-    { Value: averageEnergyConceptStep, Label: '{i18n>PROGRESS}' }, { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
+    { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' },
     { Value: totalGenerationKwh, Label: '{i18n>GENERATION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
     { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }, { Value: exportKwh, Label: '{i18n>EXPORT_KWH}' },
     { Value: selfSufficiencyPercent, Label: '{i18n>SELF_SUFFICIENCY}' }
@@ -122,12 +139,16 @@ annotate service.Buildings with @(
   ]
 );
 
-annotate service.BuildingConsumers with @UI.LineItem: [
-  { Value: meLo, Label: '{i18n>MELO}' }, { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' },
-  { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon }, { Value: energyConceptCurrentStep, Label: '{i18n>PROGRESS}' },
-  { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
-  { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }
-];
+annotate service.BuildingConsumers with @(
+  UI.DataPoint #Switchover: { Title: '{i18n>SWITCHOVER}', Description: switchoverStepLabel, Value: switchoverStep, TargetValue: switchoverTotalSteps, Visualization: #Progress },
+  UI.LineItem: [
+    { Value: meLo, Label: '{i18n>MELO}' }, { Value: importMaLo, Label: '{i18n>IMPORT_MALO}' },
+    { Value: participationMark, Label: '{i18n>MK7_PARTICIPATION}', Criticality: participationCriticality, CriticalityRepresentation: #WithIcon },
+    { $Type: 'UI.DataFieldForAnnotation', Target: '@UI.DataPoint#Switchover', Label: '{i18n>SWITCHOVER}', ![@UI.Hidden]: switchoverHidden },
+    { Value: totalConsumptionKwh, Label: '{i18n>CONSUMPTION_KWH}' }, { Value: localEnergyKwh, Label: '{i18n>LOCAL_ENERGY_KWH}' },
+    { Value: residualGridKwh, Label: '{i18n>RESIDUAL_GRID_KWH}' }
+  ]
+);
 
 annotate service.BuildingProducers with @UI.LineItem: [
   { Value: productionType, Label: '{i18n>PRODUCTION}' }, { Value: marketLocationIdentifier, Label: '{i18n>MALO}' },
@@ -165,19 +186,6 @@ annotate service.BuildingHourlyEnergy with @UI.Chart #Trend: {
   ]
 };
 
-
-// Tab definitions of the main list report. The tab titles come from the Text property.
-annotate service.Constructs with @UI.SelectionPresentationVariant #constructParticipants: {
-  Text: '{i18n>constructParticipantsView}',
-  SelectionVariant: { $Type: 'UI.SelectionVariantType', SelectOptions: [] },
-  PresentationVariant: { $Type: 'UI.PresentationVariantType', Visualizations: ['@UI.LineItem'] }
-};
-
-annotate service.Buildings with @UI.SelectionPresentationVariant #buildingStructure: {
-  Text: '{i18n>buildingStructureView}',
-  SelectionVariant: { $Type: 'UI.SelectionVariantType', SelectOptions: [] },
-  PresentationVariant: { $Type: 'UI.PresentationVariantType', Visualizations: ['@UI.LineItem'] }
-};
 
 // Field labels for the filter bar.
 annotate service.Constructs with {

@@ -5,6 +5,7 @@ const { project } = require('./lib/vnb-projector');
 const { trends } = require('./lib/energy-trends');
 const { apply } = require('./lib/query');
 const { localize, summarize } = require('./lib/data-quality');
+const { stepLabel } = require('./lib/switchover');
 
 const issueIndex = new WeakMap();
 function issuesByConstruct(data) {
@@ -98,23 +99,26 @@ module.exports = cds.service.impl(function () {
   for (const [entity, property] of Object.entries(derived)) {
      this.on('READ', entity, req => filterRows(getCalculated()[property], req));
   }
-   for (const entity of ['Constructs', 'MaLoConnections', 'TestScenarios', 'ConstructHourlyValues', 'Payments', 'DataQualityIssues', 'Buildings', 'BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy', 'ConstructEnergyTrends', 'BuildingEnergyTrends']) {
+   for (const entity of ['Constructs', 'MaLoConnections', 'ConstructHourlyValues', 'Payments', 'DataQualityIssues', 'Buildings', 'BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy', 'ConstructEnergyTrends', 'BuildingEnergyTrends', 'ConstructTreeNodes']) {
      this.on('READ', entity, req => {
        if (entity === 'ConstructEnergyTrends') return trendRows(req, 'construct');
        if (entity === 'BuildingEnergyTrends') return trendRows(req, 'building');
        const data = vnb();
-       const property = { Constructs: 'constructs', MaLoConnections: 'connections', TestScenarios: 'scenarios', ConstructHourlyValues: 'hourly', Payments: 'payments', DataQualityIssues: 'issues', Buildings: 'buildings', BuildingConsumers: 'consumers', BuildingProducers: 'producers', BuildingHourlyEnergy: 'buildingHourlyEnergy' }[entity];
-      const nav = requestedNavigation(req);
-       const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : nav === 'members' ? data.connections : nav === 'consumers' ? data.consumers : nav === 'solarProducers' ? data.producers.filter(row => row.productionType === 'Solar') : nav === 'windProducers' ? data.producers.filter(row => row.productionType === 'Wind') : nav === 'producers' ? data.producers : nav === 'hourlyEnergy' ? data.buildingHourlyEnergy : data[property];
-      const parentId = parentKey(req);
-      const childEntity = ['BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy'].includes(entity);
-      let rows = parentId ? source.filter(row => row.constructID === parentId || row.buildingID === parentId || row.ID === parentId) : source;
-      if (source === data.issues) rows = rows.map(row => localize(row, req.locale));
-      if (source === data.constructs) {
-        const byConstruct = issuesByConstruct(data);
-        rows = rows.map(row => (byConstruct.has(row.ID) ? { ...row, warningText: summarize(byConstruct.get(row.ID), req.locale) } : row));
-      }
-      return filterRows(rows, req);
-    });
-  }
+        const property = { Constructs: 'constructs', MaLoConnections: 'connections', ConstructHourlyValues: 'hourly', Payments: 'payments', DataQualityIssues: 'issues', Buildings: 'buildings', BuildingConsumers: 'consumers', BuildingProducers: 'producers', BuildingHourlyEnergy: 'buildingHourlyEnergy', ConstructTreeNodes: 'treeNodes' }[entity];
+       const nav = requestedNavigation(req);
+        const source = nav === 'hourlyValues' ? data.hourly : nav === 'payments' ? data.payments : nav === 'sourceIssues' ? data.issues : nav === 'members' ? data.connections : nav === 'consumers' ? data.consumers : nav === 'solarProducers' ? data.producers.filter(row => row.productionType === 'Solar') : nav === 'windProducers' ? data.producers.filter(row => row.productionType === 'Wind') : nav === 'producers' ? data.producers : nav === 'hourlyEnergy' ? data.buildingHourlyEnergy : data[property];
+       const parentId = parentKey(req);
+       const childEntity = ['BuildingConsumers', 'BuildingProducers', 'BuildingHourlyEnergy'].includes(entity);
+       let rows = parentId ? source.filter(row => row.constructID === parentId || row.buildingID === parentId || row.ID === parentId) : source;
+       if (source === data.issues) rows = rows.map(row => localize(row, req.locale));
+       if (source === data.constructs) {
+         const byConstruct = issuesByConstruct(data);
+         rows = rows.map(row => (byConstruct.has(row.ID) ? { ...row, warningText: summarize(byConstruct.get(row.ID), req.locale) } : row));
+       }
+       if (source === data.constructs || source === data.consumers || source === data.treeNodes) {
+         rows = rows.map(row => ('switchoverStep' in row ? { ...row, switchoverStepLabel: stepLabel(row.switchoverStep, req.locale) } : row));
+       }
+       return filterRows(rows, req);
+     });
+   }
 });
