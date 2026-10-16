@@ -135,7 +135,7 @@ Idempotency-Key: registration-unique-key
 Content-Type: application/json
 ```
 
-The endpoint accepts the `Producer Onboarding` snake-case contract, including nested `plant_specifics`, persists it separately in `ProducerRegistrationRequests`, and returns `201 Created`. Replaying the same key and payload returns the existing registration; reusing a key for different data returns `409`. It records only a simulated onboarding acceptance and never claims SAP registration. Authenticated clients can retrieve records through `GET /api/v1/ProducerRegistrations`. The API playground is at `/api-console`; credential creation and revocation are separated at `/api-console/access`.
+The endpoint accepts the `Producer Onboarding` snake-case contract, including nested `plant_specifics`, persists it separately in `ProducerRegistrationRequests`, and returns `201 Created`. Replaying the same key and payload returns the existing registration; reusing a key for different data returns `409`. The accepted request then enters the same canonical construct registration/pipeline engine used by `registerConstruct`; it does not duplicate that process logic. Producer onboarding remains the source of truth for its external request record, while process results are shown in the normal construct/case tables. If the external payload lacks a required process identifier such as MeLo, the shared pipeline records a real blocking finding instead of inventing one. It never claims SAP registration. Authenticated clients can retrieve records through `GET /api/v1/ProducerRegistrations`. The API playground is at `/api-console`; credential creation and revocation are separated at `/api-console/access`.
 
 ### White-label house-member portal
 

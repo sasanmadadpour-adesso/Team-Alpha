@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { accessCodeRequired, accessCodeValid, actionOf, allowed, createLimiter, hashKey, isKeyToken, needFor, verifySession, type Principal, type Role } from './srv/auth.js';
 import { houseMemberPortal, PORTAL_RANGES, PortalError, validateHouseMember, type PortalRange } from './srv/house-member-portal.js';
+import { registerProducerPipeline } from './srv/construct/registration.js';
 
 /**
  * Access layer for /api/v1 (demo, not real authentication): resolves the caller from "Authorization: Bearer <token>"
@@ -104,7 +105,7 @@ cds.on('bootstrap', (app: express.Express) => {
     return res.json(await validateHouseMember(malo,houseNumber));
   });
 
-  /** External Registration MVP contract. It only records onboarding; it never mutates the Ruhendstellung process. */
+  /** External Registration MVP contract. The contract is stable; accepted records also enter the canonical process pipeline. */
   app.post('/api/v1/producer-onboardings', async (req, res) => {
     const body = req.body as Record<string, unknown>;
     const actor = String(req.headers['x-ruhend-actor'] ?? 'API_CLIENT');
@@ -131,8 +132,14 @@ cds.on('bootstrap', (app: express.Express) => {
     const ID=cds.utils.uuid(), now=new Date().toISOString();
     await cds.db.tx(async tx=>{
       await tx.run(INSERT.into(entity).entries({ID,idempotencyKey,status:'ACCEPTED',constructType:body.construct_type,firstName:body.first_name,lastName:body.last_name,email:body.email,salutation:body.salutation,isBusiness:body.is_business,isReverseCharge:body.is_reverse_charge,deliveryStreet:body.deliv_address_street,deliveryHouseNumber:String(body.deliv_address_house_number??''),deliveryZipcode:String(body.deliv_address_zipcode??''),deliveryCity:body.deliv_address_city,subscriptionReason:body.subscription_reason,productionType:body.production_type,plantCapacityKw:capacity,latitude:lat,longitude:lon,marketLocationId:String(body.market_location_identifier),tranche:body.tranche,preferredDeliveryStart:new Date(String(body.preferred_delivery_start)).toISOString(),saasCustomerId:body.saas_customer_id,saasContractId:body.saas_contract_id,productName:body.product_name,consumerSaasContractId:body.consumer_saas_contract_id,controlResource:body.control_resource,technicalResources:body.technical_resources?JSON.stringify(body.technical_resources):null,contractStartUtc:new Date(String(body.contract_start_utc)).toISOString(),contractEndUtc:new Date(String(body.contract_end_utc)).toISOString(),buildingId:body.building_id,submittedBy:actor,payload:JSON.stringify(body)}));
-      await tx.run(INSERT.into(ns('AuditEvents')).entries({operation:'PRODUCER_ONBOARDING_CREATED',maloId:String(body.market_location_identifier),actor,eventTime:now,afterValue:JSON.stringify({ID,buildingId:body.building_id,status:'ACCEPTED'}),simulated:true}));
-    });
+       await tx.run(INSERT.into(ns('AuditEvents')).entries({operation:'PRODUCER_ONBOARDING_CREATED',maloId:String(body.market_location_identifier),actor,eventTime:now,afterValue:JSON.stringify({ID,buildingId:body.building_id,status:'ACCEPTED'}),simulated:true}));
+       await registerProducerPipeline(tx, {
+         buildingId: String(body.building_id), marketLocationId: String(body.market_location_identifier),
+         productionType: String(body.production_type), preferredDeliveryStart: String(body.preferred_delivery_start),
+         city: body.deliv_address_city ? String(body.deliv_address_city) : undefined,
+         streetAddress: [body.deliv_address_street, body.deliv_address_house_number].filter(Boolean).join(' ') || undefined,
+       }, actor);
+     });
     res.location(`/api/v1/ProducerRegistrations/${ID}`);
     return res.status(201).json({id:ID,status:'ACCEPTED',building_id:body.building_id,market_location_identifier:body.market_location_identifier,created_at:now,simulation:true,sap_connection:'NOT_CONFIGURED',links:{self:`/api/v1/ProducerRegistrations/${ID}`}});
   });

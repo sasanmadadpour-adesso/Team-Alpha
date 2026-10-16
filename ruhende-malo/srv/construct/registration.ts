@@ -2,6 +2,7 @@ import cds from '@sap/cds';
 import { ROLES, type ParticipantRow } from '../../scripts/workbook.js';
 import { VSZ_ITEMS } from './vsz.js';
 import { refreshConstructs } from './service.js';
+import { continueProcessing } from './cases.js';
 
 /** Step S1 — Anmeldung Konstrukt. One code path for Excel import and JSON registration. */
 const ns = (name: string) => `mk7.controlcenter.${name}`;
@@ -16,6 +17,21 @@ export interface RegistrationInput {
 }
 export interface RegistrationSource { file: string; checksum?: string; actor: string }
 export interface RegistrationResult { constructIds: string[]; rows: number; households: number; participating: number }
+
+/** The stable producer-onboarding contract has no MeLo field. Keep that gap
+ * explicit: the resulting generation row is intentionally incomplete and the
+ * normal validation pipeline will stop it with a review/blocking finding. */
+export interface ProducerPipelineInput {
+  buildingId: string;
+  marketLocationId: string;
+  productionType: string;
+  preferredDeliveryStart?: string;
+  city?: string;
+  operator?: string;
+  streetAddress?: string;
+}
+
+const producerRole = (productionType: string) => /wind/i.test(productionType) ? 'Windkraftanlage' : 'Solaranlage';
 
 /** Maps a JSON registration to normalized participant rows (same shape as workbook rows). */
 export function rowsFromRegistration(input: RegistrationInput): ParticipantRow[] {
@@ -120,4 +136,32 @@ export async function registerConstructs(tx: cds.Service, rows: ParticipantRow[]
   await refreshConstructs(tx);
   const households = rows.filter((r) => r.role === ROLES.household);
   return { constructIds, rows: rows.length, households: households.length, participating: households.filter((r) => r.participates).length };
+}
+
+/**
+ * Continue the producer onboarding through the same construct pipeline as
+ * registerConstruct. This is deliberately separate from the HTTP contract:
+ * producer records remain owned by /producer-onboardings, while process state
+ * is owned by the canonical construct registration tables.
+ *
+ * Existing buildings are never re-registered (which would replace workbook
+ * rows); they simply continue through the shared engine. A new building gets a
+ * generation construct whose missing MeLo is validated by the normal rules.
+ */
+export async function registerProducerPipeline(tx: cds.Service, input: ProducerPipelineInput, actor: string) {
+  const construct = await tx.run(SELECT.one.from(ns('Constructs')).columns('constructId').where({ constructId: input.buildingId })) as { constructId: string } | undefined;
+  if (!construct) {
+    const row: ParticipantRow = {
+      sourceId: `PRODUCER_API:${input.buildingId}:${input.marketLocationId}`,
+      sourceFile: 'producer-onboardings', sourceSheet: 'producer-onboardings', sourceRowNumber: 1,
+      buildingId: input.buildingId, role: producerRole(input.productionType), participationRaw: 'Ja', participates: true,
+      meloId: '', maloId: input.marketLocationId, generationFeedInMaloId: input.marketLocationId,
+      supplyStartUtc: input.preferredDeliveryStart?.slice(0, 10), city: input.city, operator: input.operator,
+      streetAddress: input.streetAddress, maloConflict: false, unverifiedSourceAttributes: '{}',
+      sourceData: JSON.stringify({ source: 'producer-onboardings', marketLocationId: input.marketLocationId }),
+    };
+    await registerConstructs(tx, [row], { file: 'producer-onboardings', actor }, { stichtag: input.preferredDeliveryStart?.slice(0, 10) });
+  }
+  await continueProcessing(tx, [input.buildingId], actor);
+  return input.buildingId;
 }
