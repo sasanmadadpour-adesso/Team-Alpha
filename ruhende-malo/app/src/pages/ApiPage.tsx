@@ -105,7 +105,7 @@ export function ApiPage() {
     setBody(override?.body ? pretty(override.body) : next.body ? pretty(next.body(ctx)) : ''); setBodyErr(false); setSent(undefined);
   };
   const route = useRoute();
-  useEffect(() => { if (route.endsWith('/zugang')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
+  useEffect(() => { if (route.endsWith('/access')) setTimeout(() => document.getElementById('keys')?.scrollIntoView({ behavior: 'smooth' }), 80); }, [route]);
 
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); toast(t('api.copied')); } catch { toast(text); } };
   const curl = `curl -X ${ep.method} "${base}/api/v1${encodeURI(path)}"${ep.need === 'READ' || ep.need === 'PUBLIC' ? '' : ' \\\n  -H "Authorization: Bearer $TOKEN"'}${ep.method === 'POST' ? ` \\\n  -H "Content-Type: application/json" -d '${body.replace(/\s+/g, ' ')}'` : ''}`;
@@ -217,7 +217,7 @@ export function ApiPage() {
                   })}
                 </div>
                 {changed.length === 0 && <p className="text-[13px] text-muted-foreground">{t('api.fx.none')}</p>}
-                {changed.length > 0 && <div className="flex gap-1.5"><Button variant="quiet" size="sm" onClick={() => go('/klaerfaelle')}>{t('nav.cases')} →</Button><Button variant="quiet" size="sm" onClick={() => go('/')}>{t('nav.overview')} →</Button></div>}
+                {changed.length > 0 && <div className="flex gap-1.5"><Button variant="quiet" size="sm" onClick={() => go('/cases')}>{t('nav.cases')} →</Button><Button variant="quiet" size="sm" onClick={() => go('/')}>{t('nav.overview')} →</Button></div>}
               </div>
             )}
           </Card>

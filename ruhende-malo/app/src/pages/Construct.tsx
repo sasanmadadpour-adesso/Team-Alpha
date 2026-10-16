@@ -82,7 +82,7 @@ export function ConstructPage({ constructId }: { constructId: string }) {
 
       <div className="grid grid-cols-[minmax(0,1fr)_380px] items-start gap-5 max-[1100px]:grid-cols-1">
         <Card aria-label={t('co.timeline')} className="gap-0 overflow-hidden py-0 shadow-card">
-          <GroupHead left={t('co.timeline')} right={<a href="/ablauf">{t('stages.title')} →</a>} />
+          <GroupHead left={t('co.timeline')} right={<a href="/process">{t('stages.title')} →</a>} />
           {steps.map(({ key, ...s }, i) => <TimelineStep key={key} i={i} {...s} linkOk={s.tone === 'ok' && steps[i + 1]?.tone === 'ok'} />)}
         </Card>
         <Card aria-label={t('co.participants')} className="gap-0 py-1.5 shadow-card">
@@ -92,7 +92,7 @@ export function ConstructPage({ constructId }: { constructId: string }) {
               {g.list.map((x, i) => <ParticipantRow key={x.caseId} c={x} i={i} onOpen={() => openCase(x.caseId)} />)}
             </div>
           ))}
-          <GroupHead className="mt-2 border-t" left={t('log.construct')} right={<a href={`/protokoll?k=${constructId}`}>{t('log.all')}</a>} />
+          <GroupHead className="mt-2 border-t" left={t('log.construct')} right={<a href={`/activity?k=${constructId}`}>{t('log.all')}</a>} />
           <HistoryList events={data.events.filter((e) => eventConstructs(e, data).includes(constructId))} limit={6} />
         </Card>
       </div>

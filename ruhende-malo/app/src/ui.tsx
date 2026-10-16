@@ -24,12 +24,21 @@ export const useApp = () => useContext(AppContext)!;
 
 /* ---------------- Router (clean URLs, History API) ---------------- */
 const NAV = 'ruhend:nav';
-const LEGACY: Record<string, string> = { '/api': '/schnittstelle', '/api#keys': '/schnittstelle/zugang' };
-/** Old bookmarks like /#/klaerfaelle keep working: they are rewritten to /klaerfaelle once. */
+const LEGACY: Record<string, string> = {
+  '/api': '/api-console',
+  '/api#keys': '/api-console/access',
+  '/klaerfaelle': '/cases',
+  '/schnittstelle': '/api-console',
+  '/schnittstelle/zugang': '/api-console/access',
+  '/protokoll': '/activity',
+  '/ablauf': '/process',
+};
+/** Old hash bookmarks are rewritten once to the current English client routes. */
 function normalizeLegacy() {
-  if (!location.hash.startsWith('#/')) return;
-  const old = location.hash.slice(1);
-  history.replaceState(null, '', LEGACY[old] ?? old);
+  const old = location.hash.startsWith('#/') ? location.hash.slice(1) : location.pathname;
+  const mapped = LEGACY[old];
+  if (mapped) history.replaceState(null, '', mapped);
+  else if (location.hash.startsWith('#/')) history.replaceState(null, '', old);
 }
 const current = () => location.pathname + location.search;
 

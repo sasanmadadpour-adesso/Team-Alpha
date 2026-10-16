@@ -37,7 +37,7 @@ export default function App() {
   const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   useEffect(() => {
-    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/schnittstelle') ? t('nav.api') : route.startsWith('/protokoll') ? t('nav.log') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
+    const page = route.startsWith('/cases') ? t('nav.cases') : route.startsWith('/api-console') ? t('nav.api') : route.startsWith('/activity') ? t('nav.log') : route.startsWith('/constructs') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
     document.title = `${page} · Ruhend — ${t('app.subtitle')} (${t('top.simulation.short')})`;
     document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'));
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', t('app.description'));
@@ -107,9 +107,9 @@ export default function App() {
   };
 
   useEffect(() => { setCaseId(undefined); }, [route]);   // a case drawer never outlives the page it was opened on
-  const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/schnittstelle') ? 'api' : route.startsWith('/ablauf') ? 'stages' : 'overview';
+  const section = route.startsWith('/cases') ? 'cases' : route.startsWith('/activity') ? 'log' : route.startsWith('/api-console') ? 'api' : route.startsWith('/process') ? 'stages' : 'overview';
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
-  const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
+  const constructId = route.match(/^\/constructs\/([^/]+)/)?.[1];
 
   const auth = useMemo(() => (who ? makeAuth(who, setWho, () => undefined) : undefined), [who]);
   if (who === undefined) return <I18nContext.Provider value={i18n}><Skeleton className="m-20 h-80" /></I18nContext.Provider>;

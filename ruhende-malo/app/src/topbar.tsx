@@ -52,7 +52,7 @@ export function ActivityPanel({ data, onClose }: { data: Snapshot; onClose: () =
           ))}
         </ul>
       </ScrollArea>
-      <footer className="border-t px-4 py-2.5 text-[13.5px] font-medium"><a href="/protokoll" onClick={onClose}>{t('feed.all')} →</a></footer>
+      <footer className="border-t px-4 py-2.5 text-[13.5px] font-medium"><a href="/activity" onClick={onClose}>{t('feed.all')} →</a></footer>
     </div>
   );
 }
@@ -84,8 +84,8 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
       </a>
       <nav className="flex h-full gap-1" aria-label={t('nav.main')}>
         {link('/', section === 'overview', t('nav.overview'))}
-        {link('/klaerfaelle', section === 'cases', t('nav.cases'), openCount > 0 && <Badge variant="secondary" className={cn('min-w-5 px-1.5', bump && 'animate-pop')}>{openCount}</Badge>)}
-        {link('/schnittstelle', section === 'api', t('nav.api'))}
+        {link('/cases', section === 'cases', t('nav.cases'), openCount > 0 && <Badge variant="secondary" className={cn('min-w-5 px-1.5', bump && 'animate-pop')}>{openCount}</Badge>)}
+        {link('/api-console', section === 'api', t('nav.api'))}
       </nav>
       <div className="ml-auto flex items-center gap-2.5">
         <div role="group" aria-label={t('lang.label')} className="inline-flex rounded-lg bg-muted p-0.5 max-[640px]:hidden">
@@ -114,7 +114,7 @@ export function Topbar({ lang, setLang, data, section, openCount, bump, onSelfCh
           <DropdownMenuContent align="end" sideOffset={8} className="w-72">
             <div className="flex items-center gap-2.5 px-2 pt-2 pb-1"><Avatar name={auth.who.name} size="lg" /><div><b className="block leading-tight font-semibold">{auth.who.name}</b><small className="text-[12.5px] text-muted-foreground">{t(`role.${auth.who.role}`)} · Demo</small></div></div>
             <p className="px-2 pb-2 text-[12.5px] leading-snug text-muted-foreground">{t(`role.${auth.who.role}.d`)}</p>
-            <DropdownMenuItem onSelect={() => navigate('/schnittstelle/zugang')}><KeyRound />{t('auth.keys')}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => navigate('/api-console/access')}><KeyRound />{t('auth.keys')}</DropdownMenuItem>
             {auth.admin && (
               <>
                 <DropdownMenuSeparator />

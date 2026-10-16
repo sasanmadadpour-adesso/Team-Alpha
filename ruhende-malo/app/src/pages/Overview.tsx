@@ -55,7 +55,7 @@ export function OverviewPage() {
         title={t('ov.title')}
         description={<>{t('ov.sub', { n: data.constructs.length })}{lastRun && <span className="mt-1 block text-[13px] text-muted-foreground">{t('ov.lastrun', { d: relTime(lang, lastRun) })}</span>}</>}
         actions={<>
-          <Button variant="outline" onClick={() => go('/ablauf')}><BookOpen />{t('stages.title')}</Button>
+          <Button variant="outline" onClick={() => go('/process')}><BookOpen />{t('stages.title')}</Button>
           <Button onClick={run} disabled={running || !auth.write}>
             {running ? <Loader2 className="animate-spin" /> : processed ? <RefreshCw /> : <Play />}
             {running ? t('ov.running') : processed ? t('ov.rerun') : t('ov.run')}
@@ -67,7 +67,7 @@ export function OverviewPage() {
         const waiting = result.review + result.blocked;
         const none = result.success === 0 && waiting === 0;
         return (
-          <Banner tone={waiting ? 'act' : 'ok'} icon={waiting ? <GitFork size={18} /> : <Check size={18} />} action={waiting > 0 ? <Button size="sm" variant="outline" onClick={() => go('/klaerfaelle')}>{t('nav.cases')}<ArrowRight /></Button> : undefined}>
+          <Banner tone={waiting ? 'act' : 'ok'} icon={waiting ? <GitFork size={18} /> : <Check size={18} />} action={waiting > 0 ? <Button size="sm" variant="outline" onClick={() => go('/cases')}>{t('nav.cases')}<ArrowRight /></Button> : undefined}>
             {none ? t('ov.result.none') : t('ov.result', { done: result.success, already: result.alreadyDone, waiting })}
           </Banner>
         );
@@ -75,7 +75,7 @@ export function OverviewPage() {
 
       <div className="mb-[22px] grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2">
         <StatCard value={uniqueDone} total={uniqueTotal} tone="ok" label={<>MaLos {t('ov.kpi.done')}</>} />
-        <StatCard value={openUnique} tone={openUnique ? 'act' : undefined} label={<>{t('ov.kpi.cases')} →</>} onClick={() => go('/klaerfaelle')} />
+        <StatCard value={openUnique} tone={openUnique ? 'act' : undefined} label={<>{t('ov.kpi.cases')} →</>} onClick={() => go('/cases')} />
         <StatCard value={data.relationships.filter((r) => !r.validToExclusive).length} label={t('ov.kpi.rel')} />
         <StatCard value={data.outbox.length} label={t('ov.kpi.handover')} />
       </div>
@@ -87,7 +87,7 @@ export function OverviewPage() {
           const anim = before ? constructRail(t, live, c.constructId, false, reveal[c.constructId] ?? 0) : rail; // stages: real result, revealed step by step
           const doing = before && (reveal[c.constructId] ?? 0) < STAGES.length ? STAGES[reveal[c.constructId] ?? 0] : undefined;
           return (
-            <Card key={c.constructId} style={{ animationDelay: `${i * 60}ms` }} onClick={() => go(`/konstrukt/${c.constructId}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && go(`/konstrukt/${c.constructId}`)}
+            <Card key={c.constructId} style={{ animationDelay: `${i * 60}ms` }} onClick={() => go(`/constructs/${c.constructId}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && go(`/constructs/${c.constructId}`)}
               className="animate-rise cursor-pointer gap-4 p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-input hover:shadow-lift">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -144,8 +144,8 @@ function ConstructStatus({ rail, constructId, doing }: { rail: ReturnType<typeof
         </ul>
       )}
       <div className="flex items-center justify-between gap-3 text-[13.5px]">
-        {rail.items.length > 3 ? <button className="text-muted-foreground hover:text-primary" onClick={() => go('/klaerfaelle')}>{t('ov.st.more', { n: rail.items.length - 3 })}</button> : <span />}
-        <button className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary" onClick={() => go(`/konstrukt/${constructId}`)}>{t('ov.card.open')}<ArrowRight size={14} /></button>
+        {rail.items.length > 3 ? <button className="text-muted-foreground hover:text-primary" onClick={() => go('/cases')}>{t('ov.st.more', { n: rail.items.length - 3 })}</button> : <span />}
+        <button className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary" onClick={() => go(`/constructs/${constructId}`)}>{t('ov.card.open')}<ArrowRight size={14} /></button>
       </div>
     </div>
   );

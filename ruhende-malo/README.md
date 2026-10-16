@@ -1,5 +1,7 @@
 # Ruhend — Umstellung auf ruhende MaLo (Simulation)
 
+For a complete presentation of the current app, including business flow, screens, architecture, Mermaid diagrams, validation rules, and API inventory, see [Application presentation](docs/APP_PRESENTATION.md).
+
 Local SAP CAP prototype of the MVP boxes from the solution map *Marktrolle VNB*: **Anmeldung Konstrukt → Prüfung der Daten → Korrektur Daten → Konstrukt Übersicht → Umstellung auf ruhende MaLo inkl. MeMa/MaMa**, with a REST API for other services.
 
 > **SIMULATION — NO SAP CONNECTION**

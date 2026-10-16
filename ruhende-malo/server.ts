@@ -44,7 +44,7 @@ cds.on('bootstrap', (app: express.Express) => {
         else if (file.includes(`${path.sep}assets${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       },
     }));
-    // Clean URLs (/klaerfaelle, /konstrukt/B-MUL-01 …): every page request that is not API, OData or a file gets the app shell.
+    // Clean English URLs (/cases, /constructs/B-MUL-01 …): every page request that is not API, OData or a file gets the app shell.
     app.get(/^\/(?!api\/|odata\/)[^.]*$/, (_req, res) => {
       Object.entries(HTML_HEADERS).forEach(([k, v]) => res.setHeader(k, v));
       res.setHeader('Cache-Control', 'no-cache');
