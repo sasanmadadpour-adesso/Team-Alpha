@@ -185,6 +185,7 @@ test('contains annotation metadata for the building overview KPIs', () => {
    assert.match(trend, /detachModelContextChange/);
     assert.match(trend, /latestMeasurementTime/);
     assert.match(trend, /\/house-member-portal/);
+    assert.match(trend, /\/building-energy/);
     assert.match(trend, /URLSearchParams/);
    assert.doesNotMatch(trend, /this\.\$\(\s*["']\./);
    assert.match(trend, /getElementById/);

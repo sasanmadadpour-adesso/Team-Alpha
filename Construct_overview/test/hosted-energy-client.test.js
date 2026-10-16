@@ -78,3 +78,9 @@ test('the Overview house-member portal proxy uses a producer feed-in MaLo for de
   assert.match(server, /member\.exportMaLo \|\| malo/);
   assert.match(server, /parentID: malo/);
 });
+
+test('the Overview exposes a hosted building-energy proxy', () => {
+  const server = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'server.js'), 'utf8');
+  assert.match(server, /app\.get\('\/building-energy'/);
+  assert.match(server, /roleCode: 'RESIDUAL_SUPPLY'/);
+});

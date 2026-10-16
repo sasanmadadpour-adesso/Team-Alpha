@@ -50,6 +50,19 @@ cds.on('bootstrap', app => {
   app.get('/house-member-portal', houseMemberPortal);
   // Backward-compatible alias for already-open browser tabs.
   app.get('/api/live-energy', houseMemberPortal);
+  app.get('/building-energy', async (req, res) => {
+    const building = String(req.query.building || '').trim();
+    const range = String(req.query.range || '7d').trim();
+    if (!building) return res.status(400).json({ error: { code: 'BUILDING_REQUIRED', message: 'Query parameter building is required' } });
+    try {
+      res.setHeader('Cache-Control', 'private, max-age=30');
+      const payload = await hostedEnergy({ malo: `building-${building}`, building, range, roleCode: 'RESIDUAL_SUPPLY' });
+      payload.value = payload.value.map(row => ({ ...row, parentID: building }));
+      return res.json(payload);
+    } catch (error) {
+      return res.status(error.status || 502).json({ error: { code: error.code || 'HOSTED_ENERGY_ERROR', message: error.message } });
+    }
+  });
 });
 
 // Register member portal middleware after the webhook router. Its intentionally
