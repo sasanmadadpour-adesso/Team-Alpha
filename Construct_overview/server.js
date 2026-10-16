@@ -39,7 +39,10 @@ cds.on('bootstrap', app => {
     if (!member && malo) member = sync.registered().find(row => row.primaryMaLo === malo || row.importMaLo === malo || row.exportMaLo === malo);
     try {
       res.setHeader('Cache-Control', 'private, max-age=30');
-      return res.json(await hostedEnergy({ malo, building, range, roleCode: member?.roleCode }));
+      const detailMalo = member?.roleCode === 'GENERATION' ? (member.exportMaLo || malo) : malo;
+      const payload = await hostedEnergy({ malo: detailMalo, building, range, roleCode: member?.roleCode });
+      payload.value = payload.value.map(row => ({ ...row, parentID: malo }));
+      return res.json(payload);
     } catch (error) {
       return res.status(error.status || 502).json({ error: { code: error.code || 'HOSTED_ENERGY_ERROR', message: error.message } });
     }

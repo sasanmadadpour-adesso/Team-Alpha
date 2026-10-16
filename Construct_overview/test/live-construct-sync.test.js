@@ -84,16 +84,17 @@ test('detail refresh preserves the cached ID used by UI navigation', async t => 
   assert.equal(detail.city, 'New');
 });
 
-test('maps the hosted Ruhende Participants resource into the Overview contract', () => {
+test('maps hosted Ruhende maloOverview rows into the Overview contract', () => {
   const household = registeredParticipant({ sourceId: 'MK7 Participants:12', buildingId: 'B-1', role: 'Haushaltsverbrauch', maloId: '111', meloId: 'DE-1', participates: true, city: 'Köln' });
   const producer = registeredParticipant({ sourceId: 'MK7 Participants:13', buildingId: 'B-1', role: 'Solaranlage', maloId: '222', generationFeedInMaloId: '333', meloId: 'DE-2', city: 'Köln' });
   assert.deepEqual({ primaryMaLo: household.primaryMaLo, nodeType: household.nodeType, buildingID: household.buildingID }, { primaryMaLo: '111', nodeType: 'HOUSEHOLD', buildingID: 'B-1' });
-  assert.equal(producer.primaryMaLo, '333');
+  assert.equal(producer.primaryMaLo, '222');
   assert.equal(producer.importMaLo, '222');
+  assert.equal(producer.exportMaLo, '333');
   assert.equal(/[\s'()%]/.test(household.ID), false);
 });
 
-test('falls back to the hosted Participants resource when the compatibility route is unavailable', async t => {
+test('falls back to a configured hosted MaLo resource when the compatibility route is unavailable', async t => {
   const store = new LiveSyncStore(':memory:');
   t.after(() => store.close());
   const urls = [];
@@ -101,7 +102,7 @@ test('falls back to the hosted Participants resource when the compatibility rout
     store,
     pendingUrl: 'http://pending',
     registeredUrl: 'https://host/api/constructs',
-    registeredFallbackUrl: 'https://host/api/v1/Participants',
+    registeredFallbackUrl: 'https://host/api/v1/maloOverview()',
     fetch: async url => {
       urls.push(url);
       if (url.endsWith('/api/constructs')) return response({}, 404);
@@ -109,7 +110,7 @@ test('falls back to the hosted Participants resource when the compatibility rout
     }
   });
   const rows = await sync.poll('registered');
-  assert.deepEqual(urls, ['https://host/api/constructs', 'https://host/api/v1/Participants']);
+  assert.deepEqual(urls, ['https://host/api/constructs', 'https://host/api/v1/maloOverview()']);
   assert.equal(rows[0].primaryMaLo, '111');
 });
 

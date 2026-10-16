@@ -59,3 +59,10 @@ test('falls back to hosted OData if the portal rejects the integration key', asy
   assert.equal(result.value[0].consumptionKwh, 2);
   assert.ok(calls.some(url => url.includes('HourlyConsumption')));
 });
+
+test('the Overview live-energy proxy uses a producer feed-in MaLo for detailed data', () => {
+  const server = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'server.js'), 'utf8');
+  assert.match(server, /member\?\.roleCode === 'GENERATION'/);
+  assert.match(server, /member\.exportMaLo \|\| malo/);
+  assert.match(server, /parentID: malo/);
+});

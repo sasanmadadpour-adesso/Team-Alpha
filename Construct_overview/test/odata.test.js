@@ -22,7 +22,8 @@ test('serves VNB compatibility entities and navigation over OData', async t => {
       SYNC_DB_PATH: ':memory:',
       REGISTERED_API_URL: 'http://127.0.0.1:1/api/constructs',
       REGISTERED_FALLBACK_API_URL: '',
-      PENDING_API_URL: 'http://127.0.0.1:1/api/constructs/pending'
+      PENDING_API_URL: 'http://127.0.0.1:1/api/constructs/pending',
+      WHITE_LABEL_ONLY: 'false'
     },
     stdio: 'ignore'
   });

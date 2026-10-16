@@ -54,8 +54,8 @@ Configuration:
 | Environment variable | Default | Purpose |
 |---|---|---|
 | `PENDING_API_URL` | `http://localhost:4010/api/constructs/pending` | Anmeldung snapshot URL |
-| `REGISTERED_API_URL` | `http://localhost:4020/api/constructs` | Umstellung snapshot URL |
-| `REGISTERED_FALLBACK_API_URL` | empty | Optional existing Ruhende `/api/v1/Participants` resource used when the compatibility route is unavailable |
+| `REGISTERED_API_URL` | `http://localhost:4020/api/constructs` | Umstellung snapshot URL; hosted deployments use `https://ruhend.sidely.dev/api/v1/maloOverview()` |
+| `REGISTERED_FALLBACK_API_URL` | empty | Optional fallback snapshot resource |
 | `HOUSE_MEMBER_PORTAL_API_URL` | derived from `REGISTERED_API_URL` | Hosted per-MaLo energy portal endpoint |
 | `RUHENDE_DATA_API_URL` | derived from `REGISTERED_API_URL` | Read-only hourly data fallback when the supplied key is not a hosted portal principal |
 | `EXTERNAL_API_KEY` | empty | Credential sent to external APIs |

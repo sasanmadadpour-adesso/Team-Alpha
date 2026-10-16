@@ -8,6 +8,14 @@ const { apply } = require('./lib/query');
 const { localize, summarize } = require('./lib/data-quality');
 const { stepLabel } = require('./lib/switchover');
 const { getLiveConstructSync } = require('./lib/live-construct-sync');
+const fs = require('node:fs');
+const path = require('node:path');
+const envPath = path.resolve(__dirname, '../.env');
+if (fs.existsSync(envPath)) for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+  const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/);
+  if (match && process.env[match[1]] === undefined) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
+}
+const WHITE_LABEL_ONLY = String(process.env.WHITE_LABEL_ONLY || '').toLowerCase() === 'true';
 
 const issueIndex = new WeakMap();
 function issuesByConstruct(data) {
@@ -91,6 +99,10 @@ function trendFilters(req) {
 }
 
 module.exports = cds.service.impl(function () {
+  if (WHITE_LABEL_ONLY) {
+    this.on('*', req => req.reject(404, 'This application is disabled in white-label mode.'));
+    return;
+  }
   const repository = createWorkbookRepository();
   const liveSync = getLiveConstructSync();
   const rawMappings = {

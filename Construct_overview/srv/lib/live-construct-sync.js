@@ -16,8 +16,7 @@ function firstValue(object, names) {
 }
 
 function primaryMaLo(item) {
-  const producer = ['Solaranlage', 'Windkraftanlage'].includes(item?.role);
-  return String((producer && item?.generationFeedInMaloId) || firstValue(item, ['primaryMaLo', 'primaryMalo', 'maLo', 'malo', 'MaLo', 'maloId', 'marketLocationId', 'marketLocationIdentifier', 'importMaLo']) || '').trim();
+  return String(firstValue(item, ['primaryMaLo', 'primaryMalo', 'maLo', 'malo', 'MaLo', 'maloId', 'marketLocationId', 'marketLocationIdentifier', 'importMaLo']) || '').trim();
 }
 
 function safeRegisteredID(item, malo) {
@@ -221,6 +220,9 @@ class LiveConstructSync {
   async detail(source, malo) {
     const base = source === 'pending' ? this.options.pendingUrl : this.options.registeredUrl;
     const cached = this.store.items(source).find(item => item.primaryMaLo === malo);
+    // Action-style collection endpoints such as maloOverview() do not expose a
+    // per-key URL. Their current snapshot is already the authoritative detail.
+    if (source === 'registered' && /\(\)\/?$/.test(base)) return cached;
     try {
       const current = normalizeItem(await this.request(`${base}/${encodeURIComponent(malo)}`), source);
       return cached ? { ...cached, ...current, ID: cached.ID } : current;
