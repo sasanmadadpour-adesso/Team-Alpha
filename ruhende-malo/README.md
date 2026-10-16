@@ -137,6 +137,18 @@ Content-Type: application/json
 
 The endpoint accepts the `Producer Onboarding` snake-case contract, including nested `plant_specifics`, persists it separately in `ProducerRegistrationRequests`, and returns `201 Created`. Replaying the same key and payload returns the existing registration; reusing a key for different data returns `409`. It records only a simulated onboarding acceptance and never claims SAP registration. Authenticated clients can retrieve records through `GET /api/v1/ProducerRegistrations`. The API playground is at `/api-console`; credential creation and revocation are separated at `/api-console/access`.
 
+### White-label house-member portal
+
+An authenticated read-only backend-for-frontend endpoint combines member/building master data, live Ruhendstellung status and energy trends:
+
+```http
+GET /api/v1/house-member-portal?malo=50539603888&range=7d
+Authorization: Bearer rk_...
+Accept: application/json
+```
+
+Ranges are `24h`, `7d`, `30d`, `90d`, and `1y` (hour/day/week aggregation). They end at the latest complete source interval. Building energy balance uses hourly consumption/generation. Member local energy is an explicit proportional hourly **demo derivation**, not a settlement, billing result or SAP verification. `switchoverStatus` is `COMPLETED` only when the shared process engine reports `DONE` and the business state is `RUHEND`; otherwise it is `IN_PROGRESS`. The route performs no business writes. Brand values are configurable with `PORTAL_BRAND_NAME`, `PORTAL_NAME_DE`, `PORTAL_NAME_EN`, `PORTAL_LOGO_URL`, `PORTAL_PRIMARY_COLOR`, and `PORTAL_ACCENT_COLOR`.
+
 ## Code layout
 
 | Path | Content |

@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 type Need = 'READ' | 'PUBLIC' | 'ANY' | 'WRITE' | 'MAINTAINER';
-type Group = 'registration' | 'process' | 'malo' | 'read' | 'access';
+type Group = 'portal' | 'registration' | 'process' | 'malo' | 'read' | 'access';
 interface Ep { id: string; method: 'GET' | 'POST'; path: string; group: Group; need: Need; title: string; body?: (d: Ctx) => object }
 interface Ctx { construct: string; malo: string; issue: string }
 
@@ -28,6 +28,7 @@ const context = (d: Snapshot): Ctx => ({
 
 const DEMO = { construct: 'B-API-01', reststrom: '50000000101', household: '50000000110', meloR: `DE${'0'.repeat(30)}9`, meloH: `DE${'0'.repeat(30)}1` };
 const CATALOGUE: Ep[] = [
+  { id: 'houseMemberPortal', method: 'GET', path: '/house-member-portal?malo=50539603888&range=7d', group: 'portal', need: 'READ', title: 'api.e.houseMemberPortal' },
   { id: 'producerOnboarding', method: 'POST', path: '/producer-onboardings', group: 'registration', need: 'WRITE', title: 'api.e.producerOnboarding', body: () => ({
     first_name:'Anna',last_name:'Schmidt',email:'anna.schmidt@example.de',salutation:'Frau',is_business:true,is_reverse_charge:false,
     deliv_address_street:'Rathausmarkt',deliv_address_house_number:'1',deliv_address_zipcode:'20095',deliv_address_city:'Hamburg',subscription_reason:'E01',
@@ -61,7 +62,7 @@ const CATALOGUE: Ep[] = [
   { id: 'me', method: 'GET', path: '/me()', group: 'access', need: 'READ', title: 'api.e.me' },
   { id: 'createKey', method: 'POST', path: '/createApiKey', group: 'access', need: 'MAINTAINER', title: 'api.e.createKey', body: () => ({ name: 'ERP-Test', role: 'PIPELINE' }) },
 ];
-const GROUPS: { id: Group; key: string }[] = [{ id: 'registration', key: 'api.g.registration' }, { id: 'process', key: 'api.g.process' }, { id: 'malo', key: 'api.g.malo' }, { id: 'read', key: 'api.g.read' }, { id: 'access', key: 'api.g.access' }];
+const GROUPS: { id: Group; key: string }[] = [{ id: 'portal', key: 'api.g.portal' }, { id: 'registration', key: 'api.g.registration' }, { id: 'process', key: 'api.g.process' }, { id: 'malo', key: 'api.g.malo' }, { id: 'read', key: 'api.g.read' }, { id: 'access', key: 'api.g.access' }];
 
 /** The example flow: a brand-new construct, from registration to the relationship list. */
 const RECIPE: { key: string; ep: string; path?: string; body?: object }[] = [
