@@ -3,6 +3,9 @@ import { type Snapshot, importWorkbook, loadSnapshot, resetDemo, runSelfCheck, w
 import { AuthContext, SIGNED_OUT, SignIn, makeAuth, type Who } from './auth';
 import { getToken, setToken } from './session';
 import { Topbar } from './topbar';
+import { Banner } from '@/components/app/patterns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { I18nContext, translate, type Key, type Lang } from './i18n';
 import { AppContext, errorText, navigate, openItems, useRoute, useToasts } from './ui';
 import { ConfirmHost, confirmDialog } from './confirm';
@@ -13,7 +16,6 @@ import { ApiPage } from './pages/ApiPage';
 import { ProtokollPage } from './pages/Protokoll';
 import { StagesPage } from './pages/Stages';
 import { CaseDrawer } from './pages/CaseDrawer';
-import './styles.css';
 
 function readLang(): Lang {
   try { return localStorage.getItem('ruhend.lang') === 'en' ? 'en' : 'de'; } catch { return 'de'; }
@@ -34,7 +36,7 @@ export default function App() {
   const setLang = (l: Lang) => { setLangState(l); document.documentElement.lang = l; try { localStorage.setItem('ruhend.lang', l); } catch { /* storage unavailable */ } };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   useEffect(() => {
-    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/api') ? t('nav.api') : route.startsWith('/protokoll') ? t('feed.title') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
+    const page = route.startsWith('/klaerfaelle') ? t('nav.cases') : route.startsWith('/api') ? t('nav.api') : route.startsWith('/protokoll') ? t('nav.log') : route.startsWith('/konstrukt') ? decodeURIComponent(route.split('/')[2] ?? '') : t('nav.overview');
     document.title = `${page} · Ruhend — ${t('app.subtitle')} (${t('top.simulation.short')})`;
     document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'));
     document.querySelector('meta[property="og:description"]')?.setAttribute('content', t('app.description'));
@@ -103,27 +105,29 @@ export default function App() {
     if (file.current) file.current.value = '';
   };
 
+  useEffect(() => { setCaseId(undefined); }, [route]);   // a case drawer never outlives the page it was opened on
   const section = route.startsWith('/klaerfaelle') ? 'cases' : route.startsWith('/protokoll') ? 'log' : route.startsWith('/api') ? 'api' : route.startsWith('/ablauf') ? 'stages' : 'overview';
   const logConstruct = new URLSearchParams(route.split('?')[1] ?? '').get('k') ?? undefined;
   const constructId = route.match(/^\/konstrukt\/([^/]+)/)?.[1];
 
   const auth = useMemo(() => (who ? makeAuth(who, setWho, () => undefined) : undefined), [who]);
-  if (who === undefined) return <I18nContext.Provider value={i18n}><div className="skeleton" style={{ height: 320, margin: 80 }} /></I18nContext.Provider>;
-  if (!who || !auth) return <I18nContext.Provider value={i18n}><SignIn expired={expired} onSignedIn={(w) => { setExpired(false); setWho(w); }} /></I18nContext.Provider>;
+  if (who === undefined) return <I18nContext.Provider value={i18n}><Skeleton className="m-20 h-80" /></I18nContext.Provider>;
+  if (!who || !auth) return <I18nContext.Provider value={i18n}><TooltipProvider delayDuration={150}><SignIn expired={expired} onSignedIn={(w) => { setExpired(false); setWho(w); }} /></TooltipProvider></I18nContext.Provider>;
 
   return (
     <I18nContext.Provider value={i18n}>
      <AuthContext.Provider value={auth}>
+      <TooltipProvider delayDuration={150}>
       <Topbar lang={lang} setLang={setLang} data={data} section={section} openCount={openCount} bump={bump} onSelfCheck={() => void selfCheck()} onImport={() => file.current?.click()} onReset={() => void reset()} />
       <input ref={file} type="file" accept=".xlsx" hidden onChange={(e) => onFile(e.target.files?.[0])} />
 
-      <main className="page">
-        {error && !data && <div className="banner err">{error}</div>}
-        {!data && !error && <div className="skeleton" style={{ height: 320 }} />}
+      <main className="mx-auto max-w-[1520px] px-7 pt-[calc(56px+28px)] pb-[72px] max-[760px]:px-4 max-[760px]:pt-[calc(56px+18px)] max-[760px]:pb-14">
+        {error && !data && <Banner tone="err">{error}</Banner>}
+        {!data && !error && <Skeleton className="h-80" />}
         {ctx && (
           <AppContext.Provider value={ctx}>
-            {error && <div className="banner err">{error}</div>}
-            <div key={route} className="page-enter">
+            {error && <Banner tone="err">{error}</Banner>}
+            <div key={route} className="animate-rise">
               {section === 'overview' && !constructId && <OverviewPage />}
               {constructId && <ConstructPage constructId={decodeURIComponent(constructId)} />}
               {section === 'cases' && <CasesPage />}
@@ -137,6 +141,7 @@ export default function App() {
       </main>
       {toasts.view}
       <ConfirmHost />
+      </TooltipProvider>
      </AuthContext.Provider>
     </I18nContext.Provider>
   );

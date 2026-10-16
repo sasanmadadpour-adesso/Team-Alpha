@@ -1,5 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, Banner } from '@/components/app/patterns';
 import { loadPersonas, login } from './api';
 import { useI18n } from './i18n';
 import { SIGNED_OUT, canAdmin, canWrite, setToken, type Persona, type Role } from './session';
@@ -21,7 +25,6 @@ export const makeAuth = (who: Who | null, setWho: (w: Who | null) => void, openS
 });
 export { SIGNED_OUT };
 
-export const initials = (name: string) => name.split(/[\s.]+/).filter(Boolean).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
 /** Demo sign-in dialog. One demo user, no password: it exists so that manual actions have a named actor. */
 export function SignIn({ onSignedIn, expired }: { onSignedIn: (w: Who) => void; expired: boolean }) {
@@ -36,25 +39,29 @@ export function SignIn({ onSignedIn, expired }: { onSignedIn: (w: Who) => void; 
     catch (e) { setError(errorText(t, e)); setBusy(undefined); }
   };
   return (
-    <main className="signin">
-      <div className="signin-card">
-        <div className="signin-brand"><BrandMark /><div className="brand-text"><span className="brand-line"><span className="brand-name">Ruhend</span><SimTag /></span><span className="brand-sub">{t('app.subtitle')}</span></div></div>
-        <h1>{t('auth.title')}</h1>
-        <p className="muted">{t('auth.sub')}</p>
-        {expired && <div className="banner wait">{t('auth.expired')}</div>}
-        {error && <div className="banner err">{error}</div>}
-        <div className="persona-list">
-          {!personas && !error && <div className="skeleton" style={{ height: 76 }} />}
-          {personas?.map((p) => (
-            <button key={p.id} className="persona" disabled={!!busy} onClick={() => void go(p)} aria-label={t('auth.signin', { name: p.name })}>
-              <span className="av">{initials(p.name)}</span>
-              <span className="persona-text"><b>{p.name}</b><span className={`role-tag ${p.role}`}>{t(`role.${p.role}`)}</span><small>{t(`role.${p.role}.d`)}</small></span>
-              {busy === p.id ? <span className="spin" /> : <Check size={16} className="persona-go" />}
+    <main className="grid min-h-screen place-items-center bg-[radial-gradient(900px_420px_at_50%_-10%,var(--secondary),transparent_70%)] p-6">
+      <Card className="w-full max-w-[440px] animate-rise gap-3.5 rounded-2xl p-7 shadow-float">
+        <div className="group/brand mb-1.5 flex items-center gap-3">
+          <BrandMark />
+          <div className="grid gap-px leading-tight"><span className="flex items-center gap-2"><span className="text-[16.5px] font-semibold">Ruhend</span><SimTag /></span><span className="text-[12.5px] text-muted-foreground">{t('app.subtitle')}</span></div>
+        </div>
+        <h1 className="text-primary">{t('auth.title')}</h1>
+        <p className="text-muted-foreground">{t('auth.sub')}</p>
+        {expired && <Banner tone="wait" className="mb-0">{t('auth.expired')}</Banner>}
+        {error && <Banner tone="err" className="mb-0">{error}</Banner>}
+        <div className="grid gap-2.5">
+          {!personas && !error && <Skeleton className="h-[76px]" />}
+          {personas?.map((p, i) => (
+            <button key={p.id} disabled={!!busy} onClick={() => void go(p)} aria-label={t('auth.signin', { name: p.name })} style={{ animationDelay: `${i * 70 + 120}ms` }}
+              className="flex animate-rise items-center gap-3 rounded-xl border bg-card p-3.5 text-left transition hover:-translate-y-px hover:border-teal hover:shadow-[0_0_0_3px_var(--secondary)] disabled:opacity-60">
+              <Avatar name={p.name} size="lg" />
+              <span className="grid min-w-0 flex-1 gap-0.5"><b className="font-semibold">{p.name}</b><Badge variant="secondary" className="justify-self-start">{t(`role.${p.role}`)}</Badge><small className="text-[12.5px] leading-snug text-muted-foreground">{t(`role.${p.role}.d`)}</small></span>
+              {busy === p.id ? <Loader2 className="animate-spin text-muted-foreground" size={16} /> : <ArrowRight size={16} className="text-muted-foreground/60" />}
             </button>
           ))}
         </div>
-        <p className="subtle">{t('auth.note')}</p>
-      </div>
+        <p className="text-[13px] text-muted-foreground">{t('auth.note')}</p>
+      </Card>
     </main>
   );
 }
@@ -63,5 +70,5 @@ export function SignIn({ onSignedIn, expired }: { onSignedIn: (w: Who) => void; 
 export function Gate({ children }: { children: React.ReactNode }) {
   const { write } = useAuth();
   const { t } = useI18n();
-  return <fieldset className="ro" disabled={!write} title={write ? undefined : t('auth.guest')}>{children}</fieldset>;
+  return <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-55 disabled:[&_*]:cursor-not-allowed" disabled={!write} title={write ? undefined : t('auth.guest')}>{children}</fieldset>;
 }

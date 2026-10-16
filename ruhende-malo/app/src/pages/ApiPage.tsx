@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Copy, Download, KeyRound, Play, Trash2 } from 'lucide-react';
+import { Check, Copy, Download, KeyRound, Loader2, Play, Trash2 } from 'lucide-react';
 import { type ApiKey, type Snapshot, createApiKey, loadApiKeys, loadSnapshot, revokeApiKey } from '../api';
-import { useAuth } from '../auth';
+import { Gate, useAuth } from '../auth';
 import { confirmDialog } from '../confirm';
 import { relTime, useI18n } from '../i18n';
 import { getToken } from '../session';
 import { errorText, openItems, useApp } from '../ui';
+import { Banner, Field, PageHeader } from '@/components/app/patterns';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type Need = 'READ' | 'PUBLIC' | 'ANY' | 'WRITE' | 'MAINTAINER';
 type Group = 'process' | 'malo' | 'read' | 'access';
@@ -121,93 +128,95 @@ export function ApiPage() {
   const changed = sent ? METRIC_KEYS.filter((k) => sent.before[k] !== sent.after[k]) : [];
   const needOk = ep.need === 'READ' || ep.need === 'PUBLIC' || ep.need === 'ANY' ? true : ep.need === 'WRITE' ? auth.write : auth.admin;
 
+  const M: Record<string, string> = { GET: 'bg-accent text-primary', POST: 'bg-secondary text-teal-ink' };
+  const Method = ({ m, small }: { m: string; small?: boolean }) => <span className={cn('rounded-md text-center font-mono font-medium', small ? 'w-[38px] py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-[11.5px]', M[m])}>{m}</span>;
+
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{t('api.title')} <span className="chip info" style={{ verticalAlign: 'middle' }}>v1</span></h1>
-          <p>{t('api.sub')} <span className="mono">http://localhost:4004/api/v1</span></p>
-        </div>
-        <div className="head-actions">
-          <button className="btn secondary" onClick={() => void copy(getToken() ?? '')}><Copy size={15} />{t('api.keys.token')}</button>
-          <a className="btn secondary" href="/openapi.json" download><Download size={15} />{t('api.spec')}</a>
-        </div>
-      </div>
+      <PageHeader
+        title={t('api.title')} badge={<Badge variant="info">v1</Badge>}
+        description={<>{t('api.sub')} <span className="font-mono text-[0.86em]">http://localhost:4004/api/v1</span></>}
+        actions={<>
+          <Button variant="outline" onClick={() => void copy(getToken() ?? '')}><Copy />{t('api.keys.token')}</Button>
+          <Button variant="outline" asChild><a href="/openapi.json" download><Download />{t('api.spec')}</a></Button>
+        </>}
+      />
 
-      <div className="api-shell">
-        <nav className="api-side card" aria-label={t('api.nav.docs')}>
-          {GROUPS.map((g) => (
-            <div key={g.id} className="api-group-nav">
-              <h3>{t(g.key)}</h3>
-              {CATALOGUE.filter((e) => e.group === g.id).map((e) => (
-                <button key={e.id} className={`api-link ${e.id === epId && step === undefined ? 'on' : ''}`} onClick={() => select(e.id)}>
-                  <span className={`method ${e.method}`}>{e.method}</span><span className="mono api-name" title={t(e.title)}>{shortPath(e.path)}</span>
+      <div className="mb-[18px] grid grid-cols-[270px_minmax(0,1fr)] items-start gap-[18px] max-[1100px]:grid-cols-1">
+        <Card className="sticky top-[72px] max-h-[calc(100vh-88px)] gap-0 overflow-auto p-2 shadow-card max-[1100px]:static max-[1100px]:max-h-none">
+          <nav aria-label={t('api.nav.docs')}>
+            {GROUPS.map((g) => (
+              <div key={g.id} className="grid gap-0.5 border-b py-1.5 first:pt-0 last:border-0">
+                <h3 className="px-2.5 pt-1.5 pb-1 text-[11.5px] font-semibold tracking-wider text-muted-foreground uppercase">{t(g.key)}</h3>
+                {CATALOGUE.filter((e) => e.group === g.id).map((e) => (
+                  <button key={e.id} onClick={() => select(e.id)} className={cn('grid grid-cols-[38px_minmax(0,1fr)] items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13.5px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground', e.id === epId && step === undefined && 'bg-accent font-medium text-primary hover:bg-accent hover:text-primary')}>
+                    <Method m={e.method} small /><span className="truncate font-mono text-[12.5px]" title={t(e.title)}>{shortPath(e.path)}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+            <div className="grid gap-0.5 pt-1.5">
+              <h3 className="px-2.5 pt-1.5 pb-1 text-[11.5px] font-semibold tracking-wider text-muted-foreground uppercase">{t('api.nav.recipes')}</h3>
+              <p className="px-2.5 pb-1.5 text-[12.5px] text-muted-foreground">{t('api.recipe.d')}</p>
+              {RECIPE.map((r, i) => (
+                <button key={r.key} onClick={() => select(r.ep, { path: r.path, body: r.body }, i)} className={cn('grid grid-cols-[22px_minmax(0,1fr)] items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13.5px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground', epId === r.ep && step === i && 'bg-accent font-medium text-primary hover:bg-accent')}>
+                  <span className={cn('grid size-5 place-items-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground transition-colors', done.includes(i) && 'animate-pop bg-teal text-white')}>{done.includes(i) ? <Check size={11} strokeWidth={3} /> : i + 1}</span><span>{t(r.key)}</span>
                 </button>
               ))}
             </div>
-          ))}
-          <div className="api-group-nav recipe">
-            <h3>{t('api.nav.recipes')}</h3>
-            <p className="subtle">{t('api.recipe.d')}</p>
-            {RECIPE.map((r, i) => (
-              <button key={r.key} className={`api-link step ${epId === r.ep && step === i ? 'on' : ''}`} onClick={() => select(r.ep, { path: r.path, body: r.body }, i)}>
-                <span className={`stepno ${done.includes(i) ? 'done' : ''}`}>{done.includes(i) ? <Check size={11} strokeWidth={3} /> : i + 1}</span><span>{t(r.key)}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
+          </nav>
+        </Card>
 
-        <section className="api-main">
-          <div className="card api-doc" key={epId}>
-            <div className="api-doc-head">
-              <span className={`method ${ep.method}`}>{ep.method}</span>
-              <span className="mono api-path">{ep.path.replace('{construct}', '{constructId}').replace('{issue}', '{ID}')}</span>
-              <span className={`chip ${needOk ? 'neutral' : 'wait'}`}>{t('api.role')}: {t(`api.need.${ep.need}`)}</span>
+        <section className="grid min-w-0 gap-3.5">
+          <Card key={epId} className="animate-rise gap-2 px-5 py-4 shadow-card">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Method m={ep.method} />
+              <span className="font-mono text-sm break-all">{ep.path.replace('{construct}', '{constructId}').replace('{issue}', '{ID}')}</span>
+              <Badge variant={needOk ? 'neutral' : 'wait'} className="ml-auto">{t('api.role')}: {t(`api.need.${ep.need}`)}</Badge>
             </div>
             <h2>{t(ep.title)}</h2>
-            <p className="muted">{t(`api.d.${ep.id}`)}</p>
-          </div>
+            <p className="text-muted-foreground">{t(`api.d.${ep.id}`)}</p>
+          </Card>
 
-          <div className="card api-play">
-            <div className="play-grid">
-              <div className="play-col">
-                <label className="field">URL
-                  <input className="mono" value={path} onChange={(e) => setPath(e.target.value)} spellCheck={false} />
-                </label>
+          <Card className="gap-4 p-4 shadow-card">
+            <div className="grid grid-cols-2 gap-4 max-[1100px]:grid-cols-1">
+              <div className="grid min-w-0 content-start gap-2.5">
+                <Field label="URL"><Input className="font-mono text-[13px]" value={path} onChange={(e) => setPath(e.target.value)} spellCheck={false} /></Field>
                 {ep.method === 'POST' && (
-                  <label className={`field ${bodyErr ? 'invalid' : ''}`}>{t('api.input')} (JSON)
-                    <textarea className="code" value={body} onChange={(e) => { setBody(e.target.value); setBodyErr(false); }} rows={Math.min(12, body.split('\n').length + 1)} spellCheck={false} />
-                  </label>
+                  <Field label={`${t('api.input')} (JSON)`} error={bodyErr ? 'JSON' : undefined}>
+                    <Textarea className="font-mono text-[12.5px]" aria-invalid={bodyErr} value={body} onChange={(e) => { setBody(e.target.value); setBodyErr(false); }} rows={Math.min(12, body.split('\n').length + 1)} spellCheck={false} />
+                  </Field>
                 )}
-                <div className="play-actions">
-                  <button className="btn primary" onClick={() => void send()} disabled={busy}>
-                    {busy ? <span className="spin" /> : <Play size={15} />}{busy ? t('api.sending') : t('api.send')}
-                  </button>
-                  <button className="btn ghost sm" onClick={() => void copy(curl)}><Copy size={14} />{t('api.snippet')}</button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => void send()} disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Play />}{busy ? t('api.sending') : t('api.send')}</Button>
+                  <Button variant="quiet" size="sm" onClick={() => void copy(curl)}><Copy />{t('api.snippet')}</Button>
                 </div>
-                <pre className="code snippet">{curl}</pre>
+                <pre className="max-h-[150px] overflow-auto rounded-md bg-[#0f1720] p-3 font-mono text-xs break-all whitespace-pre-wrap text-[#dbe4ee]">{curl}</pre>
               </div>
-              <div className="play-col">
-                <div className="resp-head"><span className="lbl">{t('api.response')}</span>{sent && <><span className={`chip ${sent.status < 300 ? 'ok' : 'err'}`}>{sent.status}</span><span className="subtle">{sent.ms} ms</span></>}</div>
-                <pre className="resp">{sent ? sent.text : '—'}</pre>
+              <div className="grid min-w-0 content-start gap-2.5">
+                <div className="flex min-h-6 items-center gap-2.5"><span className="text-[13px] font-medium text-muted-foreground">{t('api.response')}</span>{sent && <><Badge variant={sent.status < 300 ? 'ok' : 'err'}>{sent.status}</Badge><span className="text-[13px] text-muted-foreground">{sent.ms} ms</span></>}</div>
+                <pre className="m-0 max-h-[420px] min-h-[180px] overflow-auto rounded-md bg-muted p-3 font-mono text-[12.5px] break-all whitespace-pre-wrap">{sent ? sent.text : '—'}</pre>
               </div>
             </div>
             {sent && (
-              <div className="effect" key={`${sent.status}-${sent.ms}-${sent.text.length}`}>
-                <div className="effect-head"><b>{t('api.fx.title')}</b><span className="subtle">{t('api.fx.live')}</span></div>
-                <div className="effect-grid">
-                  {METRIC_KEYS.map((k) => (
-                    <div key={k} className={`fx ${sent.before[k] !== sent.after[k] ? 'changed' : ''}`}>
-                      <span>{t(`api.fx.${k}`)}</span>
-                      <b>{sent.before[k]}{sent.before[k] !== sent.after[k] && <> <em>→</em> {sent.after[k]}</>}</b>
-                    </div>
-                  ))}
+              <div className="grid animate-rise gap-2.5 border-t pt-3.5" key={`${sent.status}-${sent.ms}-${sent.text.length}`}>
+                <div className="flex flex-wrap items-baseline gap-3"><b>{t('api.fx.title')}</b><span className="text-[13px] text-muted-foreground">{t('api.fx.live')}</span></div>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2">
+                  {METRIC_KEYS.map((k) => {
+                    const diff = sent.before[k] !== sent.after[k];
+                    return (
+                      <div key={k} className={cn('grid gap-0.5 rounded-lg bg-muted px-3 py-2.5 text-[12.5px] text-muted-foreground transition-colors', diff && 'animate-pop bg-secondary text-teal-ink')}>
+                        <span>{t(`api.fx.${k}`)}</span>
+                        <b className={cn('text-lg font-semibold text-foreground', diff && 'text-teal-ink')}>{sent.before[k]}{diff && <> <em className="not-italic opacity-50">→</em> {sent.after[k]}</>}</b>
+                      </div>
+                    );
+                  })}
                 </div>
-                {changed.length === 0 && <p className="subtle">{t('api.fx.none')}</p>}
-                {changed.length > 0 && <div className="effect-links"><button className="btn ghost sm" onClick={() => go('/klaerfaelle')}>{t('nav.cases')} →</button><button className="btn ghost sm" onClick={() => go('/')}>{t('nav.overview')} →</button></div>}
+                {changed.length === 0 && <p className="text-[13px] text-muted-foreground">{t('api.fx.none')}</p>}
+                {changed.length > 0 && <div className="flex gap-1.5"><Button variant="quiet" size="sm" onClick={() => go('/klaerfaelle')}>{t('nav.cases')} →</Button><Button variant="quiet" size="sm" onClick={() => go('/')}>{t('nav.overview')} →</Button></div>}
               </div>
             )}
-          </div>
+          </Card>
         </section>
       </div>
 
@@ -241,32 +250,34 @@ function KeysSection() {
   };
 
   return (
-    <section id="keys" className="card api-keys">
-      <div className="keys-head"><KeyRound size={18} /><div><h2>{t('api.keys.title')}</h2><p className="subtle">{t('api.keys.sub')}</p></div></div>
-      {!auth.admin && <p className="banner wait">{t('api.keys.denied')}</p>}
-      <fieldset className="ro keys-form" disabled={!auth.admin}>
-        <label className={`field ${nameErr ? 'invalid' : ''}`}>{t('api.keys.name')}
-          <input value={name} onChange={(e) => { setName(e.target.value); setNameErr(false); }} placeholder="ERP-Test" onKeyDown={(e) => e.key === 'Enter' && void create()} />
-        </label>
-        <button className="btn primary" disabled={busy} onClick={() => void create()}>{busy ? <span className="spin" /> : <KeyRound size={15} />}{t('api.keys.create')}</button>
-      </fieldset>
+    <Card id="keys" className="scroll-mt-[72px] gap-3.5 px-5 py-[18px] shadow-card">
+      <div className="flex items-start gap-3 text-muted-foreground"><KeyRound size={18} className="mt-0.5" /><div><h2 className="text-foreground">{t('api.keys.title')}</h2><p className="text-[13px]">{t('api.keys.sub')}</p></div></div>
+      {!auth.admin && <Banner tone="wait" className="mb-0">{t('api.keys.denied')}</Banner>}
+      <Gate>
+        <div className="grid grid-cols-[minmax(180px,1fr)_auto] items-end gap-3 max-[1100px]:grid-cols-1">
+          <Field label={t('api.keys.name')} error={nameErr ? t('common.reason.required') : undefined}>
+            <Input value={name} aria-invalid={nameErr} onChange={(e) => { setName(e.target.value); setNameErr(false); }} placeholder="ERP-Test" onKeyDown={(e) => e.key === 'Enter' && void create()} />
+          </Field>
+          <Button disabled={busy} onClick={() => void create()}>{busy ? <Loader2 className="animate-spin" /> : <KeyRound />}{t('api.keys.create')}</Button>
+        </div>
+      </Gate>
       {secret && (
-        <div className="secret" role="status">
-          <div><b>{secret.name}</b><span className="subtle"> · {t('api.keys.once')}</span></div>
-          <code>{secret.token}</code>
-          <button className="btn secondary sm" onClick={() => { void navigator.clipboard.writeText(secret.token).then(() => toast(t('api.copied'))); }}><Copy size={14} />{t('api.copy')}</button>
+        <div role="status" className="grid animate-rise grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-lg border border-[#a8e5e3] bg-secondary px-3.5 py-3">
+          <div><b>{secret.name}</b><span className="text-[13px] text-muted-foreground"> · {t('api.keys.once')}</span></div>
+          <Button size="sm" variant="outline" className="row-span-2 col-start-2 row-start-1" onClick={() => { void navigator.clipboard.writeText(secret.token).then(() => toast(t('api.copied'))); }}><Copy />{t('api.copy')}</Button>
+          <code className="font-mono text-[13px] break-all">{secret.token}</code>
         </div>
       )}
-      <ul className="key-list">
-        {keys.length === 0 && <li className="empty">{t('api.keys.empty')}</li>}
+      <ul className="m-0 grid list-none p-0">
+        {keys.length === 0 && <li className="py-3 text-center text-muted-foreground">{t('api.keys.empty')}</li>}
         {keys.map((k) => (
-          <li key={k.ID} className={k.revokedAt ? 'revoked' : ''}>
-            <div><b>{k.name}</b> <span className={`role-tag ${k.role}`}>{t(`role.${k.role}`)}</span> {k.revokedAt && <span className="chip neutral">{t('api.keys.revoked')}</span>}
-              <small><span className="mono">{k.prefix}…</span> · {k.lastUsedAt ? t('api.keys.used', { when: relTime(lang, k.lastUsedAt) }) : t('api.keys.never')} · {k.createdBy}</small></div>
-            {!k.revokedAt && auth.admin && <button className="btn danger-quiet sm" onClick={() => void revoke(k)}><Trash2 size={14} />{t('api.keys.revoke')}</button>}
+          <li key={k.ID} className={cn('flex items-center justify-between gap-3 border-t py-2.5 text-sm', k.revokedAt && 'opacity-55')}>
+            <div><b className="font-semibold">{k.name}</b> <Badge variant="secondary" className="ml-1">{t(`role.${k.role}`)}</Badge> {k.revokedAt && <Badge variant="neutral">{t('api.keys.revoked')}</Badge>}
+              <small className="block text-[12.5px] text-muted-foreground"><span className="font-mono">{k.prefix}…</span> · {k.lastUsedAt ? t('api.keys.used', { when: relTime(lang, k.lastUsedAt) }) : t('api.keys.never')} · {k.createdBy}</small></div>
+            {!k.revokedAt && auth.admin && <Button variant="danger-quiet" size="sm" onClick={() => void revoke(k)}><Trash2 />{t('api.keys.revoke')}</Button>}
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

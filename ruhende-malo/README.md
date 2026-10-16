@@ -138,3 +138,7 @@ See `docs/PROCESS_STAGES.md` for exactly what happens in each of the six stages,
 ## Demo reset
 
 **Reset** in the header (or `POST /api/v1/resetDemo {"confirm": true}`) re-registers the workbook baseline and clears the simulated state and history. The workbook itself is never modified.
+
+## UI stack
+
+React 19 + Vite, **Tailwind CSS v4 and shadcn/ui**. See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for tokens, components and conventions.

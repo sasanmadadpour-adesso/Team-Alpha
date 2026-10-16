@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import type { Snapshot } from '../api';
-import { ArrowRight, BookOpen, Check, ChevronRight, GitFork, Play, RefreshCw } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, ChevronRight, GitFork, Loader2, Play, RefreshCw } from 'lucide-react';
+import { Banner, PageHeader, StatCard } from '@/components/app/patterns';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { useAuth } from '../auth';
 import { processAll, type ProcessResult } from '../api';
 import { fmtDate, relTime, useI18n } from '../i18n';
-import { Rail, Ring, STAGES, ToneIcon, caseHeadline, constructRail, errorText, openItems, useApp } from '../ui';
+import { Rail, Ring, STAGES, ToneBox, caseHeadline, constructRail, errorText, openItems, useApp } from '../ui';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const STAGE_MS = [380, 420, 620, 460, 620, 420]; // vSZ and the switch take longest: that's where most work happens
@@ -47,62 +51,60 @@ export function OverviewPage() {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{t('ov.title')}</h1>
-          <p>{t('ov.sub', { n: data.constructs.length })}</p>
-          {lastRun && <p className="subtle" style={{ marginTop: 4 }}>{t('ov.lastrun', { d: relTime(lang, lastRun) })}</p>}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-        <button className="btn secondary" onClick={() => go('/ablauf')}><BookOpen size={15} />{t('stages.title')}</button>
-        <button className="btn primary" onClick={run} disabled={running || !auth.write} title={auth.write ? undefined : t('auth.readonly')}>
-          {running ? <span className="spin" /> : processed ? <RefreshCw size={16} /> : <Play size={16} />}
-          {running ? t('ov.running') : processed ? t('ov.rerun') : t('ov.run')}
-        </button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('ov.title')}
+        description={<>{t('ov.sub', { n: data.constructs.length })}{lastRun && <span className="mt-1 block text-[13px] text-muted-foreground">{t('ov.lastrun', { d: relTime(lang, lastRun) })}</span>}</>}
+        actions={<>
+          <Button variant="outline" onClick={() => go('/ablauf')}><BookOpen />{t('stages.title')}</Button>
+          <Button onClick={run} disabled={running || !auth.write}>
+            {running ? <Loader2 className="animate-spin" /> : processed ? <RefreshCw /> : <Play />}
+            {running ? t('ov.running') : processed ? t('ov.rerun') : t('ov.run')}
+          </Button>
+        </>}
+      />
 
       {result && (() => {
         const waiting = result.review + result.blocked;
         const none = result.success === 0 && waiting === 0;
         return (
-          <div className={`banner ${waiting ? 'act' : 'ok'}`}>
-            {waiting ? <GitFork size={18} /> : <Check size={18} />}
-            <span className="grow">{none ? t('ov.result.none') : t('ov.result', { done: result.success, already: result.alreadyDone, waiting })}</span>
-            {waiting > 0 && <button className="btn sm secondary" onClick={() => go('/klaerfaelle')}>{t('nav.cases')}<ArrowRight size={14} /></button>}
-          </div>
+          <Banner tone={waiting ? 'act' : 'ok'} icon={waiting ? <GitFork size={18} /> : <Check size={18} />} action={waiting > 0 ? <Button size="sm" variant="outline" onClick={() => go('/klaerfaelle')}>{t('nav.cases')}<ArrowRight /></Button> : undefined}>
+            {none ? t('ov.result.none') : t('ov.result', { done: result.success, already: result.alreadyDone, waiting })}
+          </Banner>
         );
       })()}
 
-      <div className="kpis">
-        <div className="card kpi ok"><b>{uniqueDone}<small> / {uniqueTotal}</small></b><span>MaLos {t('ov.kpi.done')}</span></div>
-        <div className={`card kpi link ${openUnique ? 'act' : ''}`} role="button" tabIndex={0} onClick={() => go('/klaerfaelle')} onKeyDown={(e) => e.key === 'Enter' && go('/klaerfaelle')}><b>{openUnique}</b><span>{t('ov.kpi.cases')} →</span></div>
-        <div className="card kpi"><b>{data.relationships.filter((r) => !r.validToExclusive).length}</b><span>{t('ov.kpi.rel')}</span></div>
-        <div className="card kpi"><b>{data.outbox.length}</b><span>{t('ov.kpi.handover')}</span></div>
+      <div className="mb-[22px] grid grid-cols-4 gap-3 max-[1100px]:grid-cols-2">
+        <StatCard value={uniqueDone} total={uniqueTotal} tone="ok" label={<>MaLos {t('ov.kpi.done')}</>} />
+        <StatCard value={openUnique} tone={openUnique ? 'act' : undefined} label={<>{t('ov.kpi.cases')} →</>} onClick={() => go('/klaerfaelle')} />
+        <StatCard value={data.relationships.filter((r) => !r.validToExclusive).length} label={t('ov.kpi.rel')} />
+        <StatCard value={data.outbox.length} label={t('ov.kpi.handover')} />
       </div>
 
-      <div>
-        <div className="grid-constructs">
-          {data.constructs.map((c, i) => {
-            const finished = !before || (reveal[c.constructId] ?? 0) >= STAGES.length;
-            const rail = constructRail(t, finished ? live : data, c.constructId);                 // status line and ring: "before" state until this card has played through
-            const anim = before ? constructRail(t, live, c.constructId, false, reveal[c.constructId] ?? 0) : rail; // stages: real result, revealed step by step
-            const doing = before && (reveal[c.constructId] ?? 0) < STAGES.length ? STAGES[reveal[c.constructId] ?? 0] : undefined;
-            return (
-              <article key={c.constructId} className="card c-card" style={{ ['--i' as string]: i }} onClick={() => go(`/konstrukt/${c.constructId}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && go(`/konstrukt/${c.constructId}`)}>
-                <div className="c-head">
-                  <div>
-                    <h2>{c.city}</h2>
-                    <div className="c-meta"><span>{c.constructId}</span><span>{t('common.reststrom')} <b className="mono">{c.reststromMaloId}</b></span><span>{t('common.stichtag')} <b>{fmtDate(lang, c.stichtag)}</b></span></div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] content-start gap-4">
+        {data.constructs.map((c, i) => {
+          const finished = !before || (reveal[c.constructId] ?? 0) >= STAGES.length;
+          const rail = constructRail(t, finished ? live : data, c.constructId);                 // status line and ring: "before" state until this card has played through
+          const anim = before ? constructRail(t, live, c.constructId, false, reveal[c.constructId] ?? 0) : rail; // stages: real result, revealed step by step
+          const doing = before && (reveal[c.constructId] ?? 0) < STAGES.length ? STAGES[reveal[c.constructId] ?? 0] : undefined;
+          return (
+            <Card key={c.constructId} style={{ animationDelay: `${i * 60}ms` }} onClick={() => go(`/konstrukt/${c.constructId}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && go(`/konstrukt/${c.constructId}`)}
+              className="animate-rise cursor-pointer gap-4 p-5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-input hover:shadow-lift">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-[17px]">{c.city}</h2>
+                  <div className="mt-1 flex flex-wrap gap-x-3.5 text-[13px] text-muted-foreground">
+                    <span>{c.constructId}</span>
+                    <span>{t('common.reststrom')} <b className="font-mono text-[0.86em] font-medium text-foreground/80">{c.reststromMaloId}</b></span>
+                    <span>{t('common.stichtag')} <b className="font-medium text-foreground/80">{fmtDate(lang, c.stichtag)}</b></span>
                   </div>
-                  <Ring value={rail.done} total={rail.total} />
                 </div>
-                <Rail nodes={anim.nodes} running={!!doing} />
-                <ConstructStatus rail={rail} constructId={c.constructId} doing={doing} />
-              </article>
-            );
-          })}
-        </div>
+                <Ring value={rail.done} total={rail.total} />
+              </div>
+              <Rail nodes={anim.nodes} running={!!doing} />
+              <ConstructStatus rail={rail} constructId={c.constructId} doing={doing} />
+            </Card>
+          );
+        })}
       </div>
     </>
   );
@@ -119,27 +121,31 @@ function ConstructStatus({ rail, constructId, doing }: { rail: ReturnType<typeof
       : rail.total && rail.done === rail.total ? t('ov.st.doneopen', { n: rail.done, o: rail.open })
         : t('ov.st.progress', { d: rail.done, n: rail.total, o: rail.open });
   const tone = !rail.validated ? 'neutral' : rail.open ? 'act' : rail.done === rail.total ? 'ok' : 'wait';
+  const DOT: Record<string, string> = { neutral: 'bg-muted-foreground/50', act: 'bg-act', ok: 'bg-ok', wait: 'bg-wait' };
   return (
-    <div className="c-status" onClick={(e) => e.stopPropagation()}>
-      <div className={`c-line ${doing ? 'doing' : tone}`}><span className="dot" />{doing ? t(`ov.do.${doing}`) : line}</div>
+    <div className="grid cursor-default gap-2 border-t pt-3.5" onClick={(e) => e.stopPropagation()}>
+      <div className={cn('flex items-center gap-2 text-sm font-medium', doing && 'text-accent-foreground')}>
+        <span className={cn('size-2 shrink-0 rounded-full', doing ? 'animate-pulse bg-primary' : DOT[tone])} />{doing ? t(`ov.do.${doing}`) : line}
+      </div>
       {!doing && shown.length > 0 && (
-        <ul className="c-open">
+        <ul className="m-0 grid list-none gap-0.5 p-0">
           {shown.map((w) => {
             const head = caseHeadline(t, w.c, w.issue);
             return (
-              <li key={w.issue?.ID ?? w.c.caseId} onClick={() => openCase(w.c.caseId)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openCase(w.c.caseId)}>
-                <span className={`ic ${head.tone}`}><ToneIcon tone={head.tone} size={13} /></span>
-                <span className="c-open-t">{head.title}</span>
-                <span className="mono subtle">{w.issue?.ruleId === 'V14' && w.c.feedInMaloId ? w.c.feedInMaloId : w.c.maloId}</span>
-                <ChevronRight size={15} className="muted" />
+              <li key={w.issue?.ID ?? w.c.caseId} onClick={() => openCase(w.c.caseId)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openCase(w.c.caseId)}
+                className="-mx-2 grid cursor-pointer grid-cols-[24px_minmax(0,1fr)_auto_16px] items-center gap-2 rounded-md px-2 py-1.5 text-[13.5px] transition-colors hover:bg-accent/60">
+                <ToneBox tone={head.tone} />
+                <span className="truncate">{head.title}</span>
+                <span className="font-mono text-[0.86em] text-muted-foreground">{w.issue?.ruleId === 'V14' && w.c.feedInMaloId ? w.c.feedInMaloId : w.c.maloId}</span>
+                <ChevronRight size={15} className="text-muted-foreground" />
               </li>
             );
           })}
         </ul>
       )}
-      <div className="c-foot">
-        {rail.items.length > 3 ? <button className="link-btn" onClick={() => go('/klaerfaelle')}>{t('ov.st.more', { n: rail.items.length - 3 })}</button> : <span />}
-        <button className="link-btn strong" onClick={() => go(`/konstrukt/${constructId}`)}>{t('ov.card.open')}<ArrowRight size={14} /></button>
+      <div className="flex items-center justify-between gap-3 text-[13.5px]">
+        {rail.items.length > 3 ? <button className="text-muted-foreground hover:text-primary" onClick={() => go('/klaerfaelle')}>{t('ov.st.more', { n: rail.items.length - 3 })}</button> : <span />}
+        <button className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary" onClick={() => go(`/konstrukt/${constructId}`)}>{t('ov.card.open')}<ArrowRight size={14} /></button>
       </div>
     </div>
   );

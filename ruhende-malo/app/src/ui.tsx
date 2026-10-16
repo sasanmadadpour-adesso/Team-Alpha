@@ -1,5 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, CircleDashed, Clock, GitFork, Minus, PencilLine, X } from 'lucide-react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { toast as sonner } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Toaster } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Check, CircleDashed, Clock, GitFork, Minus, PencilLine } from 'lucide-react';
 import type { StepState } from './api';
 import { ApiError, type Case, type CaseIssue, type CaseStatus, type Snapshot } from './api';
 import { resultText, translate, useI18n, type Key } from './i18n';
@@ -29,19 +34,31 @@ export function useRoute(): string {
 }
 export const navigate = (path: string) => { if (location.hash !== `#${path}`) location.hash = path; window.scrollTo({ top: 0 }); };
 
-/* ---------------- Brand mark: active circle + ruhend crescent ---------------- */
-export function BrandMark() {
-  return <span className="logo"><img className="brand-mark" src="/logo.svg" alt="" width={36} height={36} /><span className="logo-ripple" aria-hidden="true" /></span>;
+/* ---------------- Brand ---------------- */
+/** The logo. Calm motion: the teal node sends one soft ripple on load and once per hover (a signal, not a spinner). */
+export function BrandMark({ className }: { className?: string }) {
+  return (
+    <span className={cn('relative block size-9 shrink-0', className)}>
+      <img src="/logo.svg" alt="" width={36} height={36} className="block size-full rounded-[10px]" />
+      <span aria-hidden="true" className="pointer-events-none absolute top-[39.5%] left-[76.7%] -mt-1 -ml-1 size-2 animate-ripple rounded-full border-[1.5px] border-[#b8fff2] opacity-0 group-hover/brand:animate-[ripple2_1.2s_var(--ease)_1]" />
+    </span>
+  );
 }
 
-/** SIMULATION tag with the full explanation on hover and focus: the warning stays on every screen, but small. */
+/** SIMULATION marker next to the title; the full explanation is one hover or focus away. */
 export function SimTag() {
   const { t } = useI18n();
   return (
-    <span className="sim-tag" tabIndex={0} role="note" aria-label={t('top.sim.title')}>
-      <i />{t('top.sim.tag')}
-      <span className="sim-pop" role="tooltip"><b>{t('top.sim.title')}</b>{t('top.sim.body')}</span>
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} role="note" aria-label={t('top.sim.title')} className="inline-flex h-[17px] cursor-help items-center gap-1.5 rounded-[5px] border border-wait-line bg-wait-soft px-1.5 text-[10px] font-semibold tracking-[0.07em] text-wait">
+          <i className="size-[5px] animate-breathe rounded-full bg-wait" />{t('top.sim.tag')}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent align="start" className="max-w-[270px] bg-card text-[13px] font-normal leading-snug text-muted-foreground shadow-float ring-1 ring-border [&_svg]:hidden">
+        <b className="mb-0.5 block font-semibold text-wait">{t('top.sim.title')}</b>{t('top.sim.body')}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -63,7 +80,7 @@ export function StatusChip({ c, animateKey }: { c: Pick<Case, 'status' | 'kind'>
   useEffect(() => {
     if (prev.current !== c.status) { setChanged(true); const id = setTimeout(() => setChanged(false), 500); prev.current = c.status; return () => clearTimeout(id); }
   }, [c.status, animateKey]);
-  return <span className={`chip ${STATUS_TONE[c.status]} ${changed ? 'changed' : ''}`}><span className="dot" />{statusLabel(t, c)}</span>;
+  return <Badge variant={STATUS_TONE[c.status]} className={cn(changed && 'animate-pop')}><span className="size-1.5 rounded-full bg-current" />{statusLabel(t, c)}</Badge>;
 }
 
 /** One work item per open finding (a shared finding is one decision); cases without a finding (vSZ) count once. */
@@ -109,6 +126,12 @@ export function caseHeadline(t: (k: Key | string, p?: Record<string, string | nu
   return { title: statusLabel(t, c), text: resultText(t, c.code), tone: STATUS_TONE[c.status] };
 }
 
+export const TONE_BOX: Record<Tone, string> = { ok: 'bg-ok-soft text-ok', act: 'bg-act-soft text-act', err: 'bg-err-soft text-err', wait: 'bg-wait-soft text-wait', info: 'bg-primary-soft text-accent-foreground', neutral: 'bg-muted text-muted-foreground' };
+/** Rounded square carrying a tone icon: the one way a finding or status is marked in lists. */
+export function ToneBox({ tone, box = 24, icon = 13, className }: { tone: Tone; box?: number; icon?: number; className?: string }) {
+  return <span style={{ width: box, height: box }} className={cn('grid shrink-0 place-items-center rounded-[7px]', TONE_BOX[tone], className)}><ToneIcon tone={tone} size={icon} /></span>;
+}
+
 export function ToneIcon({ tone, size = 18 }: { tone: Tone; size?: number }) {
   if (tone === 'ok') return <Check size={size} strokeWidth={2.2} />;
   if (tone === 'act') return <GitFork size={size} strokeWidth={2} />;
@@ -140,19 +163,35 @@ export function stepUi(stepId: string, state: StepState): UiState {
   return stepId === 'PRUEFUNG' ? 'act' : 'wait';
 }
 
+const STATE_CLASS: Record<UiState, string> = {
+  ok: 'border-ok bg-ok text-white',
+  partial: 'border-ok text-white bg-[linear-gradient(90deg,var(--ok)_50%,var(--ok-line)_50%)]',
+  act: 'border-act bg-act-soft text-act',
+  err: 'border-err bg-err-soft text-err',
+  wait: 'border-wait bg-wait-soft text-wait',
+  planned: 'border-dashed border-primary bg-card text-primary',
+  todo: 'border-dashed border-input bg-card text-muted-foreground',
+  na: 'border-border bg-card text-muted-foreground/60 opacity-70',
+  now: 'relative animate-ring border-primary bg-primary-soft',
+};
+
 export function StateIcon({ state, size = 24 }: { state: UiState; size?: number }) {
   const g = Math.round(size * 0.52);
   const icon = state === 'ok' || state === 'partial' ? <Check size={g} strokeWidth={3} />
     : state === 'act' ? <GitFork size={g} strokeWidth={2.4} />
       : state === 'err' ? <PencilLine size={g} strokeWidth={2.4} />
         : state === 'wait' ? <Clock size={g} strokeWidth={2.4} />
-          : state === 'na' ? <Minus size={g} strokeWidth={2.4} /> : null;
-  return <i className={`st st-${state}`} style={{ ['--s' as string]: `${size}px` }} aria-hidden="true">{icon}</i>;
+          : state === 'na' ? <Minus size={g} strokeWidth={2.4} />
+            : state === 'now' ? <span className="size-[55%] animate-spin rounded-full border-2 border-primary border-r-transparent [animation-duration:700ms]" /> : null;
+  return <i aria-hidden="true" style={{ width: size, height: size }} className={cn('inline-grid shrink-0 place-items-center rounded-full border-2 transition-colors duration-300', STATE_CLASS[state])}>{icon}</i>;
 }
 
+const STATE_CHIP: Record<UiState, string> = {
+  ok: 'ok', partial: 'ok', act: 'act', err: 'err', wait: 'wait', planned: 'info', todo: 'neutral', na: 'neutral', now: 'info',
+};
 export function StateChip({ state, label }: { state: UiState; label?: string }) {
   const { t } = useI18n();
-  return <span className={`chip st-chip st-${state}`}><StateIcon state={state} size={14} />{label ?? t(`state.${state}`)}</span>;
+  return <Badge variant={STATE_CHIP[state] as 'ok'} className="gap-1.5 pl-1"><StateIcon state={state} size={14} />{label ?? t(`state.${state}`)}</Badge>;
 }
 
 /* ---------------- Progress ring ---------------- */
@@ -161,10 +200,10 @@ export function Ring({ value, total }: { value: number; total: number }) {
   const [shown, setShown] = useState(0);
   useEffect(() => { const id = requestAnimationFrame(() => setShown(total ? value / total : 0)); return () => cancelAnimationFrame(id); }, [value, total]);
   return (
-    <svg className="ring" viewBox="0 0 52 52" role="img" aria-label={`${value}/${total}`}>
-      <circle className="bg" cx="26" cy="26" r={r} />
-      <circle className="fg" cx="26" cy="26" r={r} strokeDasharray={c} strokeDashoffset={c * (1 - shown)} />
-      <text x="26" y="30" textAnchor="middle">{value}/{total}</text>
+    <svg className="size-[52px] shrink-0" viewBox="0 0 52 52" role="img" aria-label={`${value}/${total}`}>
+      <circle cx="26" cy="26" r={r} fill="none" strokeWidth={5} className="stroke-muted" />
+      <circle cx="26" cy="26" r={r} fill="none" strokeWidth={5} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - shown)} className="origin-center -rotate-90 stroke-ok transition-[stroke-dashoffset] duration-[900ms] ease-[var(--ease)]" />
+      <text x="26" y="30" textAnchor="middle" className="fill-foreground text-[13px] font-semibold">{value}/{total}</text>
     </svg>
   );
 }
@@ -180,17 +219,24 @@ export function Rail({ nodes, running }: { nodes: RailNode[]; running?: boolean 
   while (reached < n && nodes[reached].state === 'ok') reached++;
   const span = 100 - 100 / n;
   const width = n > 1 ? (Math.max(0, reached - 1) / (n - 1)) * span : 0;
+  const edge = `${50 / n}%`;
   return (
-    <div className="rail-wrap">
-    <div className={`rail ${running ? 'running' : ''}`} style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, ['--edge' as string]: `${50 / n}%` }}>
-      <div className="rail-fill" style={{ width: `${width}%` }} />
-      {nodes.map((node) => (
-        <div key={node.id} className={`rail-node ${node.state}`} title={`${node.hint}${node.count && node.count !== '–' ? ` (${node.count})` : ''}`}>
-          <StateIcon state={node.state} size={24} />
-          <span>{node.label}</span>
-        </div>
-      ))}
-    </div>
+    <div className="@container">
+      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}>
+        <div className="absolute top-[11px] h-0.5 rounded-sm bg-border" style={{ left: edge, right: edge }} />
+        <div className={cn('absolute top-[11px] h-0.5 rounded-sm transition-[width] duration-700 ease-[var(--ease)]', running ? 'bg-[linear-gradient(90deg,var(--teal),var(--primary))]' : 'bg-ok')} style={{ left: edge, width: `${width}%` }} />
+        {nodes.map((node) => (
+          <Tooltip key={node.id}>
+            <TooltipTrigger asChild>
+              <div className="relative grid cursor-help justify-items-center gap-1.5 text-center">
+                <StateIcon state={node.state} size={24} />
+                <span className={cn('text-xs leading-tight whitespace-nowrap text-muted-foreground @max-[470px]:px-px @max-[470px]:text-[11px] @max-[470px]:whitespace-normal', (node.state === 'ok' || node.state === 'partial') && 'text-foreground/80')}>{node.label}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[280px] text-[13px]">{node.hint}{node.count && node.count !== '–' ? ` (${node.count})` : ''}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
     </div>
   );
 }
@@ -245,25 +291,13 @@ export function constructRail(t: (k: Key | string, p?: Record<string, string | n
   return { nodes: shown, done, total: households.length, open: items.length, items, corr, dec, validated, handover: data.outbox.filter((e) => e.constructId === constructId).length };
 }
 
-/* ---------------- Toasts ---------------- */
-interface ToastItem { id: number; message: string; tone: 'ok' | 'err' }
+/* ---------------- Toasts (sonner, themed in components/ui/sonner.tsx) ---------------- */
 export function useToasts() {
-  const [items, setItems] = useState<ToastItem[]>([]);
   const push = useCallback((message: string, tone: 'ok' | 'err' = 'ok') => {
-    const id = Date.now() + Math.random();
-    setItems((x) => [...x.slice(-2), { id, message, tone }]);
-    setTimeout(() => setItems((x) => x.filter((i) => i.id !== id)), tone === 'err' ? 7000 : 4200);
+    if (tone === 'err') sonner.error(message, { duration: 7000 });
+    else sonner.success(message, { duration: 4200 });
   }, []);
-  const view: ReactNode = (
-    <div className="toasts" role="status" aria-live="polite">
-      {items.map((i) => (
-        <div key={i.id} className={`toast ${i.tone === 'err' ? 'err' : ''}`}>
-          {i.tone === 'err' ? <X size={18} /> : <Check size={18} />}<span>{i.message}</span>
-          <button className="x" aria-label={translate(document.documentElement.lang === 'en' ? 'en' : 'de', 'common.close')} onClick={() => setItems((x) => x.filter((y) => y.id !== i.id))}><X size={14} /></button>
-        </div>
-      ))}
-    </div>
-  );
+  const view = <Toaster position="bottom-center" closeButton />;
   return { push, view };
 }
 

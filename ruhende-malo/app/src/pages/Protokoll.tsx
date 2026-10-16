@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Check, GitFork } from 'lucide-react';
+import { EmptyState, Field, PageHeader } from '@/components/app/patterns';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 import type { ApiCall, AuditEvent, Snapshot } from '../api';
 import { fmtDateTime, relTime, useI18n } from '../i18n';
 import { useApp } from '../ui';
@@ -24,7 +33,7 @@ export function eventSubject(e: AuditEvent, data: Snapshot): string {
 const HUMAN_REASON = new Set(['RESOLVE_ISSUE', 'CONFIRM_VSZ', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION']);
 export const humanReason = (e: AuditEvent) => (HUMAN_REASON.has(e.operation) ? e.reason ?? '' : '');
 
-const tone = (op: string) => (['SET_DORMANT', 'MAINTAIN_EINSPEISE_MEMA', 'CONFIRM_VSZ'].includes(op) ? 'ok' : ['RESOLVE_ISSUE', 'SAP_STATE_UPDATE', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION'].includes(op) ? 'act' : '');
+const tone = (op: string): 'ok' | 'act' | 'neutral' => (['SET_DORMANT', 'MAINTAIN_EINSPEISE_MEMA', 'CONFIRM_VSZ'].includes(op) ? 'ok' : ['RESOLVE_ISSUE', 'SAP_STATE_UPDATE', 'REACTIVATE', 'REMOVE_FROM_CONSTRUCT', 'CORRECT_TRANSITION', 'REVERSE_TRANSITION'].includes(op) ? 'act' : 'neutral');
 
 export type FeedItem = { id: string; at: string; kind: 'event'; event: AuditEvent } | { id: string; at: string; kind: 'call'; call: ApiCall };
 export const buildFeed = (data: Snapshot): FeedItem[] => {
@@ -40,18 +49,18 @@ export function HistoryList({ events, limit = 8 }: { events: AuditEvent[]; limit
   const { data, openCase } = useApp();
   const actor = (a: string) => (t(`actor.${a}`) === `actor.${a}` ? a : t(`actor.${a}`));
   const shown = events.filter((e) => e.operation !== 'VALIDATE').slice(0, limit);
-  if (!shown.length) return <div className="empty">{t('log.empty')}</div>;
+  if (!shown.length) return <EmptyState>{t('log.empty')}</EmptyState>;
   return (
-    <ul className="feed-list">
+    <ul className="m-0 list-none p-0">
       {shown.map((e, i) => {
         const c = e.maloId ? data.cases.find((x) => x.maloId === e.maloId) : undefined;
         const tn = tone(e.operation);
         return (
-          <li key={e.ID} style={{ ['--i' as string]: i, cursor: c ? 'pointer' : 'default' }} onClick={() => c && openCase(c.caseId)}>
-            <span className={`ic ${tn}`}>{tn === 'ok' ? <Check size={12} strokeWidth={3} /> : tn === 'act' ? <GitFork size={12} /> : <span className="pip" />}</span>
+          <li key={e.ID} style={{ animationDelay: `${i * 25}ms` }} onClick={() => c && openCase(c.caseId)} className={cn('grid animate-rise grid-cols-[22px_1fr] gap-2.5 px-5 py-2 text-sm', c && 'cursor-pointer hover:bg-accent/50')}>
+            <span className={cn('grid size-[22px] place-items-center rounded-full bg-muted text-muted-foreground', tn === 'ok' && 'bg-ok-soft text-ok', tn === 'act' && 'bg-act-soft text-act')}>{tn === 'ok' ? <Check size={12} strokeWidth={3} /> : tn === 'act' ? <GitFork size={12} /> : <span className="size-[5px] rounded-full bg-current" />}</span>
             <div>
-              <span className={e.maloId ? 'mono' : ''}>{eventSubject(e, data)}</span> {t(`act.${e.operation}`)}
-              <small>{actor(e.actor)} · {relTime(lang, e.eventTime)}</small>
+              <span className={cn(e.maloId && 'font-mono text-[0.86em]')}>{eventSubject(e, data)}</span> {t(`act.${e.operation}`)}
+              <small className="block text-[12.5px] text-muted-foreground">{actor(e.actor)} · {relTime(lang, e.eventTime)}</small>
             </div>
           </li>
         );
@@ -60,7 +69,7 @@ export function HistoryList({ events, limit = 8 }: { events: AuditEvent[]; limit
   );
 }
 
-/** Full audit log (FR-22): every recorded action with filters. */
+/** Full audit log (FR-22): every recorded action and API call, with filters. Same feed as the activity panel. */
 export function ProtokollPage({ initialConstruct }: { initialConstruct?: string }) {
   const { data, openCase } = useApp();
   const { t, lang } = useI18n();
@@ -85,73 +94,66 @@ export function ProtokollPage({ initialConstruct }: { initialConstruct?: string 
     if (query && !`${e.maloId ?? ''} ${eventSubject(e, data)} ${humanReason(e)} ${e.actor}`.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
+  const ALL = '__all__';
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{t('log.title')}</h1>
-          <p>{t('log.sub')}</p>
-        </div>
-      </div>
-      <div className="card log-filters">
-        <label className="field">{t('log.f.construct')}
-          <select value={construct} onChange={(e) => setConstruct(e.target.value)}>
-            <option value="">{t('log.f.all')}</option>
-            {data.constructs.map((c) => <option key={c.constructId} value={c.constructId}>{c.city} · {c.constructId}</option>)}
-          </select>
-        </label>
-        <label className="field">{t('log.f.action')}
-          <select value={operation} onChange={(e) => setOperation(e.target.value)}>
-            <option value="">{t('log.f.all')}</option>
-            {operations.map((o) => <option key={o} value={o}>{t(`act.${o}`)}</option>)}
-          </select>
-        </label>
-        <label className="field">{t('log.f.source')}
-          <select value={source} onChange={(e) => setSource(e.target.value as 'all' | 'actions' | 'api')}>
-            <option value="all">{t('log.f.all')}</option>
-            <option value="actions">{t('log.f.actions')}</option>
-            <option value="api">{t('log.f.api')}</option>
-          </select>
-        </label>
-        <label className="field grow">{t('log.f.search')}
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="50539603921" />
-        </label>
-        <label className="check"><input type="checkbox" checked={showChecks} onChange={(e) => setShowChecks(e.target.checked)} />{t('log.f.checks')}</label>
-      </div>
-      <div className="card log-table">
-        <table>
-          <thead><tr><th>{t('log.c.when')}</th><th>{t('log.c.what')}</th><th>{t('log.c.object')}</th><th>{t('log.c.who')}</th><th>{t('log.c.why')}</th></tr></thead>
-          <tbody>
+      <PageHeader title={t('log.title')} description={t('log.sub')} />
+      <Card className="mb-3.5 flex-row flex-wrap items-end gap-3.5 px-4 py-3.5 shadow-card">
+        <Field label={t('log.f.construct')} className="min-w-[180px]">
+          <Select value={construct || ALL} onValueChange={(v) => setConstruct(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value={ALL}>{t('log.f.all')}</SelectItem>{data.constructs.map((c) => <SelectItem key={c.constructId} value={c.constructId}>{c.city} · {c.constructId}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label={t('log.f.action')} className="min-w-[180px]">
+          <Select value={operation || ALL} onValueChange={(v) => setOperation(v === ALL ? '' : v)}>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value={ALL}>{t('log.f.all')}</SelectItem>{operations.map((o) => <SelectItem key={o} value={o}>{t(`act.${o}`)}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label={t('log.f.source')} className="min-w-[160px]">
+          <Select value={source} onValueChange={(v) => setSource(v as typeof source)}>
+            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">{t('log.f.all')}</SelectItem><SelectItem value="actions">{t('log.f.actions')}</SelectItem><SelectItem value="api">{t('log.f.api')}</SelectItem></SelectContent>
+          </Select>
+        </Field>
+        <Field label={t('log.f.search')} className="min-w-[200px] flex-1"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="50539603921" /></Field>
+        <Label className="h-9 gap-2 text-sm font-normal"><Checkbox checked={showChecks} onCheckedChange={(v) => setShowChecks(v === true)} />{t('log.f.checks')}</Label>
+      </Card>
+      <Card className="gap-0 overflow-hidden py-0 shadow-card">
+        <Table>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">{(['when', 'what', 'object', 'who', 'why'] as const).map((k) => <TableHead key={k} className="h-10 px-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t(`log.c.${k}`)}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>
             {rows.map((it) => {
               if (it.kind === 'call') {
                 const c = it.call;
                 return (
-                  <tr key={it.id}>
-                    <td title={relTime(lang, it.at)}>{fmtDateTime(lang, it.at)}</td>
-                    <td><span className="chip info">API</span></td>
-                    <td className="mono">{c.method} {c.path.replace('/api/v1', '')}</td>
-                    <td>{actor(c.actor)}</td>
-                    <td className="why"><span className={c.status < 300 ? 'code-ok' : 'code-err'}>{c.status}</span> · {c.durationMs} ms</td>
-                  </tr>
+                  <TableRow key={it.id}>
+                    <TableCell className="px-4 whitespace-nowrap" title={relTime(lang, it.at)}>{fmtDateTime(lang, it.at)}</TableCell>
+                    <TableCell className="px-4"><Badge variant="info">API</Badge></TableCell>
+                    <TableCell className="px-4 font-mono text-[0.86em]">{c.method} {c.path.replace('/api/v1', '')}</TableCell>
+                    <TableCell className="px-4">{actor(c.actor)}</TableCell>
+                    <TableCell className="px-4 text-muted-foreground"><span className={cn('font-semibold', c.status < 300 ? 'text-teal-ink' : 'text-err')}>{c.status}</span> · {c.durationMs} ms</TableCell>
+                  </TableRow>
                 );
               }
               const e = it.event;
               const c = e.maloId ? data.cases.find((x) => x.maloId === e.maloId) : undefined;
               return (
-                <tr key={e.ID} onClick={() => c && openCase(c.caseId)} className={c ? 'link' : ''}>
-                  <td title={relTime(lang, e.eventTime)}>{fmtDateTime(lang, e.eventTime)}</td>
-                  <td><span className={`chip ${tone(e.operation) || 'neutral'}`}>{t(`act.${e.operation}`)}</span></td>
-                  <td className={e.maloId ? 'mono' : ''}>{eventSubject(e, data)}</td>
-                  <td>{actor(e.actor)}</td>
-                  <td className="why">{humanReason(e)}</td>
-                </tr>
+                <TableRow key={e.ID} onClick={() => c && openCase(c.caseId)} className={cn(c && 'cursor-pointer')}>
+                  <TableCell className="px-4 whitespace-nowrap" title={relTime(lang, e.eventTime)}>{fmtDateTime(lang, e.eventTime)}</TableCell>
+                  <TableCell className="px-4"><Badge variant={tone(e.operation)}>{t(`act.${e.operation}`)}</Badge></TableCell>
+                  <TableCell className={cn('px-4', e.maloId && 'font-mono text-[0.86em]')}>{eventSubject(e, data)}</TableCell>
+                  <TableCell className="px-4">{actor(e.actor)}</TableCell>
+                  <TableCell className="max-w-[320px] px-4 whitespace-normal text-muted-foreground">{humanReason(e)}</TableCell>
+                </TableRow>
               );
             })}
-            {rows.length === 0 && <tr><td colSpan={5} className="empty">{t('log.empty')}</td></tr>}
-          </tbody>
-        </table>
-      </div>
+            {rows.length === 0 && <TableRow><TableCell colSpan={5}><EmptyState>{t('log.empty')}</EmptyState></TableCell></TableRow>}
+          </TableBody>
+        </Table>
+      </Card>
     </>
   );
 }
